@@ -133,17 +133,14 @@ void algo_main(const Particle particles[NPARTICLES], Jet jet[NJETS]) {
         // Pick the highest pT particle as the seed
         Particle seedp = MaxReduce<NPARTICLES>(work);
         etaphi_t seed_eta = seedp.hwEta, seed_phi = seedp.hwPhi;
-        // Reset seed pT to 0, as it will be clustered from work
-        ap_uint<15> sum_pt = 0;
      
 #ifndef __SYNTHESIS__
-        //printf("HW algo iter %d: seed %2d of pt %.2f, eta %+.2f, phi %+.2f\n", j, int(-1), work[0].hwPt*0.25, work[0].hwEta*0.01, work[0].hwPhi*0.01);
+        //printf("HW algo iter %d: seed %2d of pt %.2f, eta %+.2f, phi %+.2f\n", j, int(-1), seedp.hwPt*0.25, seedp.hwEta*0.01, seedp.hwPhi*0.01);
 #endif
         // this block builds the jet out of the seed, and zeroes out the used candidates
-        //etaphi_t seed_eta = work[0].hwEta, seed_phi = work[0].hwPhi;
-        //ap_uint<15> sum_pt = work[0].hwPt; 
+        ap_uint<15> sum_pt = 0;
         ap_int<22> sum_pt_eta = 0, sum_pt_phi = 0;
-        ap_uint<5> count = (sum_pt > 0) ? 1 : 0;
+        ap_uint<5> count = 0;
         for (unsigned int i = 0; i < NPARTICLES-j; ++i) {
             int deta = work[i].hwEta - seed_eta;
             int dphi = work[i].hwPhi - seed_phi;
