@@ -1,13 +1,12 @@
 # create a project
 open_project -reset "proj"
 # specify the name of the function to synthetize
-#set_top multitap_sr_push_simple
-set_top sorting_multitap_sr_push_simple
+set_top tdemux_simple
 # load source code for synthesis
-add_files src/multitap_sr.cc
+add_files src/tdemux.cc
 # load source code for the testbench
-add_files -tb multitap_sr_ref.cc
-add_files -tb testbench_multitap_sr.cc
+#add_files -tb tdemux_ref.cc
+add_files -tb testbench_tdemux.cc
 
 # create a solution (i.e. a hardware configuration for synthesis)
 open_solution -reset "solution"

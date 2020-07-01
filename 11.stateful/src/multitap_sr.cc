@@ -35,7 +35,7 @@ bool sorting_multitap_sr_push_simple(bool newRecord, const ap_uint<16> newValue,
     #pragma HLS ARRAY_PARTITION variable=below complete
     for (int i = 0; i < NTAPS; ++i) below[i] = !newRecord && (cells[i] <= newValue);
 
-#if 0
+#if 1
     for (int i = NTAPS-1; i >= 1; --i) {
         if      (below[i])  cells[i] = (below[i-1] ? cells[i-1] : newValue);
         else if (newRecord) cells[i] = 0;
