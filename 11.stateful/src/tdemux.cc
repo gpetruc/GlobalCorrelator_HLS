@@ -1,10 +1,11 @@
 #include "tdemux.h"
+#include <cassert>
 
 bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
     #pragma HLS PIPELINE ii=1
     #pragma HLS ARRAY_PARTITION variable=links complete
     #pragma HLS ARRAY_PARTITION variable=out complete
-    #pragma HLS INTERFACE ap_none port=out
+    //#pragma HLS INTERFACE ap_none port=out
 
     typedef ap_uint<9> offs_t;    // must count up to TMUX_IN * NLCK * 2
     typedef ap_uint<9> counter_t; // must count up to TMUX_IN * NLCK * 2
@@ -15,7 +16,6 @@ bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
     static offs_t      offs[NLINKS];
     static robin_t     robin, readrobin, blkcounter;
     static bool        readvalid = false, pre_readvalid = false;
-    #pragma HLS ARRAY_PARTITION variable=fold complete
     #pragma HLS ARRAY_PARTITION variable=offs complete
 
     const unsigned int MEMSIZE = 2*PAGESIZE;
@@ -27,17 +27,41 @@ bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
         elcounter = 0; blkcounter = 1;
         robin = 0; readvalid = false; pre_readvalid = false;
         for (int i = 0; i < NLINKS; ++i) {
-            fold[i] = (i == 0 ? 1 : 0);
-            offs[i]  =  i * BLKSIZE + (fold[i] ? PAGESIZE : 0);
+            //fold[i] = (i == 0 ? 1 : 0);
+            offs[i]  =  i * BLKSIZE + (i == 0 ? PAGESIZE : 0);
         }
         toread = -1;
 #ifndef __SYNTHESIS__
         //printf("FW: Initialized\n");
 #endif
     }
+
+
+#if 1
+    assert(NLINKS==3);
+    switch(robin) {
+        case 0:
+            buffer[0][offs[0]] = links[0];
+            buffer[1][offs[1]] = links[1];
+            buffer[2][offs[2]] = links[2];
+            break;
+            break;
+        case 1:
+            buffer[1][offs[0]] = links[0];
+            buffer[2][offs[1]] = links[1];
+            buffer[0][offs[2]] = links[2];
+            break;
+        case 2:
+            buffer[2][offs[0]] = links[0];
+            buffer[0][offs[1]] = links[1];
+            buffer[1][offs[2]] = links[2];
+            break;
+    }
+#else
     for (int i = 0; i < NLINKS; ++i) {
         buffer[(robin+i)%NLINKS][offs[i]] = links[i];
     }
+#endif
     robin++;
     elcounter++;
 
@@ -47,7 +71,7 @@ bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
     for (unsigned int j = 0; j < NLINKS; ++j) {
         printf("FW: M%d  fold %d  offs %5d : ", j, fold[j] ? 1 : 0, int(offs[j]));
         for (unsigned int i = 0; i < MEMSIZE; ++i) {
-            printf("%4d%c | ", int(buffer[j][i]), i == offs[(NLINKS-int(robin)+1+j)%NLINKS] ? '!' : ' ');
+            printf("%5d%c | ", int(buffer[j][i]), i == offs[(NLINKS-int(robin)+1+j)%NLINKS] ? '!' : ' ');
         }
         printf("\n");
     } 
@@ -61,6 +85,20 @@ bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
             //printf("FW: Swap block for %d as counter %d is %d\n", completed, int(elcounter), BLKSIZE);
 #endif
 
+#if 1          
+            for (int i = 0; i < NLINKS; ++i) {
+                if (i == blkcounter) {
+                    if (offs[i] > PAGESIZE) {
+                        offs[i] = i*BLKSIZE;
+                    } else {
+                        offs[i] = i*BLKSIZE + PAGESIZE;
+                    }
+                } else {
+                    offs[i]++;
+                } 
+           }
+  
+#else
             fold[completed] = !fold[completed];  // fold that one around
             for (int i = 0; i < NLINKS; ++i) {
                 if (i == completed) {
@@ -69,6 +107,7 @@ bool tdemux_simple(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) {
                     offs[i]++;
                 }
             }
+#endif
 
             elcounter = 0;
 
@@ -156,7 +195,7 @@ bool tdemux_simple_ref(bool newEvent, const w64 links[NLINKS], w64 out[NLINKS]) 
     for (unsigned int j = 0; j < NLINKS; ++j) {
         printf("M%d  fold %d  offs %5d : ", j, fold[j] ? 1 : 0, offs[j]);
         for (unsigned int i = 0; i < MEMSIZE; ++i) {
-            printf("%4d%c | ", int(buffer[j][i]), i == offs[(NLINKS-robin+1+j)%NLINKS] ? '!' : ' ');
+            printf("%5d%c | ", int(buffer[j][i]), i == offs[(NLINKS-robin+1+j)%NLINKS] ? '!' : ' ');
         }
         printf("\n");
     }*/
