@@ -5,6 +5,8 @@ add_files src/algo.cpp
 add_files -tb algo_test.cpp 
 add_files -tb algo_ref.cpp
 
+set cflags "-std=c++0x"
+
 # reset the solution
 open_solution -reset "solution"
 ##   VCU118 dev kit (VU9P)
@@ -19,10 +21,10 @@ csim_design
 csynth_design
 
 # run the simulation of the synthethized design
-#cosim_design -trace_level all
+cosim_design -trace_level all
 
 # export this for integration into a firmware design
-#export_design -format ip_catalog
+export_design -format ip_catalog
 
 # exit Vivado HLS
 exit
