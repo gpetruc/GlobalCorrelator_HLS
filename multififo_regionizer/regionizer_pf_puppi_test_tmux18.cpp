@@ -127,6 +127,9 @@ int main(int argc, char **argv) {
         all_channels_in[i] = 0; all_channels_regionized[i] = 0; all_channels_pf[i] = 0; all_channels_puppi[i] = 0;  
     }
 
+    std::cout<<"Before null frame"<<std::endl; 
+    muxPatternsIn.debug_print(true);
+
     // prepend one null frame at the beginning
     muxPatternsIn(all_channels_in, false,0); 
     muxPatternsIn(all_channels_in, false,1); 
@@ -242,12 +245,12 @@ int main(int argc, char **argv) {
             }
 
 	
-    	    std::cout<<"After event: "<<itest<<" i "<< i << " IMUX " <<itest %3 <<std::endl; 
-    	    muxPatternsIn.debug_print(true);
 
-            muxPatternsIn.print();
 
         }
+    	std::cout<<"After event: "<<itest<<" "<< " IMUX " <<itest %3 <<std::endl; 
+    	muxPatternsIn.debug_print(true);
+        muxPatternsIn.print();
     } 
     // moved after one event
     muxPatternsIn.flush();

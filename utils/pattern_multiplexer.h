@@ -83,33 +83,49 @@ void PatternMultiplexer::add_tmux(int imux,mask_t maskin,mask_t maskto, int time
 
 // write an event in per time
 void PatternMultiplexer::operator()(const Word event[PACKING_NCHANN], bool valid,int imux) {
-    int shiftin=0;
+    //std::cout<<"["<<__FUNCTION__<<"]::[DEBUG] "<< "valid="<<valid<<" imux="<<imux<<std::endl;
+    //int shiftin=0;
     for (unsigned ich =0 ; ich<PACKING_NCHANN;++ich){
+
+        //if (imux <0 ) { // fill all if imux <0
+        //    _queue[ich] . push( std::pair<bool,Word> (valid,event[ich]) );
+        //    continue;
+        //}
+
         //unsigned toch=ich;
         int toch=-1; // fill only the one with mask
         for( const auto & p : _masks[imux]){
             //if (p.first & (mask_t(1)<<ich))
             if (p.first[ich]){
-                ++shiftin;
-                // set toch to the non-zero shiftin bit
-                int shiftto=0;
-                for(unsigned ibit =0; ibit< PACKING_NCHANN ;++ibit)
-                {
-                    //if (p.second & (mask_t(1)<<ibit))
-                    if (p.second[ibit]){
-                        ++shiftto;
-                        if (shiftto == shiftin) {
-                            toch = ibit;
-                            break;
-                        }
-                    }
-                }
+                //find first non-zero bit in maskin. For the time being assuming block of bits
+                int shiftin=0;
+                for (int is=0;is<PACKING_NCHANN;++is) if (p.first[is]){shiftin=is;break;}
+                //find first non-zero bit in maskout
+                int shiftout=0;
+                for (int is=0;is<PACKING_NCHANN;++is) if (p.second[is]){shiftout=is;break;}
+                // add difference
+                toch = ich + shiftout -shiftin;
             } // found where to put
         }
+        if (toch<0){ // search if it is in another mask
+            for(int jmux=0;jmux<MAXMUX;++jmux)
+            {
+                if (imux==jmux) continue; // exclude the current mux
+                for( const auto & p : _masks[jmux]){
+                    if (p.second[ich]){ // is in another mask-to
+                        toch=-2;
+                        break; 
+                    }
+                }
+                if (toch == -2) break; // fast exit
+            }
+        }
         // if found match fill it, else fill the channel when calling imux=0;
+        //std::cout<<"["<<__FUNCTION__<<"]::[DEBUG] "<< " ---> Filling ich="<<ich<<" toch"<<toch<<" imux="<<imux<<std::endl;
         if (toch >=0 ) _queue[toch] . push( std::pair<bool,Word> (valid,event[ich]) );
-        if (toch <0 and imux==0) _queue[ich] . push( std::pair<bool,Word> (valid,event[ich]) );
-    } 
+        if (toch ==-1 and imux==0) _queue[ich] . push( std::pair<bool,Word> (valid,event[ich]) );
+        // don't fill -2 -> if tochn is in another mask
+    }  // loop over chn
   return ;
 }
 
