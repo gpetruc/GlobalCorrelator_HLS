@@ -1,7 +1,17 @@
 #include "firmware/regionizer.h"
+//typedef ap_uint<64> PackedTkObj;
+//typedef ap_uint<64> PackedCaloObj;
+//typedef ap_uint<64> PackedMuObj;
 #include "../utils/pattern_serializer.h"
 #include "../utils/pattern_multiplexer.h"
 #include "../utils/test_utils.h"
+
+template <unsigned int N>
+inline ap_uint<N> convert_64_to_N(const ap_uint<64> & data){
+	ap_uint<N> R; 
+	for(size_t i =0 ; i<N;++i) {if (i<64) R[i] =data[i];else R[i]=0;}
+	return R;
+};
 
 #include "../ref/pfalgo2hgc_ref.h"
 #include "../puppi/linpuppi_ref.h"
@@ -60,24 +70,24 @@ int main(int argc, char **argv) {
     mask_t trk1=trk0<<( NTKSECTORS * NTKFIBERS); 
     mask_t trk2=trk1<<( NTKSECTORS * NTKFIBERS); 
     
-    muxPatternsIn.add_tmux(1,trk0,trk1,6);
-    muxPatternsIn.add_tmux(2,trk0,trk2,12);
+    muxPatternsIn.add_tmux(1,trk0,trk1,TLEN/3);
+    muxPatternsIn.add_tmux(2,trk0,trk2,TLEN/3*2);
 
     unsigned shift_calo = 3* NTKSECTORS * NTKFIBERS; 
     mask_t calo0=( mask_t( (  uint64_t(1)<<(NCALOSECTORS*NCALOSECTORS) )-1) )<<shift_calo;
     mask_t calo1=calo0 <<(NCALOSECTORS*NCALOSECTORS);
     mask_t calo2=calo1 <<(NCALOSECTORS*NCALOSECTORS);
 
-    muxPatternsIn.add_tmux(1,calo0,calo1,6);
-    muxPatternsIn.add_tmux(2,calo0,calo2,12);
+    muxPatternsIn.add_tmux(1,calo0,calo1,TLEN/3);
+    muxPatternsIn.add_tmux(2,calo0,calo2,TLEN/3*2);
 
     unsigned shift_mu = shift_calo+ 3*(NCALOSECTORS*NCALOSECTORS);
     mask_t mu0 = (mask_t( (uint64_t(1)<<NMUFIBERS) -1))<<shift_mu;
     mask_t mu1=mu0 <<(NMUFIBERS);
     mask_t mu2=mu1 <<(NMUFIBERS);
 
-    muxPatternsIn.add_tmux(1,mu0,mu1,6);
-    muxPatternsIn.add_tmux(2,mu0,mu2,12);
+    muxPatternsIn.add_tmux(1,mu0,mu1,TLEN/3);
+    muxPatternsIn.add_tmux(2,mu0,mu2,TLEN/3*2);
 
     unsigned shift_z0 = shift_mu+3*NMUFIBERS;
     mask_t z0_0 = mask_t(1)<<shift_z0;
@@ -135,8 +145,8 @@ int main(int argc, char **argv) {
     muxPatternsIn(all_channels_in, false,1); 
     muxPatternsIn(all_channels_in, false,2); 
    
-    std::cout<<"After null frame"<<std::endl; 
-    muxPatternsIn.debug_print(true);
+    //std::cout<<"After null frame"<<std::endl; 
+    //muxPatternsIn.debug_print(true);
 
 
     // loop over the events // copied actually
@@ -156,7 +166,8 @@ int main(int argc, char **argv) {
 
         z0_t vtxZ0 = vtx_inputs.empty() ? z0_t(0) : vtx_inputs.front().first;
         //if (itest == 0) printf("Vertexis at z0 = %d\n", vtxZ0.to_int());
-
+        
+        //std::cout <<"TLEN="<<TLEN<<std::endl;
         for (int i = 0; i < TLEN; ++i, ++frame) {
             TkObj tk_links_in[NTKSECTORS][NTKFIBERS];
             PackedTkObj tk_links64_in[NTKSECTORS][NTKFIBERS];
