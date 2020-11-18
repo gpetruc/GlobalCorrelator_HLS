@@ -6,13 +6,6 @@
 #include "../utils/pattern_multiplexer.h"
 #include "../utils/test_utils.h"
 
-template <unsigned int N>
-inline ap_uint<N> convert_64_to_N(const ap_uint<64> & data){
-	ap_uint<N> R; 
-	for(size_t i =0 ; i<N;++i) {if (i<64) R[i] =data[i];else R[i]=0;}
-	return R;
-};
-
 #include "../ref/pfalgo2hgc_ref.h"
 #include "../puppi/linpuppi_ref.h"
 
@@ -27,9 +20,9 @@ inline ap_uint<N> convert_64_to_N(const ap_uint<64> & data){
 bool tk_router_ref(bool newevent, const TkObj tracks_in[NTKSECTORS][NTKFIBERS], TkObj tracks_out[NTKOUT]) ;
 bool calo_router_ref(bool newevent, const HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], HadCaloObj calo_out[NCALOOUT]) ;
 bool mu_router_ref(bool newevent, const glbeta_t etaCenter, const GlbMuObj mu_in[NMUFIBERS], MuObj mu_out[NMUOUT]) ;
-bool readEventTk(FILE *file, std::vector<TkObj> inputs[NTKSECTORS][NTKFIBERS], uint32_t &run, uint32_t &lumi, uint64_t &event) ;
+bool readEventTkTM18(FILE *file, std::vector<TkObj> inputs[NTKSECTORS], uint32_t &run, uint32_t &lumi, uint64_t &event) ;
 bool readEventCalo(FILE *file, std::vector<HadCaloObj> inputs[NCALOSECTORS][NCALOFIBERS], bool zside, uint32_t &run, uint32_t &lumi, uint64_t &event) ;
-bool readEventMu(FILE *file, std::vector<GlbMuObj> inputs[NMUFIBERS], uint32_t &run, uint32_t &lumi, uint64_t &event) ;
+bool readEventMuTM18(FILE *file, std::vector<GlbMuObj> inputs, uint32_t &run, uint32_t &lumi, uint64_t &event) ;
 bool readEventVtx(FILE *file, std::vector<std::pair<z0_t,pt_t>> & inputs, uint32_t &irun, uint32_t &ilumi, uint64_t &ievent) ;
 
 
@@ -66,30 +59,30 @@ int main(int argc, char **argv) {
     // TLEN x NTKSECTORS x NTKFIBERS // TRACKER x 3
     typedef PatternMultiplexer::mask_t mask_t;
     unsigned shift_trk = 0;  // first link of tracker
-    mask_t trk0=mask_t( (uint64_t(1)<<( NTKSECTORS * NTKFIBERS))-1 ); // 2^n-1
-    mask_t trk1=trk0<<( NTKSECTORS * NTKFIBERS); 
-    mask_t trk2=trk1<<( NTKSECTORS * NTKFIBERS); 
+    mask_t trk0=mask_t( (uint64_t(1)<<( NTKSECTORS))-1 ); // 2^n-1
+    mask_t trk1=trk0<<( NTKSECTORS ); 
+    mask_t trk2=trk1<<( NTKSECTORS ); 
     
-    muxPatternsIn.add_tmux(1,trk0,trk1,TLEN/3);
-    muxPatternsIn.add_tmux(2,trk0,trk2,TLEN/3*2);
+    muxPatternsIn.add_tmux(1,trk0,trk1,TLEN);
+    muxPatternsIn.add_tmux(2,trk0,trk2,TLEN*2);
 
-    unsigned shift_calo = 3* NTKSECTORS * NTKFIBERS; 
-    mask_t calo0=( mask_t( (  uint64_t(1)<<(NCALOSECTORS*NCALOSECTORS) )-1) )<<shift_calo;
-    mask_t calo1=calo0 <<(NCALOSECTORS*NCALOSECTORS);
-    mask_t calo2=calo1 <<(NCALOSECTORS*NCALOSECTORS);
+    unsigned shift_calo = 3* NTKSECTORS ; 
+    mask_t calo0=( mask_t( (  uint64_t(1)<<(NCALOSECTORS*NCALOFIBERS) )-1) )<<shift_calo;
+    mask_t calo1=calo0 <<(NCALOSECTORS*NCALOFIBERS);
+    mask_t calo2=calo1 <<(NCALOSECTORS*NCALOFIBERS);
 
-    muxPatternsIn.add_tmux(1,calo0,calo1,TLEN/3);
-    muxPatternsIn.add_tmux(2,calo0,calo2,TLEN/3*2);
+    muxPatternsIn.add_tmux(1,calo0,calo1,TLEN);
+    muxPatternsIn.add_tmux(2,calo0,calo2,TLEN*2);
 
-    unsigned shift_mu = shift_calo+ 3*(NCALOSECTORS*NCALOSECTORS);
-    mask_t mu0 = (mask_t( (uint64_t(1)<<NMUFIBERS) -1))<<shift_mu;
-    mask_t mu1=mu0 <<(NMUFIBERS);
-    mask_t mu2=mu1 <<(NMUFIBERS);
+    unsigned shift_mu = shift_calo+ 3*(NCALOSECTORS*NCALOFIBERS);
+    mask_t mu0 = (mask_t( (uint64_t(1)<<1) -1))<<shift_mu;
+    mask_t mu1=mu0 <<(1);
+    mask_t mu2=mu1 <<(1);
 
-    muxPatternsIn.add_tmux(1,mu0,mu1,TLEN/3);
-    muxPatternsIn.add_tmux(2,mu0,mu2,TLEN/3*2);
+    muxPatternsIn.add_tmux(1,mu0,mu1,TLEN);
+    muxPatternsIn.add_tmux(2,mu0,mu2,TLEN*2);
 
-    unsigned shift_z0 = shift_mu+3*NMUFIBERS;
+    unsigned shift_z0 = shift_mu+3;
     mask_t z0_0 = mask_t(1)<<shift_z0;
     //mask_t z0_1 = z0_0<<1;
     //mask_t z0_2 = z0_1<<1;
@@ -153,36 +146,35 @@ int main(int argc, char **argv) {
     int frame = 0; 
     bool ok = true; z0_t oldZ0;
     for (int itest = 0; itest < 30; ++itest) {
-        std::vector<TkObj>      tk_inputs[NTKSECTORS][NTKFIBERS];
+        std::vector<TkObj>      tk_inputs[NTKSECTORS];
         std::vector<HadCaloObj> calo_inputs[NCALOSECTORS][NCALOFIBERS];
-        std::vector<GlbMuObj>   mu_inputs[NMUFIBERS];
+        std::vector<GlbMuObj>   mu_inputs;
         std::vector<std::pair<z0_t,pt_t>> vtx_inputs;
 
         uint32_t run = 0, lumi = 0; uint64_t event = 0;
-        if (!readEventTk(fMC_tk, tk_inputs, run, lumi, event) || 
+        if (!readEventTkTM18(fMC_tk, tk_inputs, run, lumi, event) || 
                 !readEventCalo(fMC_calo, calo_inputs, /*zside=*/true, run, lumi, event) ||
-                !readEventMu(fMC_mu, mu_inputs, run, lumi, event) ||
+                !readEventMuTM18(fMC_mu, mu_inputs, run, lumi, event) ||
                 !readEventVtx(fMC_vtx, vtx_inputs, run, lumi, event)) break;
 
         z0_t vtxZ0 = vtx_inputs.empty() ? z0_t(0) : vtx_inputs.front().first;
         //if (itest == 0) printf("Vertexis at z0 = %d\n", vtxZ0.to_int());
-        
+       
+        // loop to enqueue TMUX=18 informaton into the muxer 
         //std::cout <<"TLEN="<<TLEN<<std::endl;
-        for (int i = 0; i < TLEN; ++i, ++frame) {
-            TkObj tk_links_in[NTKSECTORS][NTKFIBERS];
-            PackedTkObj tk_links64_in[NTKSECTORS][NTKFIBERS];
+        for (int i = 0; i < 3*TLEN; ++i, ++frame) {
+            TkObj tk_links_in[NTKSECTORS];
+            PackedTkObj tk_links64_in[NTKSECTORS];
 
             unsigned int ilink = 0;
 
             for (int s = 0; s < NTKSECTORS; ++s) {
-                for (int f = 0; f < NTKFIBERS; ++f) {
-                    clear(tk_links_in[s][f]);
-                    if (i < TLEN-1 && i < int(tk_inputs[s][f].size())) { // emp protocol, must leave one null frame at the end
-                        tk_links_in[s][f]  = tk_inputs[s][f][i];
-                    }
-                    tk_links64_in[s][f] = l1pf_pattern_pack_one(tk_links_in[s][f]);
-                    all_channels_in[shift_trk+ilink++] = tk_links64_in[s][f];
+                clear(tk_links_in[s]);
+                if (i < 3*TLEN-1 && i < int(tk_inputs[s].size())) { // emp protocol, must leave one null frame at the end
+                    tk_links_in[s]  = tk_inputs[s][i];
                 }
+                tk_links64_in[s] = l1pf_pattern_pack_one(tk_links_in[s]);
+                all_channels_in[shift_trk+ilink++] = tk_links64_in[s];
             }
              
             ilink=0; // reset so I skip the fibers for the extra trk
@@ -192,7 +184,7 @@ int main(int argc, char **argv) {
             for (int s = 0; s < NCALOSECTORS; ++s) {
                 for (int f = 0; f < NCALOFIBERS; ++f) {
                     clear(calo_links_in[s][f]);
-                    if (i < TLEN-1 && i < int(calo_inputs[s][f].size())) { // emp protocol, must leave one null frame at the end
+                    if (i < 3*TLEN-1 && i < int(calo_inputs[s][f].size())) { // emp protocol, must leave one null frame at the end
                         calo_links_in[s][f]  = calo_inputs[s][f][i];
                     }
                     calo_links64_in[s][f] = l1pf_pattern_pack_one(calo_links_in[s][f]);
@@ -201,20 +193,19 @@ int main(int argc, char **argv) {
             }
 
             ilink=0;
-            GlbMuObj    mu_links_in[NMUFIBERS];
-            PackedMuObj mu_links64_in[NMUFIBERS];
-            for (int f = 0; f < NMUFIBERS; ++f) {
-                clear(mu_links_in[f]);
-                if (i < TLEN-1 && i < int(mu_inputs[f].size())) { // emp protocol, must leave one null frame at the end
-                    mu_links_in[f]  = mu_inputs[f][i];
-                }
-                mu_links64_in[f] = l1pf_pattern_pack_one(mu_links_in[f]);
-                all_channels_in[shift_mu+ilink++] = mu_links64_in[f];
+            GlbMuObj    mu_links_in;
+            PackedMuObj mu_links64_in;
+            clear(mu_links_in);
+            if (i < 3*TLEN-1 && i < int(mu_inputs.size())) { // emp protocol, must leave one null frame at the end
+                mu_links_in  = mu_inputs[i];
             }
+            mu_links64_in = l1pf_pattern_pack_one(mu_links_in);
+            all_channels_in[shift_mu+ilink++] = mu_links64_in;
     
             ilink=0;
             all_channels_in[shift_z0+ilink++] = oldZ0;
 
+            /*
             TkObj        tk_links_ref[NTKOUT];
             HadCaloObj calo_links_ref[NCALOOUT];
             MuObj        mu_links_ref[NMUOUT]; 
@@ -245,16 +236,18 @@ int main(int argc, char **argv) {
                 l1pf_pattern_pack<NTRACK,0>(outallch, all_channels_puppi);
                 l1pf_pattern_pack<NALLNEUTRALS,NTRACK>(outallne, all_channels_puppi);
             }
+            */
 
-            muxPatternsIn(all_channels_in, (i < TLEN-1), itest %3);
-            serPatternsReg(all_channels_regionized);
-            serPatternsPf(all_channels_pf);
-            serPatternsPuppi(all_channels_puppi);
+            muxPatternsIn(all_channels_in, (i < 3*TLEN-1), itest %3);
+            //serPatternsReg(all_channels_regionized);
+            //serPatternsPf(all_channels_pf);
+            //serPatternsPuppi(all_channels_puppi);
 
-            if (i == TLEN-1) {
+            /*
+            if (i == 3*TLEN-1) {
                 oldZ0 = vtxZ0; 
             }
-
+            */
 	
 
 
