@@ -1,9 +1,9 @@
 #include <cstdio>
 #include "firmware/pfalgo3.h"
 #include "ref/pfalgo3_ref.h"
-#include "utils/DiscretePFInputsReader.h"
-#include "utils/pattern_serializer.h"
-#include "utils/test_utils.h"
+#include "../utils/DiscretePFInputsReader.h"
+#include "../utils/pattern_serializer.h"
+#include "../utils/test_utils.h"
 
 #define NTEST 1000
 

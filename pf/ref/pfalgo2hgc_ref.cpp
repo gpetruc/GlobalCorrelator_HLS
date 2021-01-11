@@ -1,12 +1,12 @@
 #include "pfalgo2hgc_ref.h"
 
 #ifndef CMSSW_GIT_HASH
-  #include "../DiscretePFInputs.h"
+  #include "../../utils/DiscretePFInputs.h"
 #else
   #include "../../interface/DiscretePFInputs.h"
 #endif
 
-#include "../utils/Firmware2DiscretePF.h"
+#include "../../utils/Firmware2DiscretePF.h"
 #include <cmath>
 #include <cstdio>
 #include <algorithm>

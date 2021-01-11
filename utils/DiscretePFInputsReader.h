@@ -3,8 +3,8 @@
 
 #include <vector>
 #include <cassert>
-#include "../firmware/data.h"
-#include "../DiscretePFInputs.h"
+#include "../dataformats/pf.h"
+#include "DiscretePFInputs.h"
 #include "DiscretePFInputsIO.h"
 #include "DiscretePF2Firmware.h"
 #include <iostream>

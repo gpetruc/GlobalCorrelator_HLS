@@ -1,7 +1,7 @@
 #ifndef FIRMWARE_PFALGO_COMMON_H
 #define FIRMWARE_PFALGO_COMMON_H
 
-#include "data.h"
+#include "../../dataformats/pf.h"
 
 inline int dr2_int(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2) {
     ap_int<eta_t::width+1> deta = (eta1-eta2);

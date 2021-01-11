@@ -146,7 +146,7 @@ void pfalgo2hgc(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const M
 }
 
 #if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-#include "l1pf_encoding.h"
+#include "../../dataformats/l1pf_encoding.h"
 
 void packed_pfalgo2hgc(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
