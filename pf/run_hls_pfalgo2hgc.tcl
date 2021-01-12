@@ -1,6 +1,6 @@
 # get the configuration
-#set pfBoard "none"
-set pfBoard "VCU118"
+set pfBoard "none"
+#set pfBoard "VCU118"
 set pfReg "HGCal"
 set hlsIPVersion 25.4
 

@@ -102,7 +102,10 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
         outpho[ic].hwPt  = photonPt;
         outpho[ic].hwEta = photonPt ? emcalo[ic].hwEta : eta_t(0);
         outpho[ic].hwPhi = photonPt ? emcalo[ic].hwPhi : phi_t(0);
-        outpho[ic].hwId  = photonPt ? PID_Photon : particleid_t(0);
+        outpho[ic].hwId  = ParticleID(photonPt ? ParticleID::PHOTON : ParticleID::HADZERO);
+        outpho[ic].hwEmPt  = photonPt;
+        outpho[ic].hwEmID  = photonPt ? 1 : 0;
+        outpho[ic].hwPUID  = 0;
 
     }
 
@@ -159,7 +162,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;
             l1tpf_impl::PropagatedTrack tk; fw2dpf::convert(track[i], tk); 
             printf("FW  \t track %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  calo ptErr %6d [ %7.2f ]   tight %d\n", 
-                                i, tk.hwPt, tk.floatPt(), tk.hwEta, tk.floatEta(), tk.hwPhi, tk.floatPhi(), tk.hwCaloPtErr, tk.floatCaloPtErr(), int(track[i].hwTightQuality));
+                                i, tk.hwPt, tk.floatPt(), tk.hwEta, tk.floatEta(), tk.hwPhi, tk.floatPhi(), tk.hwCaloPtErr, tk.floatCaloPtErr(), int(track[i].hwQuality));
         }
         for (unsigned int i = 0; i < cfg.nEMCALO; ++i) { if (emcalo[i].hwPt == 0) continue;
             l1tpf_impl::CaloCluster em; fw2dpf::convert(emcalo[i], em); 
@@ -207,7 +210,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
     // initialize good track bit
     std::unique_ptr<bool[]>  track_good(new bool[cfg.nTRACK]);
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) { 
-        track_good[it] = (track[it].hwPt < (track[it].hwTightQuality ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE) || isEle[it] || isMu[it]); 
+        track_good[it] = (track[it].hwPt < ((track[it].hwQuality & TkObj::PFTIGHT) ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE) || isEle[it] || isMu[it]); 
     }
 
     // initialize output
@@ -258,8 +261,18 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
             outch[it].hwPt = track[it].hwPt;
             outch[it].hwEta = track[it].hwEta;
             outch[it].hwPhi = track[it].hwPhi;
+            outch[it].hwDEta = track[it].hwDEta;
+            outch[it].hwDPhi = track[it].hwDPhi;
             outch[it].hwZ0 = track[it].hwZ0;
-            outch[it].hwId  = isEle[it] ? PID_Electron : (isMu[it] ? PID_Muon : PID_Charged);
+            outch[it].hwDxy = track[it].hwDxy;
+            outch[it].hwTkQuality = track[it].hwQuality;
+            if (isMu[it]) {
+                outch[it].hwId = ParticleID::mkMuon(track[it].hwCharge);
+            } else if (isEle[it]) {
+                outch[it].hwId = ParticleID::mkElectron(track[it].hwCharge);
+            } else {
+                outch[it].hwId = ParticleID::mkChHad(track[it].hwCharge);
+            }
         }
     }
 
@@ -271,7 +284,10 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
             outne_all[ic].hwPt  = calo_subpt[ic];
             outne_all[ic].hwEta = hadcalo_subem[ic].hwEta;
             outne_all[ic].hwPhi = hadcalo_subem[ic].hwPhi;
-            outne_all[ic].hwId  = PID_Neutral;
+            outne_all[ic].hwId  = ParticleID(hadcalo_subem[ic].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO);
+            outne_all[ic].hwEmPt  = hadcalo_subem[ic].hwIsEM ? calo_subpt[ic] : pt_t(0); // FIXME
+            outne_all[ic].hwEmID  = hadcalo_subem[ic].hwIsEM;
+            outne_all[ic].hwPUID  = 0;
         }
     }
 

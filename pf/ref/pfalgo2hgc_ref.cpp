@@ -24,7 +24,7 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;
             l1tpf_impl::PropagatedTrack tk; fw2dpf::convert(track[i], tk); 
             printf("FW  \t track %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  calo ptErr %6d [ %7.2f ]   tight %d\n", 
-                                i, tk.hwPt, tk.floatPt(), tk.hwEta, tk.floatEta(), tk.hwPhi, tk.floatPhi(), tk.hwCaloPtErr, tk.floatCaloPtErr(), int(track[i].hwTightQuality));
+                                i, tk.hwPt, tk.floatPt(), tk.hwEta, tk.floatEta(), tk.hwPhi, tk.floatPhi(), tk.hwCaloPtErr, tk.floatCaloPtErr(), int(track[i].hwQuality));
         }
         for (unsigned int i = 0; i < cfg.nCALO; ++i) { if (calo[i].hwPt == 0) continue;
             l1tpf_impl::CaloCluster c; fw2dpf::convert(calo[i], c); 
@@ -62,7 +62,7 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
     std::unique_ptr<bool[]> track_good(new bool[cfg.nTRACK]);
     std::unique_ptr<bool[]> isEle(new bool[cfg.nTRACK]);
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) { 
-        track_good[it] = (track[it].hwPt < (track[it].hwTightQuality ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE) || isMu[it]); 
+        track_good[it] = (track[it].hwPt < ((track[it].hwQuality & TkObj::PFTIGHT) ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE) || isMu[it]); 
         isEle[it] = false;
     }
 
@@ -110,13 +110,23 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
 
     // copy out charged hadrons
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) {
-        if (track_good[it]) {
+        if (track[it].hwPt > 0 && track_good[it]) {
             assert(!(isEle[it] && isMu[it]));
             outch[it].hwPt = track[it].hwPt;
             outch[it].hwEta = track[it].hwEta;
             outch[it].hwPhi = track[it].hwPhi;
+            outch[it].hwDEta = track[it].hwDEta;
+            outch[it].hwDPhi = track[it].hwDPhi;
             outch[it].hwZ0 = track[it].hwZ0;
-            outch[it].hwId  = isEle[it] ? PID_Electron : (isMu[it] ? PID_Muon : PID_Charged);
+            outch[it].hwDxy = track[it].hwDxy;
+            outch[it].hwTkQuality = track[it].hwQuality;
+            if (isMu[it]) {
+                outch[it].hwId = ParticleID::mkMuon(track[it].hwCharge);
+            } else if (isEle[it]) {
+                outch[it].hwId = ParticleID::mkElectron(track[it].hwCharge);
+            } else {
+                outch[it].hwId = ParticleID::mkChHad(track[it].hwCharge);
+            }
         }
     }
 
@@ -128,7 +138,10 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
             outne_all[ic].hwPt  = calo_subpt[ic];
             outne_all[ic].hwEta = calo[ic].hwEta;
             outne_all[ic].hwPhi = calo[ic].hwPhi;
-            outne_all[ic].hwId  = calo[ic].hwIsEM ? PID_Photon : PID_Neutral;
+            outne_all[ic].hwId  = ParticleID(calo[ic].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO);
+            outne_all[ic].hwEmPt  = calo[ic].hwIsEM ? calo_subpt[ic] : pt_t(0); // FIXME
+            outne_all[ic].hwEmID  = calo[ic].hwIsEM;
+            outne_all[ic].hwPUID  = 0;
         }
     }
 

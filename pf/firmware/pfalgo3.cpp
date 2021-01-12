@@ -98,20 +98,20 @@ void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const b
     const pt_t TKPT_MAX_LOOSE = PFALGO_TK_MAXINVPT_LOOSE; // 20 * PT_SCALE;
     const pt_t TKPT_MAX_TIGHT = PFALGO_TK_MAXINVPT_TIGHT; // 20 * PT_SCALE;
     for (int it = 0; it < NTRACK; ++it) {
-        bool goodByPt = track[it].hwPt < (track[it].hwTightQuality ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
+        bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
         bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
         if (good) {
             pfout[it].hwPt  = track[it].hwPt;
             pfout[it].hwEta = track[it].hwEta;
             pfout[it].hwPhi = track[it].hwPhi;
-            pfout[it].hwId  = isEle[it] ? PID_Electron : ( isMu[it] ? PID_Muon : PID_Charged );
+            pfout[it].hwId  = isMu[it] ? ParticleID::mkMuon(track[it].hwCharge) : ( isEle[it] ? ParticleID::mkElectron(track[it].hwCharge) : ParticleID::mkChHad(track[it].hwCharge) );
+            pfout[it].hwDEta = track[it].hwDEta;
+            pfout[it].hwDPhi = track[it].hwDPhi;
             pfout[it].hwZ0  = track[it].hwZ0;
+            pfout[it].hwDxy = track[it].hwDxy;
+            pfout[it].hwTkQuality = track[it].hwQuality;
         } else {
-            pfout[it].hwPt  = 0;
-            pfout[it].hwEta = 0;
-            pfout[it].hwPhi = 0;
-            pfout[it].hwId  = 0;
-            pfout[it].hwZ0  = 0;
+            clear(pfout[it]);
         }
     }
 }
@@ -141,7 +141,10 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
         pfout[icalo].hwPt  = calopt;
         pfout[icalo].hwEta = calopt ? calo[icalo].hwEta : eta_t(0);
         pfout[icalo].hwPhi = calopt ? calo[icalo].hwPhi : phi_t(0);
-        pfout[icalo].hwId  = calopt ? PID_Neutral : 0;
+        pfout[icalo].hwId  = ParticleID(calopt ? (calo[icalo].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO) : ParticleID::NONE);
+        pfout[icalo].hwEmPt  = calo[icalo].hwIsEM ? calopt : pt_t(0); // FIXME
+        pfout[icalo].hwEmID  = calopt && calo[icalo].hwIsEM ? 1 : 0;
+        pfout[icalo].hwPUID  = 0;
     }
 }
 
@@ -185,7 +188,10 @@ void tk2em_photons(const EmCaloObj calo[NEMCALO], const pt_t photonPt[NEMCALO], 
         pfout[icalo].hwPt  = photonPt[icalo];
         pfout[icalo].hwEta = photonPt[icalo] ? calo[icalo].hwEta : eta_t(0);
         pfout[icalo].hwPhi = photonPt[icalo] ? calo[icalo].hwPhi : phi_t(0);
-        pfout[icalo].hwId  = photonPt[icalo] ? PID_Photon : 0;
+        pfout[icalo].hwId  = ParticleID(photonPt[icalo] ? ParticleID::PHOTON : ParticleID::NONE);
+        pfout[icalo].hwEmPt  = photonPt[icalo]; // FIXME
+        pfout[icalo].hwEmID  = photonPt[icalo] ? 1 : 0;
+        pfout[icalo].hwPUID  = 0;
         #ifndef __SYNTHESIS__
         if (gdebug_ && photonPt[icalo]) printf("HW emcalo %2d pt %7d promoted to a photon with pt %7d\n", icalo, int(calo[icalo].hwPt), int(photonPt[icalo]));
         #endif
@@ -311,11 +317,6 @@ void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], c
     #pragma HLS ARRAY_PARTITION variable=hadcalo_sub complete
     em2calo_sub(hadcalo, sumem, keepcalo, hadcalo_sub);
 
-#if 0    
-    HadCaloObj hadcalo_sub_out[NCALO];
-    #pragma HLS ARRAY_PARTITION variable=hadcalo_sub_out complete
-    buffer_ff<HadCaloObj,NCALO>(hadcalo_sub,hadcalo_sub_out);
-#endif
 
     // ---------------------------------------------------------------
     // TK-HAD Linking

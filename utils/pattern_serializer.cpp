@@ -227,7 +227,7 @@ void HumanReadablePatternSerializer::dump_track(const TkObj track[NTRACK], unsig
 void HumanReadablePatternSerializer::dump_mu(const MuObj mu[NMU], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !mu[i].hwPt) continue;
-        fprintf(file_, "   muon  %3d, hwPt % 7d   hwPtErr % 7d    hwEta %+7d   hwPhi %+7d\n", i, int(mu[i].hwPt), int(mu[i].hwPtErr), int(mu[i].hwEta), int(mu[i].hwPhi));
+        fprintf(file_, "   muon  %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d\n", i, int(mu[i].hwPt), int(mu[i].hwEta), int(mu[i].hwPhi));
     }
     if (file_ == stdout) fflush(file_);
 }
@@ -237,7 +237,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outch[i].hwPt) continue;
         fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwZ0 %+7d\n", label, i, 
-                int(outch[i].hwPt), int(outch[i].hwEta), int(outch[i].hwPhi), int(outch[i].hwId), int(outch[i].hwZ0));
+                int(outch[i].hwPt), int(outch[i].hwEta), int(outch[i].hwPhi), outch[i].hwId.rawId(), int(outch[i].hwZ0));
     }
 }
 void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const PFNeutralObj outne[/*N*/]) 
@@ -245,7 +245,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outne[i].hwPt) continue;
         fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d\n", label, i,
-                int(outne[i].hwPt), int(outne[i].hwEta), int(outne[i].hwPhi), int(outne[i].hwId));
+                int(outne[i].hwPt), int(outne[i].hwEta), int(outne[i].hwPhi), outne[i].hwId.rawId());
     }
     if (file_ == stdout) fflush(file_);
 }
@@ -253,12 +253,12 @@ void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *labe
 {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outpuppi[i].hwPt) continue; 
-        if (outpuppi[i].hwId == 0 || outpuppi[i].hwId == 3 || outpuppi[i].hwId == 4) {
+        if (outpuppi[i].hwId.charged()) {
             fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwZ0     %+7d\n", label, i, 
-                    int(outpuppi[i].hwPt), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), int(outpuppi[i].hwId), int(outpuppi[i].hwZ0()));
+                    int(outpuppi[i].hwPt), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), outpuppi[i].hwId.rawId(), int(outpuppi[i].hwZ0()));
         } else {
             fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwPuppiW % 7d\n", label, i, 
-                    int(outpuppi[i].hwPt), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), int(outpuppi[i].hwId), int(outpuppi[i].hwPuppiW()));
+                    int(outpuppi[i].hwPt), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), outpuppi[i].hwId.rawId(), int(outpuppi[i].hwPuppiW()));
         }
     }
 }

@@ -10,12 +10,13 @@ namespace dpf2fw {
 
     // convert inputs from discrete to firmware
     inline void convert(const l1tpf_impl::PropagatedTrack & in, TkObj &out) {
+        out.clear();
         out.hwPt = in.hwPt;
         out.hwPtErr = in.hwCaloPtErr;
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
         out.hwZ0 = in.hwZ0;
-        out.hwTightQuality = (in.hwStubs >= 6 && in.hwChi2 < 500);
+        out.hwQuality = TkObj::PFTIGHT * (in.hwStubs >= 6 && in.hwChi2 < 500);
     }
 
     inline TkObj transformConvert(const l1tpf_impl::PropagatedTrack & in) {
@@ -25,6 +26,7 @@ namespace dpf2fw {
     }
 
     inline void convert(const l1tpf_impl::CaloCluster & in, HadCaloObj & out) {
+        out.clear();
         out.hwPt = in.hwPt;
         out.hwEmPt = in.hwEmPt;
         out.hwEta = in.hwEta;
@@ -32,41 +34,44 @@ namespace dpf2fw {
         out.hwIsEM = in.isEM;
     }
     inline void convert(const l1tpf_impl::CaloCluster & in, EmCaloObj & out) {
+        out.clear();
         out.hwPt = in.hwPt;
         out.hwPtErr = in.hwPtErr;
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
     }
     inline void convert(const l1tpf_impl::Muon & in, MuObj & out) {
+        out.clear();
         out.hwPt = in.hwPt;
-        out.hwPtErr = 0; // does not exist in input
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
     }
 
     inline void convert(const l1tpf_impl::PFParticle &src, PFChargedObj & pf) {
+        pf.clear();
         pf.hwPt = src.hwPt;
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
-            case 0: pf.hwId = PID_Charged; break;
-            case 1: pf.hwId = PID_Electron; break;
-            case 2: pf.hwId = PID_Neutral; break;
-            case 3: pf.hwId = PID_Photon; break;
-            case 4: pf.hwId = PID_Muon; break;
+            case 0: pf.hwId = ParticleID::mkChHad(src.track.hwCharge); break;
+            case 1: pf.hwId = ParticleID::mkElectron(src.track.hwCharge); break;
+            case 2: pf.hwId = ParticleID::HADZERO; assert(false); break;
+            case 3: pf.hwId = ParticleID::PHOTON; break;
+            case 4: pf.hwId = ParticleID::mkMuon(src.track.hwCharge); break;
         }
         pf.hwZ0 = src.track.hwZ0;
     }
     inline void convert(const l1tpf_impl::PFParticle &src, PFNeutralObj & pf) {
+        pf.clear();
         pf.hwPt = src.hwPt;
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
-            case 0: pf.hwId = PID_Charged; break;
-            case 1: pf.hwId = PID_Electron; break;
-            case 2: pf.hwId = PID_Neutral; break;
-            case 3: pf.hwId = PID_Photon; break;
-            case 4: pf.hwId = PID_Muon; break;
+            case 0: pf.hwId = ParticleID::mkChHad(src.track.hwCharge); assert(false); break;
+            case 1: pf.hwId = ParticleID::mkElectron(src.track.hwCharge); assert(false); break;
+            case 2: pf.hwId = ParticleID::HADZERO; break;
+            case 3: pf.hwId = ParticleID::PHOTON; break;
+            case 4: pf.hwId = ParticleID::mkMuon(src.track.hwCharge); assert(false); break;
         }
     }
 

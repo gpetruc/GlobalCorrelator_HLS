@@ -28,8 +28,12 @@ void pfalgo_mu_ref(const pfalgo_config &cfg, const TkObj track[/*cfg.nTRACK*/], 
                 outmu[im].hwPt = track[ibest].hwPt;
                 outmu[im].hwEta = track[ibest].hwEta;
                 outmu[im].hwPhi = track[ibest].hwPhi;
-                outmu[im].hwId  = PID_Muon;
-                outmu[im].hwZ0 = track[ibest].hwZ0;      
+                outmu[im].hwId  = ParticleID::mkMuon(track[ibest].hwCharge);
+                outmu[im].hwDEta = track[ibest].hwDEta;
+                outmu[im].hwDPhi = track[ibest].hwDPhi;
+                outmu[im].hwZ0 = track[ibest].hwZ0;
+                outmu[im].hwDxy = track[ibest].hwDxy;
+                outmu[im].hwTkQuality = track[ibest].hwQuality;
                 isMu[ibest] = 1;
                 if (debug) printf("FW  \t muon %3d linked to track %3d \n", im, ibest);
             } else {

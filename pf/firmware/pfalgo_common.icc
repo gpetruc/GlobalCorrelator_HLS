@@ -343,15 +343,15 @@ void pfmualgo(const MuObj mu[NMU], const TkObj track[NTRACK], const ap_uint<NMU>
             pfmuout[im].hwPt  = track[ibest].hwPt;
             pfmuout[im].hwEta = track[ibest].hwEta;
             pfmuout[im].hwPhi = track[ibest].hwPhi;
-            pfmuout[im].hwId  = PID_Muon;
+            pfmuout[im].hwId  = ParticleID::mkMuon(track[ibest].hwCharge);
+            pfmuout[im].hwDEta = track[ibest].hwDEta;
+            pfmuout[im].hwDPhi = track[ibest].hwDPhi;
             pfmuout[im].hwZ0  = track[ibest].hwZ0;
+            pfmuout[im].hwDxy  = track[ibest].hwDxy;
+            pfmuout[im].hwTkQuality = track[ibest].hwQuality;
             isMu[ibest] = 1;
         } else {
-            pfmuout[im].hwPt  = 0;
-            pfmuout[im].hwEta = 0;
-            pfmuout[im].hwPhi = 0;
-            pfmuout[im].hwId  = 0;
-            pfmuout[im].hwZ0  = 0;
+            clear(pfmuout[im]);
         }
     }
 }

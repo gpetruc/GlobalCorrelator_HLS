@@ -21,11 +21,13 @@ namespace fw2dpf {
         pf.cluster.hwPt = 0;
         pf.cluster.src = nullptr;
         pf.muonsrc = nullptr;
-        switch(src.hwId) {
-            case PID_Electron: pf.hwId =  1; break;
-            case PID_Muon: pf.hwId =  4; break;
-            default: pf.hwId = 0; break;
-        };
+        if (src.hwId.isMuon()) {
+            pf.hwId = 4;
+        } else if (src.hwId.isElectron()) {
+            pf.hwId = 1;
+        } else {
+            pf.hwId = 0;
+        }
         pf.hwStatus = 0;
         out.push_back(pf);
     }
@@ -42,11 +44,13 @@ namespace fw2dpf {
         pf.cluster.hwPt = 0;
         pf.cluster.src = nullptr;
         pf.muonsrc = nullptr;
-        switch(src.hwId) {
-            case PID_Electron: pf.hwId =  1; break;
-            case PID_Muon: pf.hwId =  4; break;
-            default: pf.hwId = 0; break;
-        };
+        if (src.hwId.isMuon()) {
+            pf.hwId = 4;
+        } else if (src.hwId.isElectron()) {
+            pf.hwId = 1;
+        } else {
+            pf.hwId = 0;
+        }
         pf.hwStatus = 0;
         out.push_back(pf);
     }
@@ -62,10 +66,7 @@ namespace fw2dpf {
         pf.cluster.hwPt = src.hwPt;
         pf.cluster.src = nullptr;
         pf.muonsrc = nullptr;
-        switch(src.hwId) {
-            case PID_Photon: pf.hwId = 3; break;
-            default: pf.hwId = 2; break;
-        }
+        pf.hwId = src.hwId.isPhoton() ? 3 : 2;
         pf.hwStatus = 0;
         out.push_back(pf);
     }
@@ -76,14 +77,17 @@ namespace fw2dpf {
         pf.hwPhi = src.hwPhi;
         pf.hwVtxEta = src.hwEta;
         pf.hwVtxPhi = src.hwPhi;
-        switch(src.hwId) {
-            case PID_Photon: pf.hwId = 3; break;
-            case PID_Neutral: pf.hwId = 2; break;
-            case PID_Electron: pf.hwId =  1; break;
-            case PID_Muon: pf.hwId =  4; break;
-            case PID_Charged: pf.hwId = 0; break;
+        switch(src.hwId.rawId()) {
+            case ParticleID::PHOTON: pf.hwId = 3; break;
+            case ParticleID::HADZERO: pf.hwId = 2; break;
+            case ParticleID::ELEPLUS: pf.hwId =  1; break;
+            case ParticleID::ELEMINUS: pf.hwId =  1; break;
+            case ParticleID::MUPLUS: pf.hwId =  4; break;
+            case ParticleID::MUMINUS: pf.hwId =  4; break;
+            case ParticleID::HADPLUS: pf.hwId = 0; break;
+            case ParticleID::HADMINUS: pf.hwId = 0; break;
         }
-        if (src.hwId == PID_Charged || src.hwId == PID_Electron || src.hwId == PID_Muon) {
+        if (src.hwId.charged()) {
             if (track != nullptr) {
                 pf.track = *track; // FIXME: ok only as long as there is a 1-1 mapping
             } else {
