@@ -40,8 +40,8 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
     }
 
     // constants
-    const pt_t     TKPT_MAX_LOOSE = cfg.tk_MAXINVPT_LOOSE;
-    const pt_t     TKPT_MAX_TIGHT = cfg.tk_MAXINVPT_TIGHT;
+    const pt_t     TKPT_MAX_LOOSE = Scales::makePt(cfg.tk_MAXINVPT_LOOSE);
+    const pt_t     TKPT_MAX_TIGHT = Scales::makePt(cfg.tk_MAXINVPT_TIGHT);
     const int      DR2MAX         = cfg.dR2MAX_TK_CALO;
 
     ////////////////////////////////////////////////////
@@ -55,7 +55,7 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
 
     // initialize sum track pt
     std::vector<pt_t> calo_sumtk(cfg.nCALO), calo_subpt(cfg.nCALO);
-    std::vector<int>  calo_sumtkErr2(cfg.nCALO);
+    std::vector<pt2_t>  calo_sumtkErr2(cfg.nCALO);
     for (unsigned int ic = 0; ic < cfg.nCALO; ++ic) { calo_sumtk[ic] = 0;  calo_sumtkErr2[ic] = 0;}
 
     // initialize good track bit
@@ -79,7 +79,7 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
                 track_good[it] = 1;
                 isEle[it] = calo[ibest].hwIsEM;
                 calo_sumtk[ibest]    += track[it].hwPt;
-                calo_sumtkErr2[ibest] += sqr(track[it].hwPtErr);
+                calo_sumtkErr2[ibest] += track[it].hwPtErr*track[it].hwPtErr;
             }
         }
     }
@@ -87,7 +87,7 @@ void pfalgo2hgc_ref(const pfalgo_config &cfg, const HadCaloObj calo[/*cfg.nCALO*
     for (unsigned int ic = 0; ic < cfg.nCALO; ++ic) {
         if (calo_sumtk[ic] > 0) {
             pt_t ptdiff = calo[ic].hwPt - calo_sumtk[ic];
-            int sigmamult = calo_sumtkErr2[ic]; //  + (calo_sumtkErr2[ic] >> 1)); // this multiplies by 1.5 = sqrt(1.5)^2 ~ (1.2)^2
+            pt2_t sigmamult = calo_sumtkErr2[ic]; //  + (calo_sumtkErr2[ic] >> 1)); // this multiplies by 1.5 = sqrt(1.5)^2 ~ (1.2)^2
             if (g_pfalgo2hgc_debug_ref_ && (calo[ic].hwPt > 0)) {
 #ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
                 l1tpf_impl::CaloCluster floatcalo; fw2dpf::convert(calo[ic], floatcalo); 

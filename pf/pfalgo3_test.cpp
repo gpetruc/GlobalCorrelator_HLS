@@ -31,6 +31,8 @@ int main() {
     PatternSerializer serPatternsIn("pfalgo3_input_patterns.txt"), serPatternsOut("pfalgo3_output_patterns.txt");
     ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
     for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
+#else
+    HumanReadablePatternSerializer debugDump("pfalgo3_debug.txt");
 #endif
 
     // -----------------------------------------
@@ -75,6 +77,9 @@ int main() {
             if (!pf_equals(outmupf_ref[i], outmupf[i], "PF Muon", i)) errors++;
             if (outmupf_ref[i].hwPt > 0) { ntot++; nmu++; }
         }        
+
+        debugDump.dump_inputs(emcalo, hadcalo, track, mu);
+        debugDump.dump_outputs(outch, outpho, outne, outmupf);
 
         if (errors != 0) {
             printf("Error in computing test %d (%d)\n", test, errors);

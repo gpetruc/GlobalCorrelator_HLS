@@ -3,10 +3,10 @@
 
 #include "pfalgo_common.icc"
 
-void tk2calo_sumtk_hgc(const TkObj track[NTRACK], const bool isMu[NTRACK], const int tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], int sumtkerr2[NCALO]) {
+void tk2calo_sumtk_hgc(const TkObj track[NTRACK], const bool isMu[NTRACK], const pt2_t tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], pt2_t sumtkerr2[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         pt_t sum = 0;
-        int sumerr = 0;
+        pt2_t sumerr = 0;
         for (int it = 0; it < NTRACK; ++it) {
             if (calo_track_link_bit[it][icalo] && !isMu[it]) { sum += track[it].hwPt; sumerr += tkerr2[it]; }
         }
@@ -26,8 +26,8 @@ void tk2calo_elealgo_hgc(const TkObj track[NTRACK], const HadCaloObj calo[NCALO]
 } 
 
 void tk2calo_tkalgo_hgc(const TkObj track[NTRACK], const bool isEle[NTRACK], const bool isMu[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], PFChargedObj pfout[NTRACK]) {
-    const pt_t TKPT_MAX_LOOSE = PFALGO_TK_MAXINVPT_LOOSE; // 20 * PT_SCALE;
-    const pt_t TKPT_MAX_TIGHT = PFALGO_TK_MAXINVPT_TIGHT; // 20 * PT_SCALE;
+    const pt_t TKPT_MAX_LOOSE = Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE); // 20 * PT_SCALE;
+    const pt_t TKPT_MAX_TIGHT = Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT); // 20 * PT_SCALE;
     for (int it = 0; it < NTRACK; ++it) {
         bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
         bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
@@ -49,14 +49,14 @@ void tk2calo_tkalgo_hgc(const TkObj track[NTRACK], const bool isEle[NTRACK], con
 }
 
 
-void tk2calo_caloalgo_hgc(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], const int sumtkerr2[NCALO], PFNeutralObj pfout[NCALO]) {
+void tk2calo_caloalgo_hgc(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], const pt2_t sumtkerr2[NCALO], PFNeutralObj pfout[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         pt_t calopt;
         if (sumtk[icalo] == 0) {
             calopt = calo[icalo].hwPt;
         } else {
             pt_t ptdiff = calo[icalo].hwPt - sumtk[icalo];
-            int ptdiff2 = ptdiff*ptdiff;
+            pt2_t ptdiff2 = ptdiff*ptdiff;
 #ifdef L1PF_DSP_LATENCY3
             #pragma HLS resource variable=ptdiff2 latency=3
 #endif
@@ -124,11 +124,11 @@ void pfalgo2hgc(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const M
     tk2calo_link_drdpt(calo, track, calo_track_link_bit);
     //tk2calo_link_dronly(hadcalo_sub, track, calo_track_link_bit);
 
-    int tkerr2[NTRACK];
+    pt2_t tkerr2[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=tkerr2 complete
     tk2calo_tkerr2(track, tkerr2);
 
-    pt_t sumtk[NCALO]; int sumtkerr2[NCALO];
+    pt_t sumtk[NCALO]; pt2_t sumtkerr2[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sumtk complete
     #pragma HLS ARRAY_PARTITION variable=sumtkerr2 complete
 

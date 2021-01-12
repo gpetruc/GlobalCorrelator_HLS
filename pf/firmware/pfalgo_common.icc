@@ -34,27 +34,27 @@ ap_uint<NB> dr2_dpt_int_cap(eta_t eta1, eta_t phi1, eta_t eta2, eta_t phi2, pt_t
     int dr2 = deta*deta + dphi*dphi;
 #endif
     pt_t dpt = pt1 - pt2;
-    if (dpt < 0) dpt = 0;
+    ap_ufixed<26,22,AP_TRN,AP_SAT> dpt2 = dpt*dpt; // the clipping to the max is done automatically
+    int dpt2scaled = dpt2*ptscale;
 #ifdef L1PF_DSP_LATENCY3
-    int int_dpt2 = dpt*dpt;
-    #pragma HLS resource variable=int_dpt2 latency=3
-    ap_int<26> dpt2 = (dpt > 5792) ? ap_int<26>((1<<25)-1) : ap_int<26>(int_dpt2);
-    int int_dpt2scaled = dpt2*ptscale;
-    #pragma HLS resource variable=int_dpt2scaled latency=3
-    int dq = dr2 + (int_dpt2scaled >> 8);
-#else
-    ap_int<26> dpt2 = (dpt > 5792) ? ap_int<26>((1<<25)-1) : ap_int<26>(dpt*dpt);
-    int dq = dr2 + (dpt2*ptscale >> 8);
+    #pragma HLS resource variable=dpt2 latency=3
+    #pragma HLS resource variable=dpt2scaled latency=3
 #endif
+    int dq = dr2 + dpt2scaled;
     return ((dr2 < int(dr2max)) && (dq < int(max))) ? ap_uint<NB>(dq) : max;
 }
 
 template<int NB, typename PTS_t>
 ap_uint<NB> dr2_plus_dpt_int_cap(int dr2, pt_t pt1, pt_t pt2, PTS_t ptscale, ap_uint<NB> dr2max, ap_uint<NB> max) {
-    pt_t dpt = pt1 - pt2;
+    dpt_t dpt = dpt_t(pt1) - dpt_t(pt2);
     if (dpt < 0) dpt = 0;
-    ap_int<26> dpt2 = (dpt > 5792) ? ap_int<26>((1<<25)-1) : ap_int<26>(dpt*dpt);
-    int dq = dr2 + (dpt2*ptscale >> 8);
+    ap_ufixed<26,22,AP_TRN,AP_SAT> dpt2 = dpt*dpt; // the clipping to the max is done automatically
+    int dpt2scaled = dpt2*ptscale;
+#ifdef L1PF_DSP_LATENCY3
+    #pragma HLS resource variable=dpt2 latency=3
+    #pragma HLS resource variable=dpt2scaled latency=3
+#endif
+    int dq = dr2 + dpt2scaled;
     return ((dr2 < int(dr2max)) && (dq < int(max))) ? ap_uint<NB>(dq) : max;
 }
 
@@ -103,20 +103,22 @@ void tk2calo_drvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], tk2
 }
 
 template<int DR2MAX>
-void init_dr2max_times_pterr2_inv(int vals[512]) {
+void init_dr2max_times_pterr2_inv(ptscale_t vals[512]) {
     for (int i = 0; i < 512; ++i) {
-    	int tmp = (DR2MAX<<8)/(i?i*i:1), int18_max = (1<<17)-1;
-        vals[i] = (tmp > int18_max ? int18_max : tmp);
+        float pt = Scales::makePt(i ? i : 1);
+        vals[i] = float(DR2MAX)/(pt*pt);
     }
 }
+
 template<int DR2MAX>
-int calc_dptscale(pt_t trackHwPtErr) {
+ptscale_t calc_dptscale(pt_t trackHwPtErr) {
     #pragma HLS INLINE recursive
     // LUT for 1/ptErr2
-    int _dr2max_times_pterr2_inv_vals[512];
+    ptscale_t _dr2max_times_pterr2_inv_vals[512];
     init_dr2max_times_pterr2_inv<DR2MAX>(_dr2max_times_pterr2_inv_vals);
-    if (trackHwPtErr < 512) {
-        return _dr2max_times_pterr2_inv_vals[trackHwPtErr];
+    int index = Scales::ptToInt(trackHwPtErr);
+    if (index < 512) {
+        return _dr2max_times_pterr2_inv_vals[index];
     } else {
         return 0;
     }
@@ -129,7 +131,8 @@ void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], 
     // now, DR2MAX is 10 bits, so dptscale max is at most 10+8 bits = 18 bits // FIXME: GP: this is no longer correct
     for (int it = 0; it < NTRACK; ++it) {
         pt_t caloPtMin = track[it].hwPt - 2*(track[it].hwPtErr);
-        ap_int<18> dptscale  = calc_dptscale<DR2MAX>(track[it].hwPtErr);
+        ptscale_t dptscale  = calc_dptscale<DR2MAX>(track[it].hwPtErr);
+        assert(false);
         if (caloPtMin < 0) caloPtMin = 0;
         for (int icalo = 0; icalo < NCALO; ++icalo) {
 #if 1 // original version
@@ -160,7 +163,7 @@ void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track, tk2calo_
     const tk2calo_dq_t eDQMAX  = 5*DR2MAX; // at most we're 2 sigma away in pt, so that's a factor 4
     // now, DR2MAX is 10 bits, so dptscale max is at most 10+8 bits = 18 bits // FIXME: GP: this is no longer correct
     pt_t caloPtMin = track.hwPt - 2*(track.hwPtErr);
-    ap_int<18> dptscale  = calc_dptscale<DR2MAX>(track.hwPtErr);
+    ptscale_t dptscale  = calc_dptscale<DR2MAX>(track.hwPtErr);
     if (caloPtMin < 0) caloPtMin = 0;
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         if (calo[icalo].hwPt > caloPtMin) {
@@ -271,10 +274,10 @@ void tk2calo_link_drdpt(const HadCaloObj calo[NCALO], const TkObj track[NTRACK],
     }
 }
 
-void tk2calo_tkerr2(const TkObj track[NTRACK], int tkerr2[NTRACK]) {
+void tk2calo_tkerr2(const TkObj track[NTRACK], pt2_t tkerr2[NTRACK]) {
     for (int it = 0; it < NTRACK; ++it) {
 #ifdef L1PF_DSP_LATENCY3
-        int prod = (track[it].hwPtErr * track[it].hwPtErr);
+        pt2_t prod = (track[it].hwPtErr * track[it].hwPtErr);
         #pragma HLS resource variable=prod latency=3
         tkerr2[it] = prod;
 #else
@@ -291,9 +294,9 @@ void mu2trk_dptvals(const MuObj mu[NMU], const TkObj track[NTRACK], pt_t mu_trac
     const ap_uint<12> DR2MAX = PFALGO_DR2MAX_TK_MU;
     for (int im = 0; im < NMU; ++im) {
         for (int it = 0; it < NTRACK; ++it) {
-            pt_t dpt = mu[im].hwPt - track[it].hwPt;
+            dpt_t dpt = mu[im].hwPt - track[it].hwPt;
             if (dr2_int_cap<12>(mu[im].hwEta, mu[im].hwPhi, track[it].hwEta, track[it].hwPhi, DR2MAX) < DR2MAX) {
-                mu_track_dptval[im][it] = (dpt > 0 ? dpt : pt_t(-dpt));
+                mu_track_dptval[im][it] = (dpt > 0 ? pt_t(dpt) : pt_t(-dpt));
             } else {
                 mu_track_dptval[im][it] = mu[im].hwPt >> 1;
             }

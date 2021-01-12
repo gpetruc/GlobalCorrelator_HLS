@@ -58,10 +58,10 @@ void em2calo_link(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCAL
     pick_closest<DR2MAX,NEMCALO,NCALO,em2calo_dr_t>(drvals, em_calo_link_bit);
 }
 
-void tk2calo_sumtk(const TkObj track[NTRACK], const bool isEle[NTRACK], const bool isMu[NTRACK], const int tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], int sumtkerr2[NCALO]) {
+void tk2calo_sumtk(const TkObj track[NTRACK], const bool isEle[NTRACK], const bool isMu[NTRACK], const pt2_t tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], pt2_t sumtkerr2[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         pt_t sum = 0;
-        int sumerr = 0;
+        pt2_t sumerr = 0;
         for (int it = 0; it < NTRACK; ++it) {
             if (!isEle[it] && calo_track_link_bit[it][icalo] && !isMu[it]) { sum += track[it].hwPt; sumerr += tkerr2[it]; }
         }
@@ -95,8 +95,8 @@ void em2calo_sumem(const EmCaloObj emcalo[NEMCALO], const bool isEM[NEMCALO], co
 }
 
 void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const bool isMu[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], PFChargedObj pfout[NTRACK]) {
-    const pt_t TKPT_MAX_LOOSE = PFALGO_TK_MAXINVPT_LOOSE; // 20 * PT_SCALE;
-    const pt_t TKPT_MAX_TIGHT = PFALGO_TK_MAXINVPT_TIGHT; // 20 * PT_SCALE;
+    const pt_t TKPT_MAX_LOOSE = Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE); // 20 * PT_SCALE;
+    const pt_t TKPT_MAX_TIGHT = Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT); // 20 * PT_SCALE;
     for (int it = 0; it < NTRACK; ++it) {
         bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
         bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
@@ -117,7 +117,7 @@ void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const b
 }
 
 
-void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], const int sumtkerr2[NCALO], PFNeutralObj pfout[NCALO]) {
+void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], const pt2_t sumtkerr2[NCALO], PFNeutralObj pfout[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         pt_t calopt;
         if (sumtk[icalo] == 0) {
@@ -127,8 +127,8 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
                    int(sumtk[icalo]), int(calopt));
             #endif
         } else {
-            pt_t ptdiff = calo[icalo].hwPt - sumtk[icalo];
-            if (ptdiff > 0 && (ptdiff*ptdiff > sumtkerr2[icalo])) {
+            dpt_t ptdiff = dpt_t(calo[icalo].hwPt) - dpt_t(sumtk[icalo]);
+            if (ptdiff > 0 && (pt2_t(ptdiff*ptdiff) > sumtkerr2[icalo])) {
                 calopt = ptdiff;
             } else {
                 calopt = 0;
@@ -141,7 +141,8 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
         pfout[icalo].hwPt  = calopt;
         pfout[icalo].hwEta = calopt ? calo[icalo].hwEta : eta_t(0);
         pfout[icalo].hwPhi = calopt ? calo[icalo].hwPhi : phi_t(0);
-        pfout[icalo].hwId  = ParticleID(calopt ? (calo[icalo].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO) : ParticleID::NONE);
+        //pfout[icalo].hwId  = ParticleID(calopt ? (calo[icalo].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO) : ParticleID::NONE);
+        pfout[icalo].hwId  = ParticleID(calopt ? ParticleID::HADZERO : ParticleID::NONE);
         pfout[icalo].hwEmPt  = calo[icalo].hwIsEM ? calopt : pt_t(0); // FIXME
         pfout[icalo].hwEmID  = calopt && calo[icalo].hwIsEM ? 1 : 0;
         pfout[icalo].hwPUID  = 0;
@@ -154,10 +155,10 @@ void tk2em_emalgo(const EmCaloObj calo[NEMCALO], const pt_t sumtk[NEMCALO], bool
             isEM[icalo] = true;
             photonPt[icalo] = calo[icalo].hwPt;
         } else {
-            pt_t ptdiff = calo[icalo].hwPt - sumtk[icalo];
-            int ptdiff2 = ptdiff*ptdiff;
-            int sigma2 = (calo[icalo].hwPtErr*calo[icalo].hwPtErr);
-            int sigma2Lo = (sigma2 << 2), sigma2Hi = sigma2; // + (sigma2 >> 1);
+            dpt_t ptdiff = dpt_t(calo[icalo].hwPt) - dpt_t(sumtk[icalo]);
+            pt2_t ptdiff2 = ptdiff*ptdiff;
+            pt2_t sigma2 = (calo[icalo].hwPtErr*calo[icalo].hwPtErr);
+            pt2_t sigma2Lo = (sigma2 << 2), sigma2Hi = sigma2; // + (sigma2 >> 1);
             if ((ptdiff >= 0 && ptdiff2 <= sigma2Hi) || (ptdiff < 0 && ptdiff2 < sigma2Lo)) {
                 photonPt[icalo] = 0;    
                 isEM[icalo] = true;
@@ -200,8 +201,8 @@ void tk2em_photons(const EmCaloObj calo[NEMCALO], const pt_t photonPt[NEMCALO], 
 
 void em2calo_sub(const HadCaloObj calo[NCALO], const pt_t sumem[NCALO], const bool keepcalo[NCALO], HadCaloObj calo_out[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
-        pt_t ptsub = calo[icalo].hwPt   - sumem[icalo];
-        pt_t emsub = calo[icalo].hwEmPt - sumem[icalo];
+        dpt_t ptsub = dpt_t(calo[icalo].hwPt)   - dpt_t(sumem[icalo]);
+        dpt_t emsub = dpt_t(calo[icalo].hwEmPt) - dpt_t(sumem[icalo]);
         if ((ptsub <= (calo[icalo].hwPt >> 4)) || 
                 (calo[icalo].hwIsEM && (emsub <= (calo[icalo].hwEmPt>>3)) && !keepcalo[icalo])) {
 #ifndef __SYNTHESIS__
@@ -214,10 +215,10 @@ void em2calo_sub(const HadCaloObj calo[NCALO], const pt_t sumem[NCALO], const bo
             calo_out[icalo].hwIsEM = 0;
         } else {
 #ifndef __SYNTHESIS__
-            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d empt %7d sumem %7d keepcalo %1d  --> kept with pt %7d empt %7d\n", icalo, int(calo[icalo].hwPt), int(calo[icalo].hwEmPt), int(sumem[icalo]), int(keepcalo[icalo]), int(ptsub), int((emsub > 0 ? emsub : pt_t(0))));
+            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d empt %7d sumem %7d keepcalo %1d  --> kept with pt %7d empt %7d\n", icalo, int(calo[icalo].hwPt), int(calo[icalo].hwEmPt), int(sumem[icalo]), int(keepcalo[icalo]), int(ptsub), int((emsub > 0 ? pt_t(emsub) : pt_t(0))));
 #endif
             calo_out[icalo].hwPt   = ptsub;
-            calo_out[icalo].hwEmPt = (emsub > 0 ? emsub : pt_t(0));
+            calo_out[icalo].hwEmPt = (emsub > 0 ? pt_t(emsub) : pt_t(0));
             calo_out[icalo].hwEta  = calo[icalo].hwEta;
             calo_out[icalo].hwPhi  = calo[icalo].hwPhi;
             calo_out[icalo].hwIsEM = calo[icalo].hwIsEM;
@@ -330,11 +331,11 @@ void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], c
     } }
     #endif
 
-    int tkerr2[NTRACK];
+    pt2_t tkerr2[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=tkerr2 complete
     tk2calo_tkerr2(track, tkerr2);
 
-    pt_t sumtk[NCALO]; int sumtkerr2[NCALO];
+    pt_t sumtk[NCALO]; pt2_t sumtkerr2[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sumtk complete
     #pragma HLS ARRAY_PARTITION variable=sumtkerr2 complete
 

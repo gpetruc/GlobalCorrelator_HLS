@@ -21,7 +21,6 @@ void pfalgo3_ref_set_debug(int debug) { g_pfalgo3_debug_ref_ = debug; }
 template<bool doPtMin, typename CO_t>
 int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const CO_t calo[/*nCAL*/], const TkObj & track) {
     pt_t caloPtMin = track.hwPt - 2*(track.hwPtErr);
-    if (caloPtMin < 0) caloPtMin = 0;
     int  drmin = dR2MAX, ibest = -1;
     for (unsigned int ic = 0; ic < nCAL; ++ic) {
             if (calo[ic].hwPt <= 0) continue;
@@ -73,10 +72,10 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {
         pt_t photonPt;
         if (calo_sumtk[ic] > 0) {
-            pt_t ptdiff = emcalo[ic].hwPt - calo_sumtk[ic];
-            int sigma2 = sqr(emcalo[ic].hwPtErr);
-            int sigma2Lo = 4*sigma2, sigma2Hi = sigma2; // + (sigma2>>1); // cut at 1 sigma instead of old cut at sqrt(1.5) sigma's
-            int ptdiff2 = ptdiff*ptdiff;
+            dpt_t ptdiff = dpt_t(emcalo[ic].hwPt) - dpt_t(calo_sumtk[ic]);
+            pt2_t sigma2 = emcalo[ic].hwPtErr*emcalo[ic].hwPtErr;
+            pt2_t sigma2Lo = 4*sigma2, sigma2Hi = sigma2; // + (sigma2>>1); // cut at 1 sigma instead of old cut at sqrt(1.5) sigma's
+            pt2_t ptdiff2 = ptdiff*ptdiff;
             if ((ptdiff >= 0 && ptdiff2 <= sigma2Hi) || (ptdiff < 0 && ptdiff2 < sigma2Lo)) {
                 // electron
                 photonPt = 0; 
@@ -126,15 +125,15 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     
     for (unsigned int ih = 0; ih < cfg.nCALO; ++ih) {
         hadcalo_out[ih] = hadcalo[ih];
-        pt_t sub = 0; bool keep = false;
+        dpt_t sub = 0; bool keep = false;
         for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {
             if (em2calo[ic] == int(ih)) {
                 if (isEM[ic]) sub += emcalo[ic].hwPt;
                 else keep = true;
             }
         }
-        pt_t emdiff  = hadcalo[ih].hwEmPt - sub;
-        pt_t alldiff = hadcalo[ih].hwPt - sub;
+        dpt_t emdiff  = dpt_t(hadcalo[ih].hwEmPt) - sub; // ok to saturate at zero here
+        dpt_t alldiff = dpt_t(hadcalo[ih].hwPt) - sub;
         if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) {
             printf("FW  \t calo   %3d pt %7d has a subtracted pt of %7d, empt %7d -> %7d   isem %d mustkeep %d \n",
                         ih, int(hadcalo[ih].hwPt), int(alldiff), int(hadcalo[ih].hwEmPt), int(emdiff), int(hadcalo[ih].hwIsEM), keep);
@@ -150,7 +149,7 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
             if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) printf("FW  \t calo   %3d pt %7d --> discarded (zero em)\n", ih, int(hadcalo[ih].hwPt));
         } else {
             hadcalo_out[ih].hwPt   = alldiff;   
-            hadcalo_out[ih].hwEmPt = (emdiff > 0 ? emdiff : pt_t(0)); 
+            hadcalo_out[ih].hwEmPt = (emdiff > 0 ? pt_t(emdiff) : pt_t(0)); 
         }
     }
 }
@@ -183,8 +182,8 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
     }
 
     // constants
-    const pt_t TKPT_MAX_LOOSE = cfg.tk_MAXINVPT_LOOSE; 
-    const pt_t TKPT_MAX_TIGHT = cfg.tk_MAXINVPT_TIGHT; 
+    const pt_t TKPT_MAX_LOOSE = Scales::makePt(cfg.tk_MAXINVPT_LOOSE); 
+    const pt_t TKPT_MAX_TIGHT = Scales::makePt(cfg.tk_MAXINVPT_TIGHT); 
     const int  DR2MAX = cfg.dR2MAX_TK_CALO;
 
     ////////////////////////////////////////////////////
@@ -204,7 +203,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
 
     // initialize sum track pt
     std::vector<pt_t> calo_sumtk(cfg.nCALO), calo_subpt(cfg.nCALO);
-    std::vector<int>  calo_sumtkErr2(cfg.nCALO);
+    std::vector<pt2_t>  calo_sumtkErr2(cfg.nCALO);
     for (unsigned int ic = 0; ic < cfg.nCALO; ++ic) { calo_sumtk[ic] = 0;  calo_sumtkErr2[ic] = 0;}
 
     // initialize good track bit
@@ -226,15 +225,15 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
                 if (g_pfalgo3_debug_ref_) printf("FW  \t track  %3d pt %7d matched to calo %3d pt %7d\n", it, int(track[it].hwPt), ibest, int(hadcalo_subem[ibest].hwPt));
                 track_good[it] = 1;
                 calo_sumtk[ibest]    += track[it].hwPt;
-                calo_sumtkErr2[ibest] += sqr(track[it].hwPtErr);
+                calo_sumtkErr2[ibest] += track[it].hwPtErr*track[it].hwPtErr;
             }
         }
     }
 
     for (unsigned int ic = 0; ic < cfg.nCALO; ++ic) {
         if (calo_sumtk[ic] > 0) {
-            pt_t ptdiff = hadcalo_subem[ic].hwPt - calo_sumtk[ic];
-            int sigmamult = calo_sumtkErr2[ic]; // before we did (calo_sumtkErr2[ic] + (calo_sumtkErr2[ic] >> 1)); to multiply by 1.5 = sqrt(1.5)^2 ~ (1.2)^2
+            dpt_t ptdiff = dpt_t(hadcalo_subem[ic].hwPt) - dpt_t(calo_sumtk[ic]); 
+            pt2_t sigmamult = calo_sumtkErr2[ic]; // before we did (calo_sumtkErr2[ic] + (calo_sumtkErr2[ic] >> 1)); to multiply by 1.5 = sqrt(1.5)^2 ~ (1.2)^2
             if (g_pfalgo3_debug_ref_ && (hadcalo_subem[ic].hwPt > 0)) {
 #ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
                 l1tpf_impl::CaloCluster floatcalo; fw2dpf::convert(hadcalo_subem[ic], floatcalo); 
@@ -245,7 +244,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
                         
             }
             if (ptdiff > 0 && ptdiff*ptdiff > sigmamult) {
-                calo_subpt[ic] = ptdiff;
+                calo_subpt[ic] = pt_t(ptdiff);
             } else {
                 calo_subpt[ic] = 0;
             }
@@ -284,7 +283,8 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
             outne_all[ic].hwPt  = calo_subpt[ic];
             outne_all[ic].hwEta = hadcalo_subem[ic].hwEta;
             outne_all[ic].hwPhi = hadcalo_subem[ic].hwPhi;
-            outne_all[ic].hwId  = ParticleID(hadcalo_subem[ic].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO);
+            //outne_all[ic].hwId  = ParticleID(hadcalo_subem[ic].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO);
+            outne_all[ic].hwId  = ParticleID::HADZERO;
             outne_all[ic].hwEmPt  = hadcalo_subem[ic].hwIsEM ? calo_subpt[ic] : pt_t(0); // FIXME
             outne_all[ic].hwEmID  = hadcalo_subem[ic].hwIsEM;
             outne_all[ic].hwPUID  = 0;

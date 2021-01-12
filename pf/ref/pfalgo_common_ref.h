@@ -34,14 +34,16 @@ template<typename CO_t>
 int best_match_with_pt_ref(int nCAL, int dR2MAX, const CO_t calo[/*nCAL*/], const TkObj & track) {
     pt_t caloPtMin = track.hwPt - 2*(track.hwPtErr);
     if (caloPtMin < 0) caloPtMin = 0;
-    int dptscale = (dR2MAX<<8)/std::max<int>(1,sqr(track.hwPtErr));
-    int drmin = 0, ibest = -1;
+    float ptErr = std::max<float>(Scales::INTPT_LSB, track.hwPtErr.to_float());
+    ptscale_t dptscale = float(dR2MAX)/(ptErr*ptErr);
+    int dr2min = 0, ibest = -1;
     for (int ic = 0; ic < nCAL; ++ic) {
             if (calo[ic].hwPt <= caloPtMin) continue;
-            int dr = dr2_int(track.hwEta, track.hwPhi, calo[ic].hwEta, calo[ic].hwPhi);
-            if (dr >= dR2MAX) continue;
-            dr += (( sqr(std::max<int>(track.hwPt-calo[ic].hwPt,0))*dptscale ) >> 8);
-            if (ibest == -1 || dr < drmin) { drmin = dr; ibest = ic; }
+            int dr2 = dr2_int(track.hwEta, track.hwPhi, calo[ic].hwEta, calo[ic].hwPhi);
+            if (dr2 >= dR2MAX) continue;
+            pt_t dpt = track.hwPt - calo[ic].hwPt;
+            dr2 += int((dpt*dpt)*dptscale);
+            if (ibest == -1 || dr2 < dr2min) { dr2min = dr2; ibest = ic; }
     }
     return ibest;
 }

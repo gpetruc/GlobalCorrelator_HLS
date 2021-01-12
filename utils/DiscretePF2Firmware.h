@@ -11,12 +11,12 @@ namespace dpf2fw {
     // convert inputs from discrete to firmware
     inline void convert(const l1tpf_impl::PropagatedTrack & in, TkObj &out) {
         out.clear();
-        out.hwPt = in.hwPt;
-        out.hwPtErr = in.hwCaloPtErr;
+        out.hwPt = Scales::makePt(in.hwPt);
+        out.hwPtErr = Scales::makePt(in.hwCaloPtErr);
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
         out.hwZ0 = in.hwZ0;
-        out.hwQuality = TkObj::PFTIGHT * (in.hwStubs >= 6 && in.hwChi2 < 500);
+        out.hwQuality = TkObj::PFLOOSE + (in.hwStubs >= 6 && in.hwChi2 < 500 ? TkObj::PFTIGHT : 0);
     }
 
     inline TkObj transformConvert(const l1tpf_impl::PropagatedTrack & in) {
@@ -27,29 +27,29 @@ namespace dpf2fw {
 
     inline void convert(const l1tpf_impl::CaloCluster & in, HadCaloObj & out) {
         out.clear();
-        out.hwPt = in.hwPt;
-        out.hwEmPt = in.hwEmPt;
+        out.hwPt = Scales::makePt(in.hwPt);
+        out.hwEmPt = Scales::makePt(in.hwEmPt);
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
         out.hwIsEM = in.isEM;
     }
     inline void convert(const l1tpf_impl::CaloCluster & in, EmCaloObj & out) {
         out.clear();
-        out.hwPt = in.hwPt;
-        out.hwPtErr = in.hwPtErr;
+        out.hwPt = Scales::makePt(in.hwPt);
+        out.hwPtErr = Scales::makePt(in.hwPtErr);
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
     }
     inline void convert(const l1tpf_impl::Muon & in, MuObj & out) {
         out.clear();
-        out.hwPt = in.hwPt;
+        out.hwPt = Scales::makePt(in.hwPt);
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
     }
 
     inline void convert(const l1tpf_impl::PFParticle &src, PFChargedObj & pf) {
         pf.clear();
-        pf.hwPt = src.hwPt;
+        pf.hwPt = Scales::makePt(src.hwPt);
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
@@ -63,7 +63,7 @@ namespace dpf2fw {
     }
     inline void convert(const l1tpf_impl::PFParticle &src, PFNeutralObj & pf) {
         pf.clear();
-        pf.hwPt = src.hwPt;
+        pf.hwPt = Scales::makePt(src.hwPt);
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
