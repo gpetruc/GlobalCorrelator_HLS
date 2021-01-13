@@ -131,6 +131,8 @@ namespace Scales {
 
     inline pt_t makePt(int pt) { return ap_ufixed<16,14>(pt) >> 2; }
     inline dpt_t makeDPt(int dpt) { return ap_fixed<18,16>(dpt) >> 2; }
+    inline pt_t makePtFromFloat(float pt) { return pt_t(pt); }
+    inline dpt_t makeDPtFromFloat(float dpt) { return dpt_t(dpt); }
 
     inline ap_uint<pt_t::width> ptToInt(pt_t pt) {
         // note: this can be synthethized, e.g. when pT is used as intex in a LUT
@@ -522,6 +524,9 @@ struct PFNeutralObj : public PFCommonObj {
     hwPUID = 0;
   }
 
+
+  int intEmPt() const { return Scales::intPt(hwEmPt); }
+  float floatEmPt() const { return Scales::floatPt(hwEmPt); }
 };
 
 inline void clear(PFNeutralObj &c) {

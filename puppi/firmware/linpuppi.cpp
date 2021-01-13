@@ -199,7 +199,7 @@ void fwdlinpuppi_init_w(ap_uint<9> table[fwdlinpuppi_x2w_table_size]) {
     }
 }
 
-void fwdlinpuppi_calc_wpt(pt_t pt, int x2, pt_t & puppiPt, puppiWgt_t & wgt) {
+void linpuppi_calc_wpt(pt_t pt, int x2, pt_t & puppiPt, puppiWgt_t & wgt) {
     static puppiWgt_t table[fwdlinpuppi_x2w_table_size];
 #ifdef __SYNTHESIS__
     fwdlinpuppi_init_w(table);
@@ -214,7 +214,7 @@ void fwdlinpuppi_calc_wpt(pt_t pt, int x2, pt_t & puppiPt, puppiWgt_t & wgt) {
     else if (x2 >= xavg) index = fwdlinpuppi_x2w_table_size-1;
     else index = x2 + xavg;
     wgt  = table[index];
-    puppiPt = pt_t( int(pt * table[index]) >> 8 );
+    puppiPt = Scales::makePt( int(Scales::ptToInt(pt) * table[index]) >> 8 );
 }
 
 void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]) {
@@ -279,7 +279,7 @@ void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NC
     const int ptZeroPh = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh = LINPUPPI_priorPh * (1 << x2_bits);
-    const int ptCut = LINPUPPI_ptCut; 
+    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut); 
 
     ap_int<12>  x2a[NCALO], x2ptp[NCALO];
     #pragma HLS ARRAY_PARTITION variable=x2a complete    
@@ -291,27 +291,27 @@ void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NC
 
     for (int in = 0; in < NCALO; ++in) {
         if (caloin[in].hwIsEM) {
-            int val = (ptSlopePh*caloin[in].hwPt - ptSlopePh*ptZeroPh) >> (ptSlope_bits + 2 - x2_bits);
+            int val = (ptSlopePh*Scales::ptToInt(caloin[in].hwPt) - ptSlopePh*ptZeroPh) >> (ptSlope_bits + 2 - x2_bits);
             x2ptp[in] =  val < 2047 ? val - priorPh : 2047; // saturate
         } else {
-            int val = (ptSlopeNe*caloin[in].hwPt - ptSlopeNe*ptZeroNe) >> (ptSlope_bits + 2 - x2_bits);
+            int val = (ptSlopeNe*Scales::ptToInt(caloin[in].hwPt) - ptSlopeNe*ptZeroNe) >> (ptSlope_bits + 2 - x2_bits);
             x2ptp[in] =  val < 2047 ? val - priorNe : 2047; // saturate
         }
     }
 
     for (int in = 0; in < NCALO; ++in) {
         int x2 = x2a[in]+x2ptp[in];
-        fwdlinpuppi_calc_wpt(caloin[in].hwPt, x2, puppiPts[in], puppiWgts[in]);
+        linpuppi_calc_wpt(caloin[in].hwPt, x2, puppiPts[in], puppiWgts[in]);
 #ifndef __SYNTHESIS__
         if (caloin[in].hwPt == 0) continue;
         if (gdebug_) printf("hw  candidate %02d pt %7.2f  em %1d: alpha %+7.2f   x2a %+5d = %+7.3f  x2pt %+5d = %+7.3f   x2 %+5d = %+7.3f  -->                       puppi pt %7.2f\n",
-                   in, caloin[in].hwPt*LINPUPPI_ptLSB, int(caloin[in].hwIsEM), 
+                   in, caloin[in].floatPt(), int(caloin[in].hwIsEM), 
                    sums[in] > 0 ? std::log2(float(sums[in]) * LINPUPPI_pt2DR2_scale / (1<<15))*std::log(2.) : 0., 
                    int(x2a[in]), x2a[in]/float(1<<x2_bits), 
                    (int(x2ptp[in]) + (caloin[in].hwIsEM ? priorPh : priorNe) ), 
                    (int(x2ptp[in]) + (caloin[in].hwIsEM ? priorPh : priorNe) )/float(1<<x2_bits), 
                    x2, x2/float(1<<x2_bits), 
-                   puppiPts[in]*LINPUPPI_ptLSB);
+                   Scales::floatPt(puppiPts[in]));
 #endif
     }
 }
@@ -342,7 +342,7 @@ void fwdlinpuppiNoCrop(const HadCaloObj caloin[NCALO], PuppiObj pfallne[NCALO]) 
 
     fwdlinpuppiPt(caloin, puppiPts, puppiWgts);
 
-    const int ptCut = LINPUPPI_ptCut;
+    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
     for (int in = 0; in < NCALO; ++in) {
         if (puppiPts[in] >= ptCut) {
             fill(pfallne[in], caloin[in], puppiPts[in], puppiWgts[in]);
@@ -385,7 +385,7 @@ void fwdlinpuppi(const HadCaloObj caloin[NCALO], PuppiObj pfselne[NNEUTRALS]) {
         clear(work[out]);
     }
 
-    const int ptCut = LINPUPPI_ptCut;
+    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
     for (int in = 0; in < NCALO; ++in) {
         if (puppiPts[in] < ptCut) continue;
         for (int iout = NNEUTRALS-1; iout >= 0; --iout) {
@@ -415,7 +415,7 @@ PuppiObj linpuppi_chs_one(const PFChargedObj pfch, z0_t pvZ0) {
     #pragma HLS pipeline II=1
     #pragma HLS LATENCY min=1
     PuppiObj ret;
-    if (linpuppi_fromPV(pfch, pvZ0) || pfch.hwId == PID_Muon) {
+    if (linpuppi_fromPV(pfch, pvZ0) || pfch.hwId.isMuon()) {
         fill(ret, pfch);
     } else {
         clear(ret);
@@ -444,7 +444,7 @@ void linpuppi_chs(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[
 #endif
 
     for (unsigned int i = 0; i < NTRACK; ++i) {
-        if (linpuppi_fromPV(pfch[i], pvZ0) || pfch[i].hwId == PID_Muon) {
+        if (linpuppi_fromPV(pfch[i], pvZ0) || pfch[i].hwId.isMuon()) {
             fill(outallch[i], pfch[i]);
         } else {
             clear(outallch[i]);
@@ -472,7 +472,7 @@ void linpuppiSum(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj caloin
     ap_uint<17> pt2_shift[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=pt2_shift complete
     for (int it = 0; it < NTRACK; ++it) {
-        int mypt2 = (track[it].hwPt*track[it].hwPt) >> 5; // reduce precision to make multiplication smaller later 
+        int mypt2 = (Scales::ptToInt(track[it].hwPt)*Scales::ptToInt(track[it].hwPt)) >> 5; // reduce precision to make multiplication smaller later 
         pt2_shift[it] = (mypt2 < PTMAX2_SHIFT? mypt2 : PTMAX2_SHIFT);
     }
 
@@ -505,7 +505,7 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     const int ptZeroPh = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh = LINPUPPI_priorPh * (1 << x2_bits);
-    const int ptCut = LINPUPPI_ptCut; 
+    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut); 
 #elif LINPUPPI_etaBins == 2
     const int ptSlopeNe_0 = LINPUPPI_ptSlopeNe * (1 << ptSlope_bits);
     const int ptSlopePh_0 = LINPUPPI_ptSlopePh * (1 << ptSlope_bits);
@@ -513,14 +513,14 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     const int ptZeroPh_0 = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe_0 = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh_0 = LINPUPPI_priorPh * (1 << x2_bits);
-    const int ptCut_0 = LINPUPPI_ptCut; 
+    const pt_t ptCut_0 = Scales::makePt(LINPUPPI_ptCut); 
     const int ptSlopeNe_1 = LINPUPPI_ptSlopeNe_1 * (1 << ptSlope_bits);
     const int ptSlopePh_1 = LINPUPPI_ptSlopePh_1 * (1 << ptSlope_bits);
     const int ptZeroNe_1 = LINPUPPI_ptZeroNe_1 / LINPUPPI_ptLSB; // in pt scale
     const int ptZeroPh_1 = LINPUPPI_ptZeroPh_1 / LINPUPPI_ptLSB; // in pt scale
     const int priorNe_1 = LINPUPPI_priorNe_1 * (1 << x2_bits);
     const int priorPh_1 = LINPUPPI_priorPh_1 * (1 << x2_bits);
-    const int ptCut_1 = LINPUPPI_ptCut_1; 
+    const pt_t ptCut_1 = Scales::makePt(LINPUPPI_ptCut_1); 
 #endif
 
     ap_int<12>  x2a, x2ptp;
@@ -535,9 +535,9 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     x2a = fwdlinpuppi_calc_x2a(sum, ietaBin);
 #endif
 
-    if (caloin.hwId == PID_Photon) {
+    if (caloin.hwId.isPhoton()) {
 #ifndef LINPUPPI_etaBins
-        int val = (ptSlopePh*caloin.hwPt - ptSlopePh*ptZeroPh) >> (ptSlope_bits + 2 - x2_bits);
+        int val = (ptSlopePh*Scales::ptToInt(caloin.hwPt) - ptSlopePh*ptZeroPh) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - priorPh : 2047; // saturate
 #elif LINPUPPI_etaBins == 2
         int val = ((ietaBin ? ptSlopePh_1 : ptSlopePh_0)*caloin.hwPt - (ietaBin ? ptSlopePh_1*ptZeroPh_1 : ptSlopePh_0*ptZeroPh_0)) >> (ptSlope_bits + 2 - x2_bits);
@@ -545,7 +545,7 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
 #endif
     } else {
 #ifndef LINPUPPI_etaBins
-        int val = (ptSlopeNe*caloin.hwPt - ptSlopeNe*ptZeroNe) >> (ptSlope_bits + 2 - x2_bits);
+        int val = (ptSlopeNe*Scales::ptToInt(caloin.hwPt) - ptSlopeNe*ptZeroNe) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - priorNe : 2047; // saturate
 #elif LINPUPPI_etaBins == 2
         int val = ((ietaBin ? ptSlopeNe_1 : ptSlopeNe_0)*caloin.hwPt - (ietaBin ? ptSlopeNe_1*ptZeroNe_1 : ptSlopeNe_0*ptZeroNe_0)) >> (ptSlope_bits + 2 - x2_bits);
@@ -554,11 +554,11 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     }
 
     int x2 = x2a+x2ptp;
-    pt_t puppiPt; puppiWgt_t puppiWgt; fwdlinpuppi_calc_wpt(caloin.hwPt, x2, puppiPt, puppiWgt);
+    pt_t puppiPt; puppiWgt_t puppiWgt; linpuppi_calc_wpt(caloin.hwPt, x2, puppiPt, puppiWgt);
 #ifndef LINPUPPI_etaBins
-    if (puppiPt >= LINPUPPI_ptCut) {
+    if (puppiPt >= ptCut) {
 #elif LINPUPPI_etaBins == 2
-    if (puppiPt >= (ietaBin ? LINPUPPI_ptCut_1 : LINPUPPI_ptCut)) {
+    if (puppiPt >= (ietaBin ? ptCut_1 : ptCut_0)) {
 #endif
         fill(out, caloin, puppiPt, puppiWgt);
     } else {
@@ -567,22 +567,22 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
 #ifndef __SYNTHESIS__
 #ifndef LINPUPPI_etaBins
     if (gdebug_) printf("hw  candidate  pt %7.2f  em %1d: alpha %+7.2f   x2a %+5d = %+7.3f  x2pt %+5d = %+7.3f   x2 %+5d = %+7.3f  -->                       puppi pt %7.2f\n",
-               caloin.hwPt*LINPUPPI_ptLSB, int(caloin.hwId == PID_Photon), 
+               caloin.floatPt(), int(caloin.hwId.isPhoton()), 
                sum > 0 ? std::log2(float(sum) * LINPUPPI_pt2DR2_scale / (1<<15))*std::log(2.) : 0., 
                int(x2a), x2a/float(1<<x2_bits), 
-               (int(x2ptp) + (caloin.hwId == PID_Photon ? priorPh : priorNe) ), 
-               (int(x2ptp) + (caloin.hwId == PID_Photon ? priorPh : priorNe) )/float(1<<x2_bits), 
+               (int(x2ptp) + (caloin.hwId.isPhoton() ? priorPh : priorNe) ), 
+               (int(x2ptp) + (caloin.hwId.isPhoton() ? priorPh : priorNe) )/float(1<<x2_bits), 
                x2, x2/float(1<<x2_bits), 
-               puppiPt*LINPUPPI_ptLSB);
+               Scales::floatPt(puppiPt));
 #elif LINPUPPI_etaBins == 2
     if (gdebug_) printf("hw  candidate  pt %7.2f  em %1d  ieta %1d: alpha %+7.2f   x2a %+5d = %+7.3f  x2pt %+5d = %+7.3f   x2 %+5d = %+7.3f  -->                       puppi pt %7.2f\n",
-               caloin.hwPt*LINPUPPI_ptLSB, int(caloin.hwId == PID_Photon), int(ietaBin),
+               caloin.floatPt(), int(caloin.hwId.isPhoton()), int(ietaBin),
                sum > 0 ? std::log2(float(sum) * LINPUPPI_pt2DR2_scale / (1<<15))*std::log(2.) : 0., 
                int(x2a), x2a/float(1<<x2_bits), 
-               (int(x2ptp) + (caloin.hwId == PID_Photon ? (ietaBin ? priorPh_1 : priorPh_0) : (ietaBin ? priorNe_1 : priorNe_0)) ), 
-               (int(x2ptp) + (caloin.hwId == PID_Photon ? (ietaBin ? priorPh_1 : priorPh_0) : (ietaBin ? priorNe_1 : priorNe_0)) )/float(1<<x2_bits), 
+               (int(x2ptp) + (caloin.hwId.isPhoton() ? (ietaBin ? priorPh_1 : priorPh_0) : (ietaBin ? priorNe_1 : priorNe_0)) ), 
+               (int(x2ptp) + (caloin.hwId.isPhoton() ? (ietaBin ? priorPh_1 : priorPh_0) : (ietaBin ? priorNe_1 : priorNe_0)) )/float(1<<x2_bits), 
                x2, x2/float(1<<x2_bits), 
-               puppiPt*LINPUPPI_ptLSB);
+               Scales::floatPt(puppiPt));
 #endif // etaBins
 #endif // synthesis
 }

@@ -3,13 +3,13 @@
 
 #include <cmath>
 #ifdef CMSSW_GIT_HASH
-#include "data.h"
+#include "../dataformmats/pf.h"
 #else
-#include "../../firmware/data.h"
+#include "../../dataformats/pf.h"
 #endif
 
 #if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-#include "../../firmware/l1pf_encoding.h"
+#include "../../dataformats/l1pf_encoding.h"
 #endif
 
 int dr2_int(eta_t eta1, phi_t phi1, eta_t eta2, eta_t phi2);

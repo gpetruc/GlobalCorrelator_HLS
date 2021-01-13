@@ -15,14 +15,14 @@ struct linpuppi_config {
     std::vector<float> ptSlopeNe, ptSlopePh, ptZeroNe, ptZeroPh;
     std::vector<float> alphaSlope, alphaZero, alphaCrop;
     std::vector<float> priorNe, priorPh;
-    std::vector<unsigned int> ptCut;
+    std::vector<pt_t> ptCut;
 
     linpuppi_config(unsigned int nTrack_, unsigned int nIn_, unsigned int nOut_,
                     unsigned int dR2Min_, unsigned int dR2Max_, unsigned int ptMax_, unsigned int dzCut_,
                     float ptSlopeNe_, float ptSlopePh_, float ptZeroNe_, float ptZeroPh_, 
                     float alphaSlope_, float alphaZero_, float alphaCrop_, 
                     float priorNe_, float priorPh_, 
-                    unsigned int ptCut_) :
+                    pt_t ptCut_) :
                 nTrack(nTrack_), nIn(nIn_), nOut(nOut_),
                 dR2Min(dR2Min_), dR2Max(dR2Max_), ptMax(ptMax_), dzCut(dzCut_),
                 absEtaBins(), invertEtaBins(false), 
@@ -44,7 +44,7 @@ struct linpuppi_config {
                     const std::vector<float> & ptSlopeNe_, const std::vector<float> & ptSlopePh_, const std::vector<float> & ptZeroNe_, const std::vector<float> & ptZeroPh_, 
                     const std::vector<float> & alphaSlope_, const std::vector<float> & alphaZero_, const std::vector<float> & alphaCrop_, 
                     const std::vector<float> & priorNe_, const std::vector<float> & priorPh_,
-                    const std::vector<unsigned int> & ptCut_) :
+                    const std::vector<pt_t> & ptCut_) :
                 nTrack(nTrack_), nIn(nIn_), nOut(nOut_),
                 dR2Min(dR2Min_), dR2Max(dR2Max_), ptMax(ptMax_), dzCut(dzCut_),
                 absEtaBins(absEtaBins_), invertEtaBins(invertEtaBins_),

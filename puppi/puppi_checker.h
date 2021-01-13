@@ -25,8 +25,8 @@ class PuppiChecker {
             printf("  -   filled   : %6d  (%6.2f%% )   [ pT >= 2 GeV ]\n", npt2_,  npt2_ * 100.0 * fall);
             printf("  - exact match: %6d  (%6.2f%% )\n", nok_,   nok_ * 100.0 * fall);
             printf("  - mismatch   : %6d  (%6.2f%% )\n", nmiss, nmiss * 100.0 * fall);
-            printf("  -   by 1*LSB : %6d  (%6.2f%% )   [ 1 unit, %.2f GeV ]\n", n1bit_, n1bit_ * 100.0 * fall, LINPUPPI_ptLSB);
-            printf("  -      small : %6d  (%6.2f%% )   [ %.2f < delta(pt) <= 1 GeV + 1% ]\n", nalmostok_, nalmostok_ * 100.0 * fall, LINPUPPI_ptLSB);
+            printf("  -   by 1*LSB : %6d  (%6.2f%% )   [ 1 unit, %.2f GeV ]\n", n1bit_, n1bit_ * 100.0 * fall, Scales::INTPT_LSB);
+            printf("  -      small : %6d  (%6.2f%% )   [ %.2f < delta(pt) <= 1 GeV + 1% ]\n", nalmostok_, nalmostok_ * 100.0 * fall, Scales::INTPT_LSB);
             printf("  -      big   : %6d  (%6.2f%% )   [ delta(pt) > 1 GeV + 1% ]\n", (nbad_), (nbad_) * 100.0 * fall);
             printf("  - average pT  diff   %+8.4f  (on all)    %+8.4f  (on mismatch)\n", sumDiff_*fall, sumDiff_*fmiss);
             printf("  - average pT |diff|  % 8.4f  (on all)    % 8.4f  (on mismatch)\n", sumAbsDiff_*fall, sumAbsDiff_*fmiss);
@@ -41,17 +41,17 @@ template<typename T, unsigned int N>
 void PuppiChecker::checkIntVsFloat(const T input[N], const PuppiObj puppi[N], const PuppiObj puppi_flt[N], bool verbose) {
     for (int i = 0; i < N; ++i){
         if (input[i].hwPt > 0) {
-            if (puppi_flt[i].hwPt*LINPUPPI_ptLSB >= 2) npt2_++;
+            if (puppi_flt[i].floatPt() >= 2) npt2_++;
 
-            int hwPtDiff = (puppi_flt[i].hwPt - puppi[i].hwPt);
-            float ptDiff = hwPtDiff * LINPUPPI_ptLSB;
+            dpt_t hwPtDiff = dpt_t(puppi_flt[i].hwPt) - dpt_t(puppi[i].hwPt);
+            float ptDiff = Scales::floatPt(hwPtDiff);
 
             int warn = 0;
             if (hwPtDiff == 0) {
                 nok_++; 
-            } else if (std::abs(hwPtDiff) == 1) {
+            } else if (std::abs(Scales::intPt(hwPtDiff)) == 1) {
                 n1bit_++;
-            } else if (std::abs(ptDiff)< 1 + 0.01 * puppi_flt[i].hwPt*LINPUPPI_ptLSB) {
+            } else if (std::abs(ptDiff)< 1 + 0.01 * puppi_flt[i].floatPt()) {
                 nalmostok_++;
                 warn = 1;
             } else {
@@ -61,8 +61,8 @@ void PuppiChecker::checkIntVsFloat(const T input[N], const PuppiObj puppi[N], co
             sumDiff_ += ptDiff;
             sumAbsDiff_ += std::abs(ptDiff);
             if (verbose)  printf("particle %02d pT %7.2f :  puppiPt_int %7.2f   puppiPt_flt %7.2f    diff %+7.2f %s\n",
-                    i, input[i].hwPt * LINPUPPI_ptLSB, 
-                    puppi[i].hwPt * LINPUPPI_ptLSB, puppi_flt[i].hwPt * LINPUPPI_ptLSB, ptDiff,
+                    i, input[i].floatPt(), 
+                    puppi[i].floatPt(), puppi_flt[i].floatPt(), ptDiff,
                     warn ? (warn == 1 ? "small" : "LARGE") : ""); 
         }
     }
@@ -80,9 +80,9 @@ bool PuppiChecker::check(const PuppiObj puppi[N], const PuppiObj puppi_ref[N], c
     if (!ret) {
         for (int i = 0; i < N; ++i){
             printf("particle %02d:  puppiPt_hw %7.2f eta %+5d phi %+5d    puppiPt_ref %7.2f eta %+5d phi %+5d   puppiPt_flt %7.2f eta %+5d phi %+5d\n", i,
-                    puppi[i].hwPt     * LINPUPPI_ptLSB, int(puppi[i].hwEta), int(puppi[i].hwPhi),
-                    puppi_ref[i].hwPt * LINPUPPI_ptLSB, int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), 
-                    puppi_flt[i].hwPt * LINPUPPI_ptLSB, int(puppi_flt[i].hwEta), int(puppi_flt[i].hwPhi));
+                    puppi[i].floatPt(),     int(puppi[i].hwEta), int(puppi[i].hwPhi),
+                    puppi_ref[i].floatPt(), int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), 
+                    puppi_flt[i].floatPt(), int(puppi_flt[i].hwEta), int(puppi_flt[i].hwPhi));
         }
     }
     return ret;
@@ -99,8 +99,8 @@ bool PuppiChecker::checkChs(z0_t pvZ0, const PuppiObj puppi[N], const PuppiObj p
     if (!ret) {
         for (int i = 0; i < N; ++i){
             printf("particle %02d:  puppiPt_hw %7.2f eta %+5d phi %+5d dz %+5d   puppiPt_ref %7.2f eta %+5d phi %+5d dz %+5d\n", i,
-                    puppi[i].hwPt     * LINPUPPI_ptLSB, int(puppi[i].hwEta), int(puppi[i].hwPhi), int(puppi[i].hwZ0() - pvZ0),
-                    puppi_ref[i].hwPt * LINPUPPI_ptLSB, int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), int(puppi_ref[i].hwZ0() - pvZ0)); 
+                    puppi[i].floatPt(),     int(puppi[i].hwEta), int(puppi[i].hwPhi), int(puppi[i].hwZ0() - pvZ0),
+                    puppi_ref[i].floatPt(), int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), int(puppi_ref[i].hwZ0() - pvZ0)); 
         }
     }
     return ret;

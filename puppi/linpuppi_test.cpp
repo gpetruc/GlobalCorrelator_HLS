@@ -7,12 +7,12 @@
 #include "puppi_checker.h"
 
 #if defined(REG_Barrel)
-    #include "../ref/pfalgo3_ref.h"
+    #include "../pf/ref/pfalgo3_ref.h"
 #elif defined(REG_HGCal)
-    #include "../ref/pfalgo2hgc_ref.h"
+    #include "../pf/ref/pfalgo2hgc_ref.h"
 #endif
 
-#define NTEST 500
+#define NTEST 5
 
 
 int main() {
@@ -27,7 +27,7 @@ int main() {
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
                           LINPUPPI_priorNe, LINPUPPI_priorPh,
-                          LINPUPPI_ptCut);
+                          Scales::makePt(LINPUPPI_ptCut));
 #elif defined(REG_HGCal)
     DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
     pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
@@ -40,7 +40,7 @@ int main() {
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          LINPUPPI_ptCut, LINPUPPI_ptCut_1);
+                          Scales::makePt(LINPUPPI_ptCut), LINPUPPI_ptCut_1);
 #endif
     
     // input TP objects and PV
@@ -71,7 +71,7 @@ int main() {
 
 #ifdef TEST_PT_CUT
         float minpt = 0;
-        for (unsigned int i = 0; i < NTRACK; ++i) minpt += track[i].hwPt*LINPUPPI_ptLSB;
+        for (unsigned int i = 0; i < NTRACK; ++i) minpt += track[i].floatPt();
         if (minpt < TEST_PT_CUT) { 
             //std::cout << "Skipping region with total calo pt " << minpt << " below threshold." << std::endl; 
             --test; continue; 
@@ -85,7 +85,7 @@ int main() {
         pfalgo2hgc_ref(pfcfg, hadcalo, track, mu, pfch, pfallne, pfmu); 
 #endif
 
-        bool verbose = 0;
+        bool verbose = 1;
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
 
