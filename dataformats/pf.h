@@ -60,6 +60,10 @@ struct ParticleID {
 #endif
     return bits[0]; /* 1 if positive, 0 if negative */
   }
+
+  bool chargeOrNull() const { // doesn't throw on null id
+    return bits[0]; 
+  }
   bool charged() const { return bits[1] || bits[2]; };
   bool neutral() const { return !charged(); }
   void clear() { bits = 0; }
@@ -459,7 +463,7 @@ struct PFChargedObj : public PFCommonObj {
   tkquality_t hwTkQuality;
 
   phi_t hwVtxPhi() const {
-    return hwId.charge() ? hwPhi + hwDPhi : hwPhi - hwDPhi;
+    return hwId.chargeOrNull() ? hwPhi + hwDPhi : hwPhi - hwDPhi;
   }
   eta_t hwVtxEta() const { return hwEta + hwDEta; }
 
@@ -550,14 +554,14 @@ struct PuppiObj {
 
   inline z0_t hwZ0() const {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     return z0_t(hwData(BITS_Z0_START + z0_t::width - 1, BITS_Z0_START));
   }
 
   inline void setHwZ0(z0_t z0) {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     hwData(BITS_Z0_START + z0_t::width - 1, BITS_Z0_START) =
         z0(z0_t::width - 1, 0);
@@ -565,21 +569,21 @@ struct PuppiObj {
 
   inline dxy_t hwDxy() const {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     return dxy_t(hwData(BITS_DXY_START + dxy_t::width - 1, BITS_DXY_START));
   }
 
   inline void setHwDxy(dxy_t dxy) {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     hwData(BITS_DXY_START + dxy_t::width - 1, BITS_DXY_START) = dxy(7, 0);
   }
 
   inline tkquality_t hwTkQuality() const {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     return tkquality_t(
         hwData(BITS_TKQUAL_START + tkquality_t::width - 1, BITS_TKQUAL_START));
@@ -587,7 +591,7 @@ struct PuppiObj {
 
   inline void setHwTkQuality(tkquality_t qual) {
 #ifndef __SYNTHESIS__
-    assert(hwId.charged());
+    assert(hwId.charged() || hwPt == 0);
 #endif
     hwData(BITS_TKQUAL_START + tkquality_t::width - 1, BITS_TKQUAL_START) =
         qual(tkquality_t::width - 1, 0);
@@ -626,6 +630,36 @@ struct PuppiObj {
   }
 
 
+  inline void fill(const PFChargedObj &src) {
+    hwEta = src.hwVtxEta(); 
+    hwPhi = src.hwVtxPhi();
+    hwId = src.hwId;
+    hwPt = src.hwPt;
+    hwData = 0;
+    setHwZ0(src.hwZ0);
+    setHwDxy(src.hwDxy);
+    setHwTkQuality(src.hwTkQuality);
+  }
+  inline void fill(const PFNeutralObj &src, pt_t puppiPt,
+                   puppiWgt_t puppiWgt) {
+    hwEta = src.hwEta;
+    hwPhi = src.hwPhi;
+    hwId = src.hwId;
+    hwPt = puppiPt;
+    hwData = 0;
+    setHwPuppiW(puppiWgt);
+  }
+  inline void fill(const HadCaloObj &src, pt_t puppiPt,
+                   puppiWgt_t puppiWgt) {
+    hwEta = src.hwEta;
+    hwPhi = src.hwPhi;
+    hwId = src.hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO;
+    hwPt = puppiPt;
+    hwData = 0;
+    setHwPuppiW(puppiWgt);
+  }
+
+
   int intPt() const { return Scales::intPt(hwPt); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
@@ -640,35 +674,6 @@ struct PuppiObj {
 
 inline void clear(PuppiObj &c) {
   c.clear();
-}
-
-inline void fill(PuppiObj &out, const PFChargedObj &src) {
-  out.hwEta = src.hwVtxEta();
-  out.hwPhi = src.hwVtxPhi();
-  out.hwId = src.hwId;
-  out.hwPt = src.hwPt;
-  out.hwData = 0;
-  out.setHwZ0(src.hwZ0);
-  out.setHwDxy(src.hwDxy);
-  out.setHwTkQuality(src.hwTkQuality);
-}
-inline void fill(PuppiObj &out, const PFNeutralObj &src, pt_t puppiPt,
-                 puppiWgt_t puppiWgt) {
-  out.hwEta = src.hwEta;
-  out.hwPhi = src.hwPhi;
-  out.hwId = src.hwId;
-  out.hwPt = puppiPt;
-  out.hwData = 0;
-  out.setHwPuppiW(puppiWgt);
-}
-inline void fill(PuppiObj &out, const HadCaloObj &src, pt_t puppiPt,
-                 puppiWgt_t puppiWgt) {
-  out.hwEta = src.hwEta;
-  out.hwPhi = src.hwPhi;
-  out.hwId = src.hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO;
-  out.hwPt = puppiPt;
-  out.hwData = 0;
-  out.setHwPuppiW(puppiWgt);
 }
 
 // TMUX

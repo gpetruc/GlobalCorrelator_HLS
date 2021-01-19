@@ -1,7 +1,7 @@
 set puppiReg "Barrel"
 #set puppiReg "HGCal"
-#set puppiBoard "none"
-set puppiBoard "VCU118"
+set puppiBoard "none"
+#set puppiBoard "VCU118"
 set cflags "-std=c++0x -DREG_${puppiReg} -DBOARD_${puppiBoard}" 
 
 open_project -reset proj_linpuppi_${puppiReg}_${puppiBoard}
@@ -22,11 +22,11 @@ add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb linpuppi_test.cpp   -cflags "${cflags} -DTEST_PUPPI_NOCROP -DTEST_PT_CUT=80" 
 #add_files -tb linpuppi_test.cpp   -cflags "${cflags} -DTEST_PT_CUT=80"
 if { $puppiReg == "Barrel" } {
-    add_files -tb ../ref/pfalgo3_ref.cpp   -cflags "${cflags}"
+    add_files -tb ../pf/ref/pfalgo3_ref.cpp   -cflags "${cflags}"
 } elseif { $puppiReg == "HGCal" } {
-    add_files -tb ../ref/pfalgo2hgc_ref.cpp   -cflags "${cflags}"
+    add_files -tb ../pf/ref/pfalgo2hgc_ref.cpp   -cflags "${cflags}"
 }
-add_files -tb ../ref/pfalgo_common_ref.cpp   -cflags "${cflags}"
+add_files -tb ../pf/ref/pfalgo_common_ref.cpp   -cflags "${cflags}"
 add_files -tb ../data/TTbar_PU200_${puppiReg}.dump
 
 # reset the solution

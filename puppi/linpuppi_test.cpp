@@ -12,7 +12,7 @@
     #include "../pf/ref/pfalgo2hgc_ref.h"
 #endif
 
-#define NTEST 5
+#define NTEST 1000
 
 
 int main() {
@@ -40,7 +40,7 @@ int main() {
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          Scales::makePt(LINPUPPI_ptCut), LINPUPPI_ptCut_1);
+                          Scales::makePt(LINPUPPI_ptCut), Scales::makePt(LINPUPPI_ptCut_1));
 #endif
     
     // input TP objects and PV
@@ -61,6 +61,8 @@ int main() {
     PatternSerializer serPatternsChsIn("linpuppi_chs_input_patterns.txt"), serPatternsChsOut("linpuppi_chs_output_patterns.txt");
     ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_input_chs[PACKING_NCHANN], packed_output[PACKING_NCHANN], packed_output_chs[PACKING_NCHANN];
     for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_input_chs[i] = 0; packed_output[i] = 0; packed_output_chs[i] = 0; }
+#else
+    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
 #endif
 
     PuppiChecker checker;
@@ -85,7 +87,7 @@ int main() {
         pfalgo2hgc_ref(pfcfg, hadcalo, track, mu, pfch, pfallne, pfmu); 
 #endif
 
-        bool verbose = 1;
+        bool verbose = 0;
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
 
@@ -130,6 +132,15 @@ int main() {
 #else
                   checker.check<NNEUTRALS>(outselne, outselne_ref, outselne_flt);
 #endif
+
+#if defined(TEST_PUPPI_NOCROP) or defined(TEST_PUPPI_STREAM)
+        debugDump.dump_puppi(NALLNEUTRALS, "all    ", outallne);
+#else
+        debugDump.dump_puppi(NNEUTRALS,    "sel    ", outselne);
+#endif
+        debugDump.dump_puppi(NALLNEUTRALS, "all rnc", outallne_ref_nocut);
+        debugDump.dump_puppi(NALLNEUTRALS, "all flt", outallne_flt_nocut);
+
         if (!ok) {
             printf("FAILED test %d\n", test);
             HumanReadablePatternSerializer dumper("-", true);

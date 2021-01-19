@@ -22,7 +22,7 @@ int main() {
                         LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                         LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
                         LINPUPPI_priorNe, LINPUPPI_priorPh,
-                        LINPUPPI_ptCut);
+                        Scales::makePt(LINPUPPI_ptCut));
     
     // input TP objects (used)
     HadCaloObj calo[NCALO];
@@ -42,6 +42,8 @@ int main() {
     PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt"), serPatternsOut("fwlinpuppi_output_patterns.txt");
     ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
     for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
+#else
+    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
 #endif
 
     PuppiChecker checker;
@@ -52,7 +54,7 @@ int main() {
 
 #ifdef TEST_PT_CUT
         float minpt = 0;
-        for (unsigned int i = 0; i < NCALO; ++i) minpt += calo[i].hwPt*LINPUPPI_ptLSB;
+        for (unsigned int i = 0; i < NCALO; ++i) minpt += calo[i].floatPt();
         if (minpt < TEST_PT_CUT) { 
             //std::cout << "Skipping region with total calo pt " << minpt << " below threshold." << std::endl; 
             --test; continue; 
@@ -87,6 +89,15 @@ int main() {
 
         // validate numerical accuracy 
         checker.checkIntVsFloat<HadCaloObj,NCALO>(calo, outallne_ref_nocut, outallne_flt_nocut, verbose);
+
+#if defined(TEST_PUPPI_NOCROP)
+        debugDump.dump_puppi(NALLNEUTRALS, "all    ", outallne);
+#else
+        debugDump.dump_puppi(NNEUTRALS,    "sel    ", outselne);
+#endif
+        debugDump.dump_puppi(NALLNEUTRALS, "all rnc", outallne_ref_nocut);
+        debugDump.dump_puppi(NALLNEUTRALS, "all flt", outallne_flt_nocut);
+
 
         // check vs reference
 #if defined(TEST_PUPPI_NOCROP)

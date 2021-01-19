@@ -1,7 +1,7 @@
 set puppiReg "HGCalNoTK"
 #set puppiReg "HF"
-#set puppiBoard "none"
-set puppiBoard "VCU118"
+set puppiBoard "none"
+#set puppiBoard "VCU118"
 set cflags "-std=c++0x -DREG_${puppiReg} -DBOARD_${puppiBoard}" 
 
 open_project -reset proj_linpuppi_${puppiReg}_${puppiBoard}
