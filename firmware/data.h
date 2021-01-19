@@ -223,6 +223,9 @@ struct PuppiObj {
             #endif
             hwData(8,0) = w(8,0); 
         }
+
+        inline bool operator<(const PuppiObj&b) const { return hwPt < b.hwPt; }
+        inline bool operator>(const PuppiObj&b) const { return hwPt > b.hwPt; }
 };
 inline void clear(PuppiObj & c) {
     c.hwPt = 0; c.hwEta = 0; c.hwPhi = 0; c.hwId = 0; c.hwData = 0;

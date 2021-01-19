@@ -2,24 +2,7 @@
 #ifndef BITONIC_NEW_H
 #define BITONIC_NEW_H
 
-    template <typename T>
-inline T max(T a, T b)  
-{  
-    return (a < b)? b : a;  
-}  
-
-    template <typename T>
-inline T min(T a, T b)  
-{  
-    return (a < b)? a : b;  
-}  
-
-int get_pow2_size(unsigned int n){
-    if (n && !(n&(n-1)))return n;
-    int count=0;
-    while(n) {n>>=1;++count;}
-    return 1<<count;
-}
+#include<algorithm>
 
 unsigned int PowerOf2LessThan(unsigned int n){
     unsigned int i=1;
@@ -41,7 +24,7 @@ void bitonicMerge(T in[], int InSize,T out[],int OutSize, bool dir)
 
     // size == 1 -> pass through
     if (InSize<=1) { 
-        for(int i=0;i<min(InSize,OutSize);++i) out[i]=in[i]; 
+        for(int i=0;i<std::min(InSize,OutSize);++i) out[i]=in[i]; 
         return;
     }
 
@@ -102,15 +85,15 @@ void bitonicSort(T in[],int Start, int InSize,T out[], int OutSize, bool dir )
 {
     if (InSize <= 1) // copy in-> out and exit
     {
-        for(int i=0;i<min(InSize,OutSize);++i) out[i] = in[i+Start]; 
+        for(int i=0;i<std::min(InSize,OutSize);++i) out[i] = in[i+Start]; 
         return ;
     }
 
     int  LowerInSize = InSize / 2;
     int  UpperInSize = InSize - LowerInSize; //-- UpperSize >= LowerSize
 
-    int  LowerOutSize = min( OutSize , LowerInSize );
-    int  UpperOutSize = min( OutSize , UpperInSize );
+    int  LowerOutSize = std::min( OutSize , LowerInSize );
+    int  UpperOutSize = std::min( OutSize , UpperInSize );
 
     // sorted output
     T OutTmp[LowerOutSize+UpperOutSize];
@@ -135,8 +118,8 @@ void bitonicSort(T in[],int Start, int InSize,T out[], int OutSize, bool dir )
     }
 }
 
-    template<typename T>
-void sort_and_crop_ref(unsigned int nIn, unsigned int nOut, T in[], T out[]) 
+template<typename T>
+void bitonic_sort_and_crop_ref(unsigned int nIn, unsigned int nOut, T in[], T out[]) 
 {  // just an interface
     bitonicSort(in,0, nIn,out, nOut,0); 
 }

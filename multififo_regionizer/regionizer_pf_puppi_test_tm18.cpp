@@ -18,11 +18,9 @@
 #include <vector>
 #include <string>
 
-#include "sort/bitonic_sort_new.h"
+#include "../sort/bitonic_sort_new.h"
 #define TLEN REGIONIZERNCLOCKS 
 
-inline const bool operator<(const PuppiObj&a , const PuppiObj&b){ return a.hwPt<b.hwPt;}
-inline const bool operator>(const PuppiObj&a , const PuppiObj&b){ return a.hwPt>b.hwPt;}
 
 int main(int argc, char **argv) {
     pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
@@ -266,7 +264,7 @@ int main(int argc, char **argv) {
                 std::copy(outallne, outallne+NALLNEUTRALS, outpresort+NTRACK);
                 PuppiObj outsorted[NPUPPIFINALSORTED];
                 //puppisort_and_crop_ref(NTRACK+NALLNEUTRALS, NPUPPIFINALSORTED, outpresort, outsorted);
-                sort_and_crop_ref(NTRACK+NALLNEUTRALS, NPUPPIFINALSORTED, outpresort, outsorted) ;
+                bitonic_sort_and_crop_ref(NTRACK+NALLNEUTRALS, NPUPPIFINALSORTED, outpresort, outsorted) ;
                 l1pf_pattern_pack<NTRACK+NALLNEUTRALS,0>(outpresort, all_channels_puppi);
                 l1pf_pattern_pack<NPUPPIFINALSORTED,0>(outsorted, all_channels_puppisort);
             }
