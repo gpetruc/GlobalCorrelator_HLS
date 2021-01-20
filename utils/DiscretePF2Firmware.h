@@ -12,7 +12,6 @@ namespace dpf2fw {
     inline void convert(const l1tpf_impl::PropagatedTrack & in, TkObj &out) {
         out.clear();
         out.hwPt = Scales::makePt(in.hwPt);
-        out.hwPtErr = Scales::makePt(in.hwCaloPtErr);
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
         out.hwZ0 = in.hwZ0;
@@ -76,6 +75,9 @@ namespace dpf2fw {
     }
 
 
+    inline void convert(const l1tpf_impl::InputRegion & src, PFRegion & region) {
+        region.hwEtaCenter = Scales::makeGlbEta(src.etaCenter);
+    }
 
     template<unsigned int NMAX, typename In, typename Out>
     void convert(const std::vector<In> & in, Out out[NMAX]) {

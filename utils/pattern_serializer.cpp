@@ -206,28 +206,28 @@ void HumanReadablePatternSerializer::dump_outputs(const PFChargedObj outch[NTRAC
 void HumanReadablePatternSerializer::dump_hadcalo(const HadCaloObj hadcalo[NCALO], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !hadcalo[i].hwPt) continue;
-        fprintf(file_, "   calo  %3d, hwPt % 7d   hwEmPt  % 7d    hwEta %+7d   hwPhi %+7d   hwIsEM %1d\n", i, hadcalo[i].intPt(), hadcalo[i].intEmPt(), int(hadcalo[i].hwEta), int(hadcalo[i].hwPhi), int(hadcalo[i].hwIsEM));
+        fprintf(file_, "   calo  %3d, hwPt % 7d   hwEmPt  % 7d    hwEta %+7d   hwPhi %+7d   hwIsEM %1d\n", i, hadcalo[i].intPt(), hadcalo[i].intEmPt(), hadcalo[i].intEta(), hadcalo[i].intPhi(), int(hadcalo[i].hwIsEM));
     }
     if (file_ == stdout) fflush(file_);
 }
 void HumanReadablePatternSerializer::dump_emcalo(const EmCaloObj emcalo[NEMCALO], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !emcalo[i].hwPt) continue;
-        fprintf(file_, "   em    %3d, hwPt % 7d   hwPtErr % 7d    hwEta %+7d   hwPhi %+7d\n", i, emcalo[i].intPt(), emcalo[i].intPtErr(), int(emcalo[i].hwEta), int(emcalo[i].hwPhi));
+        fprintf(file_, "   em    %3d, hwPt % 7d   hwPtErr % 7d    hwEta %+7d   hwPhi %+7d\n", i, emcalo[i].intPt(), emcalo[i].intPtErr(), emcalo[i].intEta(), emcalo[i].intPhi());
     }
     if (file_ == stdout) fflush(file_);
 }
 void HumanReadablePatternSerializer::dump_track(const TkObj track[NTRACK], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !track[i].hwPt) continue;
-        fprintf(file_, "   track %3d, hwPt % 7d   hwPtErr % 7d    hwEta %+7d   hwPhi %+7d     hwZ0 %+7d   tight %1d\n", i, track[i].intPt(), track[i].intPtErr(), int(track[i].hwEta), int(track[i].hwPhi), int(track[i].hwZ0), int(track[i].isPFTight()));
+        fprintf(file_, "   track %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d     hwZ0 %+7d   tight %1d\n", i, track[i].intPt(), track[i].intEta(), track[i].intPhi(), int(track[i].hwZ0), int(track[i].isPFTight()));
     }
     if (file_ == stdout) fflush(file_);
 }
 void HumanReadablePatternSerializer::dump_mu(const MuObj mu[NMU], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !mu[i].hwPt) continue;
-        fprintf(file_, "   muon  %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d\n", i, mu[i].intPt(), int(mu[i].hwEta), int(mu[i].hwPhi));
+        fprintf(file_, "   muon  %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d\n", i, mu[i].intPt(), mu[i].intEta(), mu[i].intPhi());
     }
     if (file_ == stdout) fflush(file_);
 }
@@ -237,7 +237,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outch[i].hwPt) continue;
         fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwZ0 %+7d\n", label, i, 
-                outch[i].intPt(), int(outch[i].hwEta), int(outch[i].hwPhi), outch[i].oldId(), int(outch[i].hwZ0));
+                outch[i].intPt(), outch[i].intEta(), outch[i].intPhi(), outch[i].oldId(), int(outch[i].hwZ0));
     }
 }
 void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const PFNeutralObj outne[/*N*/]) 
@@ -245,7 +245,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outne[i].hwPt) continue;
         fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d\n", label, i,
-                outne[i].intPt(), int(outne[i].hwEta), int(outne[i].hwPhi), outne[i].oldId());
+                outne[i].intPt(), outne[i].intEta(), outne[i].intPhi(), outne[i].oldId());
     }
     if (file_ == stdout) fflush(file_);
 }
@@ -255,10 +255,10 @@ void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *labe
         if (zerosuppress_ && !outpuppi[i].hwPt) continue; 
         if (outpuppi[i].hwId.charged()) {
             fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwZ0     %+7d\n", label, i, 
-                    outpuppi[i].intPt(), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), outpuppi[i].oldId(), int(outpuppi[i].hwZ0()));
+                    outpuppi[i].intPt(), outpuppi[i].intEta(), outpuppi[i].intPhi(), outpuppi[i].oldId(), int(outpuppi[i].hwZ0()));
         } else {
             fprintf(file_, "   %s %3d, hwPt % 7d   hwEta %+7d   hwPhi %+7d   hwId %1d      hwPuppiW % 7d\n", label, i, 
-                    outpuppi[i].intPt(), int(outpuppi[i].hwEta), int(outpuppi[i].hwPhi), outpuppi[i].oldId(), int(outpuppi[i].hwPuppiW()));
+                    outpuppi[i].intPt(), outpuppi[i].intEta(), outpuppi[i].intPhi(), outpuppi[i].oldId(), int(outpuppi[i].hwPuppiW()));
         }
     }
 }

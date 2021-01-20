@@ -87,10 +87,10 @@ void ptsort_hwopt(const T in[NIn], T out[NOut]) {
 }
 //----------------------------------
 template<int DR2MAX>
-void tk2calo_drvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], tk2calo_dr_t calo_track_drval[NTRACK][NCALO]) {
+void tk2calo_drvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const pt_t tkPtErr[NTRACK], tk2calo_dr_t calo_track_drval[NTRACK][NCALO]) {
     const tk2calo_dr_t eDR2MAX = DR2MAX;
     for (int it = 0; it < NTRACK; ++it) {
-        pt_t caloPtMin = track[it].hwPt - 2*(track[it].hwPtErr);
+        pt_t caloPtMin = track[it].hwPt - 2*tkPtErr[it];
         if (caloPtMin < 0) caloPtMin = 0;
         for (int icalo = 0; icalo < NCALO; ++icalo) {
             if (calo[icalo].hwPt > caloPtMin) {
@@ -125,13 +125,13 @@ ptscale_t calc_dptscale(pt_t trackHwPtErr) {
 }
 
 template<int DR2MAX>
-void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], tk2calo_dq_t calo_track_drval[NTRACK][NCALO]) {
+void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const pt_t tkPtErr[NTRACK], tk2calo_dq_t calo_track_drval[NTRACK][NCALO]) {
     const tk2calo_dq_t eDR2MAX = DR2MAX;
     const tk2calo_dq_t eDQMAX  = 5*DR2MAX; // at most we're 2 sigma away in pt, so that's a factor 4
     // now, DR2MAX is 10 bits, so dptscale max is at most 10+8 bits = 18 bits // FIXME: GP: this is no longer correct
     for (int it = 0; it < NTRACK; ++it) {
-        pt_t caloPtMin = track[it].hwPt - 2*(track[it].hwPtErr);
-        ptscale_t dptscale  = calc_dptscale<DR2MAX>(track[it].hwPtErr);
+        pt_t caloPtMin = track[it].hwPt - 2*tkPtErr[it];
+        ptscale_t dptscale  = calc_dptscale<DR2MAX>(tkPtErr[it]);
         assert(false);
         if (caloPtMin < 0) caloPtMin = 0;
         for (int icalo = 0; icalo < NCALO; ++icalo) {
@@ -158,12 +158,12 @@ void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], 
 }
 
 template<int DR2MAX>
-void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track, tk2calo_dq_t calo_track_drval[NCALO]) {
+void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track, const pt_t tkPtErr, tk2calo_dq_t calo_track_drval[NCALO]) {
     const tk2calo_dq_t eDR2MAX = DR2MAX;
     const tk2calo_dq_t eDQMAX  = 5*DR2MAX; // at most we're 2 sigma away in pt, so that's a factor 4
     // now, DR2MAX is 10 bits, so dptscale max is at most 10+8 bits = 18 bits // FIXME: GP: this is no longer correct
-    pt_t caloPtMin = track.hwPt - 2*(track.hwPtErr);
-    ptscale_t dptscale  = calc_dptscale<DR2MAX>(track.hwPtErr);
+    pt_t caloPtMin = track.hwPt - 2*tkPtErr;
+    ptscale_t dptscale  = calc_dptscale<DR2MAX>(tkPtErr);
     if (caloPtMin < 0) caloPtMin = 0;
     for (int icalo = 0; icalo < NCALO; ++icalo) {
         if (calo[icalo].hwPt > caloPtMin) {
@@ -252,16 +252,16 @@ void pick_closest(const DR_T calo_track_drval[NTK][NCA], ap_uint<NCA> calo_track
 }
 
 
-void tk2calo_link_dronly(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], ap_uint<NCALO> calo_track_link_bit[NTRACK]) {
+void tk2calo_link_dronly(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const pt_t tkPtErr[NTRACK], ap_uint<NCALO> calo_track_link_bit[NTRACK]) {
     const int DR2MAX = PFALGO_DR2MAX_TK_CALO;
     tk2calo_dr_t drvals[NTRACK][NCALO];
     #pragma HLS ARRAY_PARTITION variable=drvals complete dim=0
 
-    tk2calo_drvals<DR2MAX>(calo, track, drvals);
+    tk2calo_drvals<DR2MAX>(calo, track, tkPtErr, drvals);
     pick_closest<DR2MAX,NTRACK,NCALO,tk2calo_dr_t>(drvals, calo_track_link_bit);
 }
 
-void tk2calo_link_drdpt(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], ap_uint<NCALO> calo_track_link_bit[NTRACK]) {
+void tk2calo_link_drdpt(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const pt_t tkPtErr[NTRACK], ap_uint<NCALO> calo_track_link_bit[NTRACK]) {
     const int DR2MAX = PFALGO_DR2MAX_TK_CALO;
     const int DQMAX = 5*DR2MAX;
     for (int i = 0; i < NTRACK; ++i) {
@@ -269,20 +269,46 @@ void tk2calo_link_drdpt(const HadCaloObj calo[NCALO], const TkObj track[NTRACK],
         tk2calo_dq_t drvals[NCALO];
         #pragma HLS ARRAY_PARTITION variable=drvals complete dim=0
 
-        tk2calo_drdptvals<DR2MAX>(calo, track[i], drvals);
+        tk2calo_drdptvals<DR2MAX>(calo, track[i], tkPtErr[i], drvals);
         calo_track_link_bit[i] = pick_closest<DQMAX,NCALO,tk2calo_dq_t>(drvals);
     }
 }
 
-void tk2calo_tkerr2(const TkObj track[NTRACK], pt2_t tkerr2[NTRACK]) {
+pt_t tk2calo_tkerr(const TkObj & track, const PFRegion & region) {
+    const float edges[PTERR_BINS]  = PTERR_EDGES;
+    const float offss[PTERR_BINS]  = PTERR_OFFS;
+    const float scales[PTERR_BINS] = PTERR_SCALE;
+    
+    glbeta_t abseta = region.hwGlbEta(track.hwEta);
+    if (abseta < 0) abseta = -abseta;
+    
+    ptErrScale_t scale = 0.3125;
+    ptErrOffs_t offs = 7.0;
+    for (int i = 0; i < PTERR_BINS; ++i) {
+        if (abseta < Scales::makeGlbEta(edges[i])) {
+           scale = scales[i];
+           offs  = offss[i];
+           break;
+        }
+    }
+    pt_t ptErr = track.hwPt * scale + offs;
+    if (ptErr > track.hwPt) ptErr = track.hwPt;
+    return ptErr;
+}
+
+void tk2calo_tkerr(const PFRegion & region, const TkObj track[NTRACK], pt_t tkerr[NTRACK]) {
     for (int it = 0; it < NTRACK; ++it) {
+        tkerr[it] = tk2calo_tkerr(track[it], region);
+    }
+}
+
+void tk2calo_tkerr2(pt_t tkerr[NTRACK], pt2_t tkerr2[NTRACK]) {
+    for (int it = 0; it < NTRACK; ++it) {
+        pt2_t prod = tkerr[it] * tkerr[it];
 #ifdef L1PF_DSP_LATENCY3
-        pt2_t prod = (track[it].hwPtErr * track[it].hwPtErr);
         #pragma HLS resource variable=prod latency=3
-        tkerr2[it] = prod;
-#else
-        tkerr2[it] = (track[it].hwPtErr * track[it].hwPtErr);
 #endif
+        tkerr2[it] = prod;
     }
 }
 

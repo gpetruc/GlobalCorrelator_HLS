@@ -121,6 +121,7 @@ namespace Scales {
     constexpr float PUPPIW_LSB = 1.0/256;
     inline float floatPt(pt_t pt) { return pt.to_float(); }
     inline float floatPt(dpt_t pt) { return pt.to_float(); }
+    inline float floatPt(pt2_t pt2) { return pt2.to_float(); }
     inline int intPt(pt_t pt) { return (ap_ufixed<16,14>(pt) << 2).to_int(); }
     inline int intPt(dpt_t pt) { return (ap_fixed<18,16>(pt) << 2).to_int(); }
     inline float floatEta(eta_t eta) { return eta.to_float() * ETAPHI_LSB; }
@@ -151,6 +152,9 @@ namespace Scales {
         ret(dpt_t::width-1,0) = pt(dpt_t::width-1,0);
         return ret;
     }
+
+    inline eta_t makeEta(float eta) { return round(eta / ETAPHI_LSB); }
+    inline glbeta_t makeGlbEta(float eta) { return round(eta / ETAPHI_LSB); }
 
 };
 
@@ -288,11 +292,14 @@ struct HadCaloObj {
 
   int intPt() const { return Scales::intPt(hwPt); }
   int intEmPt() const { return Scales::intPt(hwEmPt); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatEmPt() const { return Scales::floatPt(hwEmPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
 };
+
 inline void clear(HadCaloObj &c) {
   c.clear();
 }
@@ -318,6 +325,8 @@ struct EmCaloObj {
 
   int intPt() const { return Scales::intPt(hwPt); }
   int intPtErr() const { return Scales::intPt(hwPtErr); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatPtErr() const { return Scales::floatPt(hwPtErr); }
   float floatEta() const { return Scales::floatEta(hwEta); }
@@ -330,7 +339,6 @@ inline void clear(EmCaloObj &c) {
 
 struct TkObj {
   pt_t hwPt;
-  pt_t hwPtErr;
   eta_t hwEta;   // relative to the region center, at calo
   phi_t hwPhi;   // relative to the region center, at calo
   tkdeta_t hwDEta; //  vtx - calo
@@ -339,6 +347,7 @@ struct TkObj {
   z0_t hwZ0;
   dxy_t hwDxy;
   tkquality_t hwQuality;
+  
   enum TkQuality { PFLOOSE = 1, PFTIGHT = 2 };
   bool isPFLoose() const { return hwQuality[0]; }
   bool isPFTight() const { return hwQuality[1]; }
@@ -346,7 +355,6 @@ struct TkObj {
   eta_t hwVtxEta() const { return hwEta + hwDEta; }
   inline bool operator==(const TkObj & other) const {
     return hwPt == other.hwPt &&
-      hwPtErr == other.hwPtErr &&
       hwEta == other.hwEta &&
       hwPhi == other.hwPhi &&
       hwDEta == other.hwDEta &&
@@ -358,7 +366,6 @@ struct TkObj {
   }
   inline void clear() {
     hwPt = 0;
-    hwPtErr = 0;
     hwEta = 0;
     hwPhi = 0;
     hwDEta = 0;
@@ -366,13 +373,13 @@ struct TkObj {
     hwZ0 = 0;
     hwDxy = 0;
     hwCharge = false;
-    hwQuality = false;
+    hwQuality = 0;
   }
 
   int intPt() const { return Scales::intPt(hwPt); }
-  int intPtErr() const { return Scales::intPt(hwPtErr); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
-  float floatPtErr() const { return Scales::floatPt(hwPtErr); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
   float floatDEta() const { return Scales::floatEta(hwDEta); }
@@ -424,6 +431,8 @@ struct MuObj {
   }
 
   int intPt() const { return Scales::intPt(hwPt); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
@@ -447,6 +456,8 @@ struct PFCommonObj {
   ParticleID hwId;
 
   int intPt() const { return Scales::intPt(hwPt); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
@@ -531,11 +542,45 @@ struct PFNeutralObj : public PFCommonObj {
 
   int intEmPt() const { return Scales::intPt(hwEmPt); }
   float floatEmPt() const { return Scales::floatPt(hwEmPt); }
+
+  static const int BITWIDTH = _PFCOMMON_BITWIDTH + pt_t::width + ap_uint<6>::width + ap_uint<6>::width;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_common(ret, start);
+        _pack_into_bits(ret, start, hwEmPt);
+        _pack_into_bits(ret, start, hwEmID);
+        _pack_into_bits(ret, start, hwPUID);
+        return ret;
+  }
+  inline static PFNeutralObj unpack(const ap_uint<BITWIDTH> & src) {
+        PFNeutralObj ret; unsigned int start = 0;
+        ret._unpack_common(src, start);
+        _unpack_from_bits(src, start, ret.hwEmPt);
+        _unpack_from_bits(src, start, ret.hwEmID);
+        _unpack_from_bits(src, start, ret.hwPUID);
+        return ret;
+  }
+
 };
 
 inline void clear(PFNeutralObj &c) {
   c.clear();
 }
+
+struct PFRegion {
+    glbeta_t hwEtaCenter;
+
+    inline glbeta_t hwGlbEta(eta_t hwEta) const {
+        return hwEtaCenter + hwEta;
+    }
+
+    inline float floatEtaCenter() const {
+        return Scales::floatEta(hwEtaCenter);
+    }
+    inline float floatGlbEta(eta_t hwEta) const {
+        return Scales::floatEta(hwGlbEta(hwEta));
+    }
+};
 
 struct PuppiObj {
   pt_t hwPt;
@@ -661,6 +706,8 @@ struct PuppiObj {
 
 
   int intPt() const { return Scales::intPt(hwPt); }
+  int intEta() const { return hwEta.to_int(); }
+  int intPhi() const { return hwPhi.to_int(); }
   float floatPt() const { return Scales::floatPt(hwPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }

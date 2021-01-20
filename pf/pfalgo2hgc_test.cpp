@@ -14,6 +14,7 @@ int main() {
     DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
     
     // input TP objects
+    PFRegion region;
     HadCaloObj calo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; z0_t hwZPV;
     MuObj mu[NMU];
 
@@ -24,8 +25,12 @@ int main() {
 
     pfalgo_config cfg(NTRACK,NCALO,NMU, NSELCALO,
                       PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
-                      PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
-
+                      Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
+    const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
+    const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
+    const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
+    cfg.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
+ 
 #if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
     PatternSerializer serPatternsIn("pfalgo2hgc_input_patterns.txt"), serPatternsOut("pfalgo2hgc_output_patterns.txt");
     ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
@@ -38,19 +43,19 @@ int main() {
     // run multiple tests
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(calo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextRegion(region, calo, emcalo, track, mu, hwZPV)) break;
 
 #if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-        pfalgo2hgc_pack_in(calo, track, mu, packed_input); 
+        pfalgo2hgc_pack_in(region, calo, track, mu, packed_input); 
         serPatternsIn(packed_input);
         packed_pfalgo2hgc(packed_input, packed_output);
         serPatternsOut(packed_output);
         pfalgo2hgc_unpack_out(packed_output, outch, outne, outmupf);
 #else
-        pfalgo2hgc(calo, track, mu, outch, outne, outmupf);
+        pfalgo2hgc(region, calo, track, mu, outch, outne, outmupf);
 #endif
 
-        pfalgo2hgc_ref(cfg, calo, track, mu, outch_ref, outne_ref, outmupf_ref);
+        pfalgo2hgc_ref(cfg, region, calo, track, mu, outch_ref, outne_ref, outmupf_ref);
 
         // -----------------------------------------
         // validation against the reference algorithm

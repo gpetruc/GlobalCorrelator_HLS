@@ -113,7 +113,6 @@ namespace fw2dpf {
     // convert inputs from discrete to firmware
     inline void convert(const TkObj & in, l1tpf_impl::PropagatedTrack & out) {
         out.hwPt = in.hwPt;
-        out.hwCaloPtErr = in.hwPtErr;
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
         out.hwZ0 = in.hwZ0;

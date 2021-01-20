@@ -1,12 +1,5 @@
 #include "pfalgo3_ref.h"
 
-#ifndef CMSSW_GIT_HASH
-  #include "../../utils/DiscretePFInputs.h"
-#else
-  #include "../../interface/DiscretePFInputs.h"
-#endif
-
-#include "../../utils/Firmware2DiscretePF.h"
 #include <cmath>
 #include <cstdio>
 #include <algorithm>
@@ -18,13 +11,10 @@ int g_pfalgo3_debug_ref_ = 0;
 
 void pfalgo3_ref_set_debug(int debug) { g_pfalgo3_debug_ref_ = debug; }
 
-template<bool doPtMin, typename CO_t>
-int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const CO_t calo[/*nCAL*/], const TkObj & track) {
-    pt_t caloPtMin = track.hwPt - 2*(track.hwPtErr);
+int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const EmCaloObj calo[/*nCAL*/], const TkObj & track) {
     int  drmin = dR2MAX, ibest = -1;
     for (unsigned int ic = 0; ic < nCAL; ++ic) {
             if (calo[ic].hwPt <= 0) continue;
-            if (doPtMin && calo[ic].hwPt <= caloPtMin) continue;
             int dr = dr2_int(track.hwEta, track.hwPhi, calo[ic].hwEta, calo[ic].hwPhi);
             if (dr < drmin) { drmin = dr; ibest = ic; }
     }
@@ -55,9 +45,9 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     // for each track, find the closest calo
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) {
         if (track[it].hwPt > 0 && !isMu[it]) {
-            tk2em[it] = tk_best_match_ref<false,EmCaloObj>(cfg.nEMCALO, DR2MAX_TE, emcalo, track[it]);
+            tk2em[it] = tk_best_match_ref(cfg.nEMCALO, DR2MAX_TE, emcalo, track[it]);
             if (tk2em[it] != -1) {
-                if (g_pfalgo3_debug_ref_) printf("FW  \t track  %3d pt %7d matched to em calo %3d pt %7d\n", it, int(track[it].hwPt), tk2em[it], int(emcalo[tk2em[it]].hwPt));
+                if (g_pfalgo3_debug_ref_) printf("FW  \t track  %3d pt %8.2f matched to em calo %3d pt %8.2f\n", it, track[it].floatPt(), tk2em[it], emcalo[tk2em[it]].floatPt());
                 calo_sumtk[tk2em[it]] += track[it].hwPt;
             }
         } else {
@@ -66,7 +56,7 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     }
 
     if (g_pfalgo3_debug_ref_) {
-        for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {  if (emcalo[ic].hwPt > 0) printf("FW  \t emcalo %3d pt %7d has sumtk %7d\n", ic, int(emcalo[ic].hwPt), int(calo_sumtk[ic])); }
+        for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {  if (emcalo[ic].hwPt > 0) printf("FW  \t emcalo %3d pt %8.2f has sumtk %8.2fd\n", ic, emcalo[ic].floatPt(), Scales::floatPt(calo_sumtk[ic])); }
     }
 
     for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {
@@ -80,23 +70,23 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
                 // electron
                 photonPt = 0; 
                 isEM[ic] = true;
-                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %7d ptdiff %7d [match window: -%.2f / +%.2f] flagged as electron\n", ic, int(emcalo[ic].hwPt), int(ptdiff), std::sqrt(float(sigma2Lo)), std::sqrt(float(sigma2Hi)));
+                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %8.2f ptdiff %8.2f [match window: -%.2f / +%.2f] flagged as electron\n", ic, emcalo[ic].floatPt(), Scales::floatPt(ptdiff), std::sqrt(Scales::floatPt(sigma2Lo)), std::sqrt(float(sigma2Hi)));
             } else if (ptdiff > 0) {
                 // electron + photon
                 photonPt = ptdiff; 
                 isEM[ic] = true;
-                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %7d ptdiff %7d [match window: -%.2f / +%.2f] flagged as electron + photon of pt %7d\n", ic, int(emcalo[ic].hwPt), int(ptdiff), std::sqrt(float(sigma2Lo)), std::sqrt(float(sigma2Hi)), int(photonPt));
+                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %8.2f ptdiff %8.2f [match window: -%.2f / +%.2f] flagged as electron + photon of pt %8.2f\n", ic, emcalo[ic].floatPt(), Scales::floatPt(ptdiff), std::sqrt(Scales::floatPt(sigma2Lo)), std::sqrt(float(sigma2Hi)), int(photonPt));
             } else {
                 // pion
                 photonPt = 0;
                 isEM[ic] = false;
-                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %7d ptdiff %7d [match window: -%.2f / +%.2f] flagged as pion\n", ic, int(emcalo[ic].hwPt), int(ptdiff), std::sqrt(float(sigma2Lo)), std::sqrt(float(sigma2Hi)));
+                if (g_pfalgo3_debug_ref_) printf("FW  \t emcalo %3d pt %8.2f ptdiff %8.2f [match window: -%.2f / +%.2f] flagged as pion\n", ic, emcalo[ic].floatPt(), Scales::floatPt(ptdiff), std::sqrt(Scales::floatPt(sigma2Lo)), std::sqrt(Scales::floatPt(sigma2Hi)));
             }
         } else {
             // photon
             isEM[ic] = true;
             photonPt = emcalo[ic].hwPt;
-            if (g_pfalgo3_debug_ref_ && emcalo[ic].hwPt > 0) printf("FW  \t emcalo %3d pt %7d flagged as photon\n", ic, int(emcalo[ic].hwPt));
+            if (g_pfalgo3_debug_ref_ && emcalo[ic].hwPt > 0) printf("FW  \t emcalo %3d pt %8.2f flagged as photon\n", ic, emcalo[ic].floatPt());
         }
         outpho[ic].hwPt  = photonPt;
         outpho[ic].hwEta = photonPt ? emcalo[ic].hwEta : eta_t(0);
@@ -110,16 +100,16 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
 
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) {
         isEle[it] = (tk2em[it] != -1) && isEM[tk2em[it]];
-        if (g_pfalgo3_debug_ref_ && isEle[it]) printf("FW  \t track  %3d pt %7d flagged as electron.\n", it, int(track[it].hwPt));
+        if (g_pfalgo3_debug_ref_ && isEle[it]) printf("FW  \t track  %3d pt %8.2f flagged as electron.\n", it, track[it].floatPt());
     }
 
     std::vector<int> em2calo(cfg.nEMCALO);
     for (unsigned int ic = 0; ic < cfg.nEMCALO; ++ic) {
         em2calo[ic] = em_best_match_ref(cfg.nCALO, DR2MAX_EH, hadcalo, emcalo[ic]);
         if (g_pfalgo3_debug_ref_ && (emcalo[ic].hwPt > 0)) {
-             printf("FW  \t emcalo %3d pt %7d isEM %d matched to hadcalo %7d pt %7d emPt %7d isEM %d\n", 
-                                ic, int(emcalo[ic].hwPt), int(isEM[ic]), em2calo[ic], (em2calo[ic] >= 0 ? int(hadcalo[em2calo[ic]].hwPt) : -1), 
-                                (em2calo[ic] >= 0 ? int(hadcalo[em2calo[ic]].hwEmPt) : -1), (em2calo[ic] >= 0 ? int(hadcalo[em2calo[ic]].hwIsEM) : 0));
+             printf("FW  \t emcalo %3d pt %8.2f isEM %d matched to hadcalo %3d pt %8.2f emPt %8.2f isEM %d\n", 
+                                ic, emcalo[ic].floatPt(), int(isEM[ic]), em2calo[ic], (em2calo[ic] >= 0 ? hadcalo[em2calo[ic]].floatPt() : -1), 
+                                (em2calo[ic] >= 0 ? hadcalo[em2calo[ic]].floatEmPt() : -1), (em2calo[ic] >= 0 ? int(hadcalo[em2calo[ic]].hwIsEM) : 0));
         }
     }
     
@@ -135,18 +125,18 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
         dpt_t emdiff  = dpt_t(hadcalo[ih].hwEmPt) - sub; // ok to saturate at zero here
         dpt_t alldiff = dpt_t(hadcalo[ih].hwPt) - sub;
         if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) {
-            printf("FW  \t calo   %3d pt %7d has a subtracted pt of %7d, empt %7d -> %7d   isem %d mustkeep %d \n",
-                        ih, int(hadcalo[ih].hwPt), int(alldiff), int(hadcalo[ih].hwEmPt), int(emdiff), int(hadcalo[ih].hwIsEM), keep);
+            printf("FW  \t calo   %3d pt %8.2f has a subtracted pt of %8.2f, empt %8.2f -> %8.2f   isem %d mustkeep %d \n",
+                        ih, hadcalo[ih].floatPt(), Scales::floatPt(alldiff), hadcalo[ih].floatEmPt(), Scales::floatPt(emdiff), int(hadcalo[ih].hwIsEM), keep);
                     
         }
         if (alldiff <= ( hadcalo[ih].hwPt >>  4 ) ) {
             hadcalo_out[ih].hwPt = 0;   // kill
             hadcalo_out[ih].hwEmPt = 0; // kill
-            if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) printf("FW  \t calo   %3d pt %7d --> discarded (zero pt)\n", ih, int(hadcalo[ih].hwPt));
+            if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) printf("FW  \t calo   %3d pt %8.2f --> discarded (zero pt)\n", ih, hadcalo[ih].floatPt());
         } else if ((hadcalo[ih].hwIsEM && emdiff <= ( hadcalo[ih].hwEmPt >> 3 )) && !keep) {
             hadcalo_out[ih].hwPt = 0;   // kill
             hadcalo_out[ih].hwEmPt = 0; // kill
-            if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) printf("FW  \t calo   %3d pt %7d --> discarded (zero em)\n", ih, int(hadcalo[ih].hwPt));
+            if (g_pfalgo3_debug_ref_ && (hadcalo[ih].hwPt > 0)) printf("FW  \t calo   %3d pt %8.2f --> discarded (zero em)\n", ih, hadcalo[ih].floatPt());
         } else {
             hadcalo_out[ih].hwPt   = alldiff;   
             hadcalo_out[ih].hwEmPt = (emdiff > 0 ? pt_t(emdiff) : pt_t(0)); 
@@ -154,36 +144,30 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     }
 }
 
-void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) {
+void pfalgo3_ref(const pfalgo3_config &cfg, const PFRegion & region, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) {
 
     if (g_pfalgo3_debug_ref_) {
-#ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;
-            l1tpf_impl::PropagatedTrack tk; fw2dpf::convert(track[i], tk); 
-            printf("FW  \t track %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  calo ptErr %6d [ %7.2f ]   tight %d\n", 
-                                i, tk.hwPt, tk.floatPt(), tk.hwEta, tk.floatEta(), tk.hwPhi, tk.floatPhi(), tk.hwCaloPtErr, tk.floatCaloPtErr(), int(track[i].hwQuality));
+            printf("FW  \t track %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  quality %d\n", 
+                                i, track[i].floatPt(), track[i].intPt(), track[i].floatEta(), track[i].intEta(), track[i].floatPhi(), track[i].intPhi(), int(track[i].hwQuality));
         }
         for (unsigned int i = 0; i < cfg.nEMCALO; ++i) { if (emcalo[i].hwPt == 0) continue;
-            l1tpf_impl::CaloCluster em; fw2dpf::convert(emcalo[i], em); 
-            printf("FW  \t EM    %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  calo ptErr %6d [ %7.2f ] \n", 
-                                i, em.hwPt, em.floatPt(), em.hwEta, em.floatEta(), em.hwPhi, em.floatPhi(), em.hwPtErr, em.floatPtErr());
+            printf("FW  \t EM    %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  calo ptErr %8.2f [ %6d ] \n", 
+                                i, emcalo[i].floatPt(), emcalo[i].intPt(), emcalo[i].floatEta(), emcalo[i].intEta(), emcalo[i].floatPhi(), emcalo[i].intPhi(), emcalo[i].floatPtErr(), emcalo[i].intPtErr());
         } 
         for (unsigned int i = 0; i < cfg.nCALO; ++i) { if (hadcalo[i].hwPt == 0) continue;
-            l1tpf_impl::CaloCluster calo; fw2dpf::convert(hadcalo[i], calo); 
-            printf("FW  \t calo  %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  calo emPt %7d [ %7.2f ]   isEM %d \n", 
-                                i, calo.hwPt, calo.floatPt(), calo.hwEta, calo.floatEta(), calo.hwPhi, calo.floatPhi(), calo.hwEmPt, calo.floatEmPt(), calo.isEM);
+            printf("FW  \t calo  %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  calo emPt %8.2f [ %6d ]   isEM %d \n", 
+                                i, hadcalo[i].floatPt(), hadcalo[i].intPt(), hadcalo[i].floatEta(), hadcalo[i].intEta(), hadcalo[i].floatPhi(), hadcalo[i].intPhi(), hadcalo[i].floatEmPt(), hadcalo[i].intEmPt(), int(hadcalo[i].hwIsEM));
         } 
         for (unsigned int i = 0; i < cfg.nMU; ++i) { if (mu[i].hwPt == 0) continue;
-            l1tpf_impl::Muon muon; fw2dpf::convert(mu[i], muon); 
-            printf("FW  \t muon  %3d: pt %8d [ %7.2f ]  muon eta %+7d [ %+5.2f ]  muon phi %+7d [ %+5.2f ]   \n", 
-                                i, muon.hwPt, muon.floatPt(), muon.hwEta, muon.floatEta(), muon.hwPhi, muon.floatPhi());
+            printf("FW  \t muon  %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]   \n", 
+                                i, mu[i].floatPt(), mu[i].intPt(), mu[i].floatEta(), mu[i].intEta(), mu[i].floatPhi(), mu[i].intPhi());
         } 
-#endif
     }
 
     // constants
-    const pt_t TKPT_MAX_LOOSE = Scales::makePt(cfg.tk_MAXINVPT_LOOSE); 
-    const pt_t TKPT_MAX_TIGHT = Scales::makePt(cfg.tk_MAXINVPT_TIGHT); 
+    const pt_t TKPT_MAX_LOOSE = cfg.tk_MAXINVPT_LOOSE; 
+    const pt_t TKPT_MAX_TIGHT = cfg.tk_MAXINVPT_TIGHT; 
     const int  DR2MAX = cfg.dR2MAX_TK_CALO;
 
     ////////////////////////////////////////////////////
@@ -219,13 +203,13 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
     // for each track, find the closest calo
     for (unsigned int it = 0; it < cfg.nTRACK; ++it) {
         if (track[it].hwPt > 0 && !isEle[it] && !isMu[it]) {
-            int  ibest = best_match_with_pt_ref<HadCaloObj>(cfg.nCALO, DR2MAX, &hadcalo_subem[0], track[it]);
-            //int  ibest = tk_best_match_ref<true,HadCaloObj>(cfg.nCALO, DR2MAX, &hadcalo_subem[0], track[it]);
+            pt_t tkCaloPtErr = ptErr_ref(cfg, region, track[it]);
+            int  ibest = best_match_with_pt_ref<HadCaloObj>(cfg.nCALO, DR2MAX, &hadcalo_subem[0], track[it], tkCaloPtErr);
             if (ibest != -1) {
-                if (g_pfalgo3_debug_ref_) printf("FW  \t track  %3d pt %7d matched to calo %3d pt %7d\n", it, int(track[it].hwPt), ibest, int(hadcalo_subem[ibest].hwPt));
+                if (g_pfalgo3_debug_ref_) printf("FW  \t track  %3d pt %8.2f matched to calo %3d pt %8.2f\n", it, track[it].floatPt(), ibest, hadcalo_subem[ibest].floatPt());
                 track_good[it] = 1;
                 calo_sumtk[ibest]    += track[it].hwPt;
-                calo_sumtkErr2[ibest] += track[it].hwPtErr*track[it].hwPtErr;
+                calo_sumtkErr2[ibest] += tkCaloPtErr*tkCaloPtErr;
             }
         }
     }
@@ -235,12 +219,9 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
             dpt_t ptdiff = dpt_t(hadcalo_subem[ic].hwPt) - dpt_t(calo_sumtk[ic]); 
             pt2_t sigmamult = calo_sumtkErr2[ic]; // before we did (calo_sumtkErr2[ic] + (calo_sumtkErr2[ic] >> 1)); to multiply by 1.5 = sqrt(1.5)^2 ~ (1.2)^2
             if (g_pfalgo3_debug_ref_ && (hadcalo_subem[ic].hwPt > 0)) {
-#ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
-                l1tpf_impl::CaloCluster floatcalo; fw2dpf::convert(hadcalo_subem[ic], floatcalo); 
-                printf("FW  \t calo  %3d pt %7d [ %7.2f ] eta %+7d [ %+5.2f ] has a sum track pt %7d, difference %7d +- %.2f \n",
-                            ic, int(hadcalo_subem[ic].hwPt), floatcalo.floatPt(), int(hadcalo_subem[ic].hwEta), floatcalo.floatEta(), 
-                                int(calo_sumtk[ic]), int(ptdiff), std::sqrt(float(int(calo_sumtkErr2[ic]))));
-#endif
+                printf("FW  \t calo  %3d pt %8.2f [ %7d ] eta %+5.2f [ %+7d ] has a sum track pt %8.2f, difference %7.2f +- %.2f \n",
+                            ic, hadcalo_subem[ic].floatPt(), hadcalo_subem[ic].intPt(), hadcalo_subem[ic].floatEta(), hadcalo_subem[ic].intEta(),  
+                                Scales::floatPt(calo_sumtk[ic]), Scales::floatPt(ptdiff), std::sqrt(Scales::floatPt(calo_sumtkErr2[ic])));
                         
             }
             if (ptdiff > 0 && ptdiff*ptdiff > sigmamult) {
@@ -251,7 +232,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
         } else {
             calo_subpt[ic] = hadcalo_subem[ic].hwPt;
         }
-        if (g_pfalgo3_debug_ref_ && (hadcalo_subem[ic].hwPt > 0)) printf("FW  \t calo  %3d pt %7d ---> %7d \n", ic, int(hadcalo_subem[ic].hwPt), int(calo_subpt[ic]));
+        if (g_pfalgo3_debug_ref_ && (hadcalo_subem[ic].hwPt > 0)) printf("FW  \t calo  %3d pt %8.2f ---> %8.2f \n", ic, hadcalo_subem[ic].floatPt(), Scales::floatPt(calo_subpt[ic]));
     }
 
     // copy out charged hadrons
@@ -294,24 +275,18 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO
     ptsort_ref(cfg.nCALO, cfg.nSELCALO, outne_all, outne);
 
     if (g_pfalgo3_debug_ref_) {
-#ifdef L1Trigger_Phase2L1ParticleFlow_DiscretePFInputs_MORE
-        std::vector<l1tpf_impl::PFParticle> tmp;
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (outch[i].hwPt == 0) continue;
-            fw2dpf::convert(outch[i], track[i], tmp); auto & pf = tmp.back();
-            printf("FW  \t outch %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  pid %d\n", 
-                                i, pf.hwPt, pf.floatPt(), pf.hwEta, pf.floatEta(), pf.hwPhi, pf.floatPhi(), pf.hwId);
+            printf("FW  \t outch %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  pid %d\n", 
+                                i, outch[i].floatPt(), outch[i].intPt(), outch[i].floatEta(), outch[i].intEta(), outch[i].floatPhi(), outch[i].intPhi(), outch[i].intId());
         }
         for (unsigned int i = 0; i < cfg.nPHOTON; ++i) { if (outpho[i].hwPt == 0) continue;
-            fw2dpf::convert(outpho[i], tmp); auto & pf = tmp.back();
-            printf("FW  \t outph %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  pid %d\n", 
-                                i, pf.hwPt, pf.floatPt(), pf.hwEta, pf.floatEta(), pf.hwPhi, pf.floatPhi(), pf.hwId);
+            printf("FW  \t outph %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  pid %d\n", 
+                                i, outpho[i].floatPt(), outpho[i].intPt(), outpho[i].floatEta(), outpho[i].intEta(), outpho[i].floatPhi(), outpho[i].intPhi(), outpho[i].intId());
         }
         for (unsigned int i = 0; i < cfg.nSELCALO; ++i) { if (outne[i].hwPt == 0) continue;
-            fw2dpf::convert(outne[i], tmp); auto & pf = tmp.back();
-            printf("FW  \t outne %3d: pt %8d [ %7.2f ]  calo eta %+7d [ %+5.2f ]  calo phi %+7d [ %+5.2f ]  pid %d\n", 
-                                i, pf.hwPt, pf.floatPt(), pf.hwEta, pf.floatEta(), pf.hwPhi, pf.floatPhi(), pf.hwId);
+            printf("FW  \t outne %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+7d ]  calo phi %+5.2f [ %+7d ]  pid %d\n", 
+                                i, outne[i].floatPt(), outne[i].intPt(), outne[i].floatEta(), outne[i].intEta(), outne[i].floatPhi(), outne[i].intPhi(), outne[i].intId());
         }
-#endif
     }
 
 

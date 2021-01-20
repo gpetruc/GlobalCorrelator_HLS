@@ -48,10 +48,10 @@ class DiscretePFInputsReader {
         }
         ~DiscretePFInputsReader() { fclose(file_); }
         // for region-by-region approach
-        bool nextRegion(HadCaloObj calo[NCALO], EmCaloObj emcalo[NEMCALO], TkObj track[NTRACK], MuObj mu[NMU], z0_t & hwZPV) {
+        bool nextRegion(PFRegion & region, HadCaloObj calo[NCALO], EmCaloObj emcalo[NEMCALO], TkObj track[NTRACK], MuObj mu[NMU], z0_t & hwZPV) {
             if (!nextRegion()) return false;
             const Region &r = event_.regions[iregion_];
-
+            dpf2fw::convert(r, region);
             dpf2fw::convert<NTRACK>(r.track, track);
             dpf2fw::convert<NCALO>(r.calo, calo);
             dpf2fw::convert<NEMCALO>(r.emcalo, emcalo);
@@ -73,7 +73,8 @@ class DiscretePFInputsReader {
             if (!event_.readFromFile(file_)) return false;
             return true;
         }
-        const Event & event() { return event_; }
+        const Event & event() const { return event_; }
+        const Region & region() const { return event_.regions[iregion_-1]; }
 
         template<unsigned int EVNTRACKS>
         void allTracks(TkObj track[EVNTRACKS]){

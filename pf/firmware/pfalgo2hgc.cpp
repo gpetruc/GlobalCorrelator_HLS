@@ -78,7 +78,7 @@ void tk2calo_caloalgo_hgc(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO],
 
 
 
-void pfalgo2hgc(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
+void pfalgo2hgc(const PFRegion & region, const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
     #pragma HLS ARRAY_PARTITION variable=calo complete
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=mu complete    
@@ -119,14 +119,19 @@ void pfalgo2hgc(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const M
 
     // ---------------------------------------------------------------
     // TK-HAD Linking
+    
+    pt_t tkerr[NTRACK];
+    #pragma HLS ARRAY_PARTITION variable=tkerr complete
+    tk2calo_tkerr(region, track, tkerr);
+
     ap_uint<NCALO> calo_track_link_bit[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=calo_track_link_bit complete
-    tk2calo_link_drdpt(calo, track, calo_track_link_bit);
+    tk2calo_link_drdpt(calo, track, tkerr, calo_track_link_bit);
     //tk2calo_link_dronly(hadcalo_sub, track, calo_track_link_bit);
 
     pt2_t tkerr2[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=tkerr2 complete
-    tk2calo_tkerr2(track, tkerr2);
+    tk2calo_tkerr2(tkerr, tkerr2);
 
     pt_t sumtk[NCALO]; pt2_t sumtkerr2[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sumtk complete

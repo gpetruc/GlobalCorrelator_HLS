@@ -123,8 +123,8 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
         if (sumtk[icalo] == 0) {
             calopt = calo[icalo].hwPt;
             #ifndef __SYNTHESIS__
-            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d sumtk %7d                                -->  calopt %7d \n", icalo, int(calo[icalo].hwPt), 
-                   int(sumtk[icalo]), int(calopt));
+            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %8.2f sumtk %8.2f                                -->  calopt %8.2f \n", 
+                    icalo, calo[icalo].floatPt(), Scales::floatPt(sumtk[icalo]), Scales::floatPt(calopt));
             #endif
         } else {
             dpt_t ptdiff = dpt_t(calo[icalo].hwPt) - dpt_t(sumtk[icalo]);
@@ -134,8 +134,8 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
                 calopt = 0;
             }
             #ifndef __SYNTHESIS__
-            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d sumtk %7d +- %7.1f --> ptdiff %7d  -->  calopt %7d \n", icalo, int(calo[icalo].hwPt), 
-                   int(sumtk[icalo]), std::sqrt(float(sumtkerr2[icalo])), int(ptdiff), int(calopt));
+            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %8.2f sumtk %8.2f +- %7.2f --> ptdiff %8.2f  -->  calopt %8.2f \n", icalo, calo[icalo].floatPt(), 
+                   Scales::floatPt(sumtk[icalo]), std::sqrt(Scales::floatPt(sumtkerr2[icalo])), Scales::floatPt(ptdiff), Scales::floatPt(calopt));
             #endif
         }
         pfout[icalo].hwPt  = calopt;
@@ -194,7 +194,7 @@ void tk2em_photons(const EmCaloObj calo[NEMCALO], const pt_t photonPt[NEMCALO], 
         pfout[icalo].hwEmID  = photonPt[icalo] ? 1 : 0;
         pfout[icalo].hwPUID  = 0;
         #ifndef __SYNTHESIS__
-        if (gdebug_ && photonPt[icalo]) printf("HW emcalo %2d pt %7d promoted to a photon with pt %7d\n", icalo, int(calo[icalo].hwPt), int(photonPt[icalo]));
+        if (gdebug_ && photonPt[icalo]) printf("HW emcalo %2d pt %8.2f promoted to a photon with pt %8.2f\n", icalo, calo[icalo].floatPt(), Scales::floatPt(photonPt[icalo]));
         #endif
     }
 }
@@ -206,7 +206,7 @@ void em2calo_sub(const HadCaloObj calo[NCALO], const pt_t sumem[NCALO], const bo
         if ((ptsub <= (calo[icalo].hwPt >> 4)) || 
                 (calo[icalo].hwIsEM && (emsub <= (calo[icalo].hwEmPt>>3)) && !keepcalo[icalo])) {
 #ifndef __SYNTHESIS__
-            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d empt %7d sumem %7d keepcalo %1d  --> discarded\n", icalo, int(calo[icalo].hwPt), int(calo[icalo].hwEmPt), int(sumem[icalo]), int(keepcalo[icalo]));
+            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %8.2f empt %8.2f sumem %8.2f keepcalo %1d  --> discarded\n", icalo, calo[icalo].floatPt(), calo[icalo].floatEmPt(), Scales::floatPt(sumem[icalo]), int(keepcalo[icalo]));
 #endif
             calo_out[icalo].hwPt   = 0;
             calo_out[icalo].hwEmPt = 0;
@@ -215,7 +215,7 @@ void em2calo_sub(const HadCaloObj calo[NCALO], const pt_t sumem[NCALO], const bo
             calo_out[icalo].hwIsEM = 0;
         } else {
 #ifndef __SYNTHESIS__
-            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %7d empt %7d sumem %7d keepcalo %1d  --> kept with pt %7d empt %7d\n", icalo, int(calo[icalo].hwPt), int(calo[icalo].hwEmPt), int(sumem[icalo]), int(keepcalo[icalo]), int(ptsub), int((emsub > 0 ? pt_t(emsub) : pt_t(0))));
+            if (gdebug_ && calo[icalo].hwPt) printf("HW hadcalo %2d pt %8.2f empt %8.2f sumem %8.2f keepcalo %1d  --> kept with pt %8.2f empt %8.2f\n", icalo, calo[icalo].floatPt(), calo[icalo].floatEmPt(), Scales::floatPt(sumem[icalo]), int(keepcalo[icalo]), Scales::floatPt(ptsub), Scales::floatPt((emsub > 0 ? pt_t(emsub) : pt_t(0))));
 #endif
             calo_out[icalo].hwPt   = ptsub;
             calo_out[icalo].hwEmPt = (emsub > 0 ? pt_t(emsub) : pt_t(0));
@@ -229,7 +229,7 @@ void em2calo_sub(const HadCaloObj calo[NCALO], const pt_t sumem[NCALO], const bo
 
 
 
-void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], PFChargedObj outch[NTRACK], PFNeutralObj outpho[NPHOTON], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
+void pfalgo3(const PFRegion & region, const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], PFChargedObj outch[NTRACK], PFNeutralObj outpho[NPHOTON], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
     #pragma HLS ARRAY_PARTITION variable=emcalo complete
     #pragma HLS ARRAY_PARTITION variable=hadcalo complete
     #pragma HLS ARRAY_PARTITION variable=track complete
@@ -278,7 +278,7 @@ void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], c
     tk2em_link(emcalo, track, isMu, em_track_link_bit);
     #ifndef __SYNTHESIS__
     for (int it = 0; it < NTRACK; ++it) { for (int ic = 0; ic < NEMCALO; ++ic) {
-        if (gdebug_ && track[it].hwPt && em_track_link_bit[it][ic]) printf("HW track %2d pt %7d is linked to em calo %2d pt %7d\n", it, int(track[it].hwPt), ic, int(emcalo[ic].hwPt));
+        if (gdebug_ && track[it].hwPt && em_track_link_bit[it][ic]) printf("HW track %2d pt %8.2f is linked to em calo %2d pt %8.2f\n", it, track[it].floatPt(), ic, emcalo[ic].floatPt());
     } }
     #endif
     
@@ -305,7 +305,7 @@ void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], c
     em2calo_link(emcalo, hadcalo, em_calo_link_bit);
     #ifndef __SYNTHESIS__
     for (int ie = 0; ie < NEMCALO; ++ie) { for (int ic = 0; ic < NCALO; ++ic) {
-        if (gdebug_ && emcalo[ie].hwPt && em_calo_link_bit[ie][ic]) printf("HW em calo %2d pt %7d is linked to had calo %2d pt %7d empt %7d\n", ie, int(emcalo[ie].hwPt), ic, int(hadcalo[ic].hwPt), int(hadcalo[ic].hwEmPt));
+        if (gdebug_ && emcalo[ie].hwPt && em_calo_link_bit[ie][ic]) printf("HW em calo %2d pt %8.2f is linked to had calo %2d pt %8.2f empt %8.2f\n", ie, emcalo[ie].floatPt(), ic, hadcalo[ic].floatPt(), hadcalo[ic].floatEmPt());
     } }
     #endif
 
@@ -321,19 +321,24 @@ void pfalgo3(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], c
 
     // ---------------------------------------------------------------
     // TK-HAD Linking
+    
+    pt_t tkerr[NTRACK];
+    #pragma HLS ARRAY_PARTITION variable=tkerr complete
+    tk2calo_tkerr(region, track, tkerr);
+
     ap_uint<NCALO> calo_track_link_bit[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=calo_track_link_bit complete
 
-    tk2calo_link_drdpt(hadcalo_sub, track, calo_track_link_bit);
+    tk2calo_link_drdpt(hadcalo_sub, track, tkerr, calo_track_link_bit);
     #ifndef __SYNTHESIS__
     for (int it = 0; it < NTRACK; ++it) { for (int ic = 0; ic < NCALO; ++ic) {
-        if (gdebug_ && track[it].hwPt && calo_track_link_bit[it][ic]) printf("HW track %2d pt %7d is linked to had calo %2d pt %7d\n", it, int(track[it].hwPt), ic, int(hadcalo_sub[ic].hwPt));
+        if (gdebug_ && track[it].hwPt && calo_track_link_bit[it][ic]) printf("HW track %2d pt %8.2f is linked to had calo %2d pt %8.2f\n", it, track[it].floatPt(), ic, hadcalo_sub[ic].floatPt());
     } }
     #endif
 
     pt2_t tkerr2[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=tkerr2 complete
-    tk2calo_tkerr2(track, tkerr2);
+    tk2calo_tkerr2(tkerr, tkerr2);
 
     pt_t sumtk[NCALO]; pt2_t sumtkerr2[NCALO];
     #pragma HLS ARRAY_PARTITION variable=sumtk complete

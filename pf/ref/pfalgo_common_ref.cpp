@@ -3,6 +3,40 @@
 #include <cmath>
 #include <cstdio>
 
+void pfalgo_config::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[]) {
+    ptErrBins.resize(nbins);
+    for (unsigned int i = 0; i < nbins; ++i) {
+        ptErrBins[i].abseta = Scales::makeGlbEta(absetas[i]);
+        ptErrBins[i].scale  = scales[i];
+        ptErrBins[i].offs   = offs[i];
+
+        printf("loadPtErrBins: #%d: abseta %5.3f -> %8d, scale %7.4f -> %7.4f, offs %7.3f -> %7.4f\n",
+                i, 
+                absetas[i], ptErrBins[i].abseta.to_int(), 
+                scales[i], ptErrBins[i].scale.to_float(),
+                offs[i], ptErrBins[i].offs.to_float());
+    }
+}
+
+pt_t ptErr_ref(const pfalgo_config & cfg, const PFRegion & region, const TkObj & track) {
+    glbeta_t abseta = region.hwGlbEta(track.hwEta);
+    if (abseta < 0) abseta = -abseta;
+    
+    ptErrScale_t scale = 0.3125;
+    ptErrOffs_t offs = 7.0;
+    for (const auto & bin : cfg.ptErrBins) {
+        if (abseta < bin.abseta) {
+           scale = bin.scale;
+           offs  = bin.offs;
+           break;
+        }
+    }
+
+    pt_t ptErr = track.hwPt * scale + offs;
+    if (ptErr > track.hwPt) ptErr = track.hwPt;
+    return ptErr;
+}
+
 void pfalgo_mu_ref(const pfalgo_config &cfg, const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], bool isMu[/*cfg.nTRACK*/], PFChargedObj outmu[/*cfg.nMU*/], bool debug) {
 
     // init
