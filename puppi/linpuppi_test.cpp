@@ -44,6 +44,7 @@ int main() {
 #endif
     
     // input TP objects and PV
+    PFRegion region;
     HadCaloObj hadcalo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; MuObj mu[NMU]; 
     z0_t hwZPV;
 
@@ -69,7 +70,7 @@ int main() {
 
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(hadcalo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextRegion(region, hadcalo, emcalo, track, mu, hwZPV)) break;
 
 #ifdef TEST_PT_CUT
         float minpt = 0;
@@ -81,10 +82,10 @@ int main() {
 #endif
 
 #if defined(REG_Barrel)
-        pfalgo3_ref(pfcfg, emcalo, hadcalo, track, mu, pfch, pfpho, pfne, pfmu);
+        pfalgo3_ref(pfcfg, region, emcalo, hadcalo, track, mu, pfch, pfpho, pfne, pfmu);
         pfalgo3_merge_neutrals_ref(pfcfg, pfpho, pfne, pfallne);
 #elif defined(REG_HGCal)
-        pfalgo2hgc_ref(pfcfg, hadcalo, track, mu, pfch, pfallne, pfmu); 
+        pfalgo2hgc_ref(pfcfg, region, hadcalo, track, mu, pfch, pfallne, pfmu); 
 #endif
 
         bool verbose = 0;

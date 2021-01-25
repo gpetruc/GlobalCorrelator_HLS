@@ -4,10 +4,10 @@
 #include <cstdlib>
 #include <cassert>
 
-#if defined(PACKING_DATA_SIZE) and defined(PACKING_NCHANN)
+#if defined(PACKING_DATA_SIZE)
 
-PatternSerializer::PatternSerializer(const std::string &fname, unsigned int nmux, unsigned int nzero, bool zero_valid, unsigned int nprefix, unsigned int npostfix, const std::string &boardName) :
-    fname_(fname), nin_(PACKING_NCHANN), nout_(PACKING_NCHANN/nmux), nmux_(nmux), nzero_(nzero), nprefix_(nprefix), npostfix_(npostfix), zerovalid_(zero_valid), file_(nullptr), ipattern_(0) 
+PatternSerializer::PatternSerializer(const std::string &fname, unsigned int nchann, unsigned int nmux, unsigned int nzero, bool zero_valid, unsigned int nprefix, unsigned int npostfix, const std::string &boardName) :
+    fname_(fname), nin_(nchann), nout_(nchann/nmux), nmux_(nmux), nzero_(nzero), nprefix_(nprefix), npostfix_(npostfix), zerovalid_(zero_valid), file_(nullptr), ipattern_(0) 
 {
     if (!fname.empty()) {
         const unsigned int extra_space = (PACKING_DATA_SIZE-32)/4;
@@ -23,7 +23,7 @@ PatternSerializer::PatternSerializer(const std::string &fname, unsigned int nmux
         fprintf(file_, "\n");
     }
     if (nmux_ > 1) {
-        assert(PACKING_NCHANN % nmux_ == 0);
+        assert(nchann % nmux_ == 0);
     }
 
     if (nprefix_ || npostfix_ || nzero_) {
@@ -46,7 +46,7 @@ PatternSerializer::~PatternSerializer()
     }
 }
 
-void PatternSerializer::operator()(const ap_uint<PACKING_DATA_SIZE> event[PACKING_NCHANN], bool valid) 
+void PatternSerializer::operator()(const ap_uint<PACKING_DATA_SIZE> event[], bool valid) 
 {
     if (!file_) return;
     for (unsigned int j = 0; j < nmux_; ++j) {
@@ -57,7 +57,7 @@ void PatternSerializer::operator()(const ap_uint<PACKING_DATA_SIZE> event[PACKIN
     }
 }
 
-void PatternSerializer::operator()(const ap_uint<PACKING_DATA_SIZE> event[PACKING_NCHANN], const bool valid[PACKING_NCHANN]) 
+void PatternSerializer::operator()(const ap_uint<PACKING_DATA_SIZE> event[], const bool valid[]) 
 {
     if (!file_) return;
     for (unsigned int j = 0; j < nmux_; ++j) {

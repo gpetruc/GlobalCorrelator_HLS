@@ -267,6 +267,31 @@ template <> struct ct_log2_ceil<1> {
   enum { value = 0 };
 };
 
+template <typename U, typename T> 
+void _pack_into_bits(U & u, unsigned int & start, const T & data) {
+    unsigned int w = T::width;
+    u(start+w-1,start) = data(w-1,0);
+    start += w;
+}
+template <typename U, typename T> 
+void _unpack_from_bits(const U & u, unsigned int & start, T & data) {
+    unsigned int w = T::width;
+    data(w-1,0) = u(start+w-1,start);
+    start += w;
+}
+template <typename U> 
+void _pack_bool_into_bits(U & u, unsigned int & start, bool data) {
+    u[start++] = data;
+}
+template <typename U> 
+void _unpack_bool_from_bits(const U & u, unsigned int & start, bool & data) {
+    data = u[start++];
+}
+
+
+
+
+
 struct HadCaloObj {
   pt_t hwPt;
   eta_t hwEta; // relative to the region center, at calo
@@ -298,6 +323,28 @@ struct HadCaloObj {
   float floatEmPt() const { return Scales::floatPt(hwEmPt); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
+
+
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width + 1;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwPt);
+        _pack_into_bits(ret, start, hwEta);
+        _pack_into_bits(ret, start, hwPhi);
+        _pack_into_bits(ret, start, hwEmPt);
+        _pack_bool_into_bits(ret, start, hwIsEM);
+        return ret;
+  }
+  inline static HadCaloObj unpack(const ap_uint<BITWIDTH> & src) {
+        HadCaloObj ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwPt);
+        _unpack_from_bits(src, start, ret.hwEta);
+        _unpack_from_bits(src, start, ret.hwPhi);
+        _unpack_from_bits(src, start, ret.hwEmPt);
+        _unpack_bool_from_bits(src, start, ret.hwIsEM);
+        return ret;
+  }
+
 };
 
 inline void clear(HadCaloObj &c) {
@@ -331,6 +378,24 @@ struct EmCaloObj {
   float floatPtErr() const { return Scales::floatPt(hwPtErr); }
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
+
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwPt);
+        _pack_into_bits(ret, start, hwEta);
+        _pack_into_bits(ret, start, hwPhi);
+        _pack_into_bits(ret, start, hwPtErr);
+        return ret;
+  }
+  inline static EmCaloObj unpack(const ap_uint<BITWIDTH> & src) {
+        EmCaloObj ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwPt);
+        _unpack_from_bits(src, start, ret.hwEta);
+        _unpack_from_bits(src, start, ret.hwPhi);
+        _unpack_from_bits(src, start, ret.hwPtErr);
+        return ret;
+  }
 
 };
 inline void clear(EmCaloObj &c) {
@@ -388,6 +453,35 @@ struct TkObj {
   float floatVtxPhi() const { return Scales::floatPhi(hwVtxPhi()); }
   float floatZ0() const { return Scales::floatZ0(hwZ0); }
   float floatDxy() const { return Scales::floatDxy(hwDxy); }
+
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 + z0_t::width + dxy_t::width + tkquality_t::width;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwPt);
+        _pack_into_bits(ret, start, hwEta);
+        _pack_into_bits(ret, start, hwPhi);
+        _pack_into_bits(ret, start, hwDEta);
+        _pack_into_bits(ret, start, hwDPhi);
+        _pack_bool_into_bits(ret, start, hwCharge);
+        _pack_into_bits(ret, start, hwZ0);
+        _pack_into_bits(ret, start, hwDxy);
+        _pack_into_bits(ret, start, hwQuality);
+        return ret;
+  }
+  inline static TkObj unpack(const ap_uint<BITWIDTH> & src) {
+        TkObj ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwPt);
+        _unpack_from_bits(src, start, ret.hwEta);
+        _unpack_from_bits(src, start, ret.hwPhi);
+        _unpack_from_bits(src, start, ret.hwDEta);
+        _unpack_from_bits(src, start, ret.hwDPhi);
+        _unpack_bool_from_bits(src, start, ret.hwCharge);
+        _unpack_from_bits(src, start, ret.hwZ0);
+        _unpack_from_bits(src, start, ret.hwDxy);
+        _unpack_from_bits(src, start, ret.hwQuality);
+        return ret;
+  }
+
 };
 inline void clear(TkObj &c) {
   c.clear();
@@ -443,6 +537,34 @@ struct MuObj {
   float floatZ0() const { return Scales::floatZ0(hwZ0); }
   float floatDxy() const { return Scales::floatDxy(hwDxy); }
 
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 + z0_t::width + dxy_t::width + ap_uint<3>::width;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwPt);
+        _pack_into_bits(ret, start, hwEta);
+        _pack_into_bits(ret, start, hwPhi);
+        _pack_into_bits(ret, start, hwDEta);
+        _pack_into_bits(ret, start, hwDPhi);
+        _pack_bool_into_bits(ret, start, hwCharge);
+        _pack_into_bits(ret, start, hwZ0);
+        _pack_into_bits(ret, start, hwDxy);
+        _pack_into_bits(ret, start, hwQuality);
+        return ret;
+  }
+  inline static MuObj unpack(const ap_uint<BITWIDTH> & src) {
+        MuObj ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwPt);
+        _unpack_from_bits(src, start, ret.hwEta);
+        _unpack_from_bits(src, start, ret.hwPhi);
+        _unpack_from_bits(src, start, ret.hwDEta);
+        _unpack_from_bits(src, start, ret.hwDPhi);
+        _unpack_bool_from_bits(src, start, ret.hwCharge);
+        _unpack_from_bits(src, start, ret.hwZ0);
+        _unpack_from_bits(src, start, ret.hwDxy);
+        _unpack_from_bits(src, start, ret.hwQuality);
+        return ret;
+  }
+
 
 };
 inline void clear(MuObj &c) {
@@ -464,11 +586,28 @@ struct PFCommonObj {
   int intId() const { return hwId.rawId(); }
   int oldId() const { return hwPt > 0 ? hwId.oldId() : 0; }
   int pdgId() const { return hwId.pdgId(); }
+
+  static const int _PFCOMMON_BITWIDTH = pt_t::width + eta_t::width + phi_t::width + 3;
+  template<typename U>
+  inline void _pack_common(U & out, unsigned int & start) const {
+        _pack_into_bits(out, start, hwPt);
+        _pack_into_bits(out, start, hwEta);
+        _pack_into_bits(out, start, hwPhi);
+        _pack_into_bits(out, start, hwId.bits);
+  }
+  template<typename U>
+  inline void _unpack_common(const U & src, unsigned int & start) {
+        _unpack_from_bits(src, start, hwPt);
+        _unpack_from_bits(src, start, hwEta);
+        _unpack_from_bits(src, start, hwPhi);
+        _unpack_from_bits(src, start, hwId.bits);
+  }
+
 };
 
 struct PFChargedObj : public PFCommonObj {
-  eta_t hwDEta; // relative to the region center, at calo
-  phi_t hwDPhi; // relative to the region center, at calo
+  tkdeta_t hwDEta; // relative to the region center, at calo
+  tkdphi_t hwDPhi; // relative to the region center, at calo
   z0_t hwZ0;
   dxy_t hwDxy;
   tkquality_t hwTkQuality;
@@ -508,6 +647,28 @@ struct PFChargedObj : public PFCommonObj {
   float floatVtxPhi() const { return Scales::floatPhi(hwVtxPhi()); }
   float floatZ0() const { return Scales::floatZ0(hwZ0); }
   float floatDxy() const { return Scales::floatDxy(hwDxy); }
+
+  static const int BITWIDTH = _PFCOMMON_BITWIDTH + tkdeta_t::width + tkdphi_t::width + z0_t::width + dxy_t::width + tkquality_t::width;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_common(ret, start);
+        _pack_into_bits(ret, start, hwDEta);
+        _pack_into_bits(ret, start, hwDPhi);
+        _pack_into_bits(ret, start, hwZ0);
+        _pack_into_bits(ret, start, hwDxy);
+        _pack_into_bits(ret, start, hwTkQuality);
+        return ret;
+  }
+  inline static PFChargedObj unpack(const ap_uint<BITWIDTH> & src) {
+        PFChargedObj ret; unsigned int start = 0;
+        ret._unpack_common(src, start);
+        _unpack_from_bits(src, start, ret.hwDEta);
+        _unpack_from_bits(src, start, ret.hwDPhi);
+        _unpack_from_bits(src, start, ret.hwZ0);
+        _unpack_from_bits(src, start, ret.hwDxy);
+        _unpack_from_bits(src, start, ret.hwTkQuality);
+        return ret;
+  }
 
 };
 inline void clear(PFChargedObj &c) {
@@ -580,6 +741,20 @@ struct PFRegion {
     inline float floatGlbEta(eta_t hwEta) const {
         return Scales::floatEta(hwGlbEta(hwEta));
     }
+
+    static const int BITWIDTH = glbeta_t::width;
+    inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwEtaCenter);
+        return ret;
+    }
+    inline static PFRegion unpack(const ap_uint<BITWIDTH> & src) {
+        PFRegion ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwEtaCenter);
+        return ret;
+    }
+
+
 };
 
 struct PuppiObj {
@@ -591,11 +766,11 @@ struct PuppiObj {
   static const int BITS_Z0_START = 0;
   static const int BITS_DXY_START = BITS_Z0_START + z0_t::width;
   static const int BITS_TKQUAL_START = BITS_DXY_START + dxy_t::width;
-  static const int BITS_TOTAL = BITS_TKQUAL_START + tkquality_t::width;
+  static const int DATA_BITS_TOTAL = BITS_TKQUAL_START + tkquality_t::width;
 
   static const int BITS_PUPPIW_START = 0;
 
-  ap_uint<BITS_TOTAL> hwData;
+  ap_uint<DATA_BITS_TOTAL> hwData;
 
   inline z0_t hwZ0() const {
 #ifndef __SYNTHESIS__
@@ -716,6 +891,27 @@ struct PuppiObj {
   int oldId() const { return hwPt > 0 ? hwId.oldId() : 0; }
   float floatZ0() const { return Scales::floatZ0(hwZ0()); }
   float floatDxy() const { return Scales::floatDxy(hwDxy()); }
+
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + 3 + DATA_BITS_TOTAL;
+  inline ap_uint<BITWIDTH> pack() const {
+        ap_uint<BITWIDTH> ret; unsigned int start = 0;
+        _pack_into_bits(ret, start, hwPt);
+        _pack_into_bits(ret, start, hwEta);
+        _pack_into_bits(ret, start, hwPhi);
+        _pack_into_bits(ret, start, hwId.bits);
+        _pack_into_bits(ret, start, hwData);
+        return ret;
+  }
+  inline static PuppiObj unpack(const ap_uint<BITWIDTH> & src) {
+        PuppiObj ret; unsigned int start = 0;
+        _unpack_from_bits(src, start, ret.hwPt);
+        _unpack_from_bits(src, start, ret.hwEta);
+        _unpack_from_bits(src, start, ret.hwPhi);
+        _unpack_from_bits(src, start, ret.hwId.bits);
+        _unpack_from_bits(src, start, ret.hwData);
+        return ret;
+  }
+
 
 };
 

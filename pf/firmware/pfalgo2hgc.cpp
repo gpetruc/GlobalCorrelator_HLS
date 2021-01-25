@@ -2,6 +2,7 @@
 #include <cassert>
 
 #include "pfalgo_common.icc"
+#include "../../dataformats/l1pf_encoding.h"
 
 void tk2calo_sumtk_hgc(const TkObj track[NTRACK], const bool isMu[NTRACK], const pt2_t tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], pt2_t sumtkerr2[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {
@@ -153,10 +154,7 @@ void pfalgo2hgc(const PFRegion & region, const HadCaloObj calo[NCALO], const TkO
 
 }
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-#include "../../dataformats/l1pf_encoding.h"
-
-void packed_pfalgo2hgc(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) {
+void packed_pfalgo2hgc(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN], ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=output complete
 #ifdef HLS_pipeline_II
@@ -176,7 +174,7 @@ void packed_pfalgo2hgc(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], a
 #endif
 
     // ---------------------------------------------------------------
-
+    PFRegion region; 
     HadCaloObj calo[NCALO]; TkObj track[NTRACK]; MuObj mu[NMU]; 
     PFChargedObj outch[NTRACK]; PFNeutralObj outne[NSELCALO]; PFChargedObj outmu[NMU];
     #pragma HLS ARRAY_PARTITION variable=calo complete
@@ -186,53 +184,49 @@ void packed_pfalgo2hgc(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], a
     #pragma HLS ARRAY_PARTITION variable=outne complete
     #pragma HLS ARRAY_PARTITION variable=outmu complete
 
-    pfalgo2hgc_unpack_in(input, calo, track, mu);
-    pfalgo2hgc(calo, track, mu, outch, outne, outmu);
+    pfalgo2hgc_unpack_in(input, region, calo, track, mu);
+    pfalgo2hgc(region, calo, track, mu, outch, outne, outmu);
     pfalgo2hgc_pack_out(outch, outne, outmu, output);
 }
 
-void pfalgo2hgc_pack_in(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN]) {
-    assert(NTRACK+NCALO+NMU <= PACKING_NCHANN);
-    const int CALO_OFFS = 0, TRACK_OFFS = CALO_OFFS + NCALO, MU_OFFS = TRACK_OFFS + NTRACK;
-    l1pf_pattern_pack<NCALO, CALO_OFFS >(calo,  input);
+void pfalgo2hgc_pack_in(const PFRegion & region, const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN]) {
+    const unsigned int TRACK_OFFS = 1, CALO_OFFS = TRACK_OFFS + NTRACK, MU_OFFS = CALO_OFFS + NCALO;
+    input[0] = region.pack();
     l1pf_pattern_pack<NTRACK,TRACK_OFFS>(track, input);
+    l1pf_pattern_pack<NCALO, CALO_OFFS >(calo,  input);
     l1pf_pattern_pack<NMU,   MU_OFFS   >(mu,    input);
 }
 
-void pfalgo2hgc_unpack_in(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], HadCaloObj calo[NCALO], TkObj track[NTRACK], MuObj mu[NMU]) {
+void pfalgo2hgc_unpack_in(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN], PFRegion & region, HadCaloObj calo[NCALO], TkObj track[NTRACK], MuObj mu[NMU]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=calo complete
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=mu complete    
     #pragma HLS inline
-    assert(NTRACK+NCALO+NMU <= PACKING_NCHANN);
-    const int CALO_OFFS = 0, TRACK_OFFS = CALO_OFFS + NCALO, MU_OFFS = TRACK_OFFS + NTRACK;
-    l1pf_pattern_unpack<NCALO, CALO_OFFS >(input, calo);
+    const unsigned int TRACK_OFFS = 1, CALO_OFFS = TRACK_OFFS + NTRACK, MU_OFFS = CALO_OFFS + NCALO;
+    region = PFRegion::unpack(input[0]);
     l1pf_pattern_unpack<NTRACK,TRACK_OFFS>(input, track);
+    l1pf_pattern_unpack<NCALO, CALO_OFFS >(input, calo);
     l1pf_pattern_unpack<NMU,   MU_OFFS   >(input, mu);
 }
 
-void pfalgo2hgc_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) {
+void pfalgo2hgc_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT]) {
     #pragma HLS ARRAY_PARTITION variable=output complete
     #pragma HLS ARRAY_PARTITION variable=outch complete
     #pragma HLS ARRAY_PARTITION variable=outne complete
     #pragma HLS ARRAY_PARTITION variable=outmu complete
     #pragma HLS inline
 
-    assert(NTRACK+NSELCALO+NMU <= PACKING_NCHANN);
     const int PFCH_OFFS = 0, PFNE_OFFS = PFCH_OFFS + NTRACK, PFMU_OFFS = PFNE_OFFS + NSELCALO;
     l1pf_pattern_pack<NTRACK,  PFCH_OFFS>(outch, output);
     l1pf_pattern_pack<NSELCALO,PFNE_OFFS>(outne, output);
     l1pf_pattern_pack<NMU,     PFMU_OFFS>(outmu, output);
 }
 
-void pfalgo2hgc_unpack_out(const ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
-    assert(NTRACK+NSELCALO+NMU <= PACKING_NCHANN);
+void pfalgo2hgc_unpack_out(const ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
     const int PFCH_OFFS = 0, PFNE_OFFS = PFCH_OFFS + NTRACK, PFMU_OFFS = PFNE_OFFS + NSELCALO;
     l1pf_pattern_unpack<NTRACK,  PFCH_OFFS>(output, outch);
     l1pf_pattern_unpack<NSELCALO,PFNE_OFFS>(output, outne);
     l1pf_pattern_unpack<NMU,     PFMU_OFFS>(output, outmu);
 }
-
-#endif
 

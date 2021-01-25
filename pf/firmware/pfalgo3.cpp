@@ -10,6 +10,7 @@ void pfalgo3_set_debug(bool debug) { }
 #endif
 
 #include "pfalgo_common.icc"
+#include "../../dataformats/l1pf_encoding.h"
 
 template<int DR2MAX>
 void tk2em_drvals(const EmCaloObj calo[NEMCALO], const TkObj track[NTRACK], const bool isMu[NTRACK], tk2em_dr_t calo_track_drval[NTRACK][NEMCALO]) {
@@ -354,10 +355,9 @@ void pfalgo3(const PFRegion & region, const EmCaloObj emcalo[NEMCALO], const Had
     ptsort_hwopt<PFNeutralObj,NCALO,NSELCALO>(outne_all, outne);
 }
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-#include "../../dataformats/l1pf_encoding.h"
 
-void packed_pfalgo3(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) {
+
+void packed_pfalgo3(const ap_uint<PFALGO3_DATA_SIZE> input[PFALGO3_NCHANN_IN], ap_uint<PFALGO3_DATA_SIZE> output[PFALGO3_NCHANN_OUT]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=output complete
 #ifdef HLS_pipeline_II
@@ -378,6 +378,7 @@ void packed_pfalgo3(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_u
 
     // ---------------------------------------------------------------
 
+    PFRegion region; 
     EmCaloObj emcalo[NEMCALO]; HadCaloObj hadcalo[NCALO]; TkObj track[NTRACK]; MuObj mu[NMU]; 
     PFChargedObj outch[NTRACK]; PFNeutralObj outpho[NPHOTON], outne[NSELCALO]; PFChargedObj outmu[NMU];
     #pragma HLS ARRAY_PARTITION variable=emcalo complete
@@ -389,36 +390,36 @@ void packed_pfalgo3(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_u
     #pragma HLS ARRAY_PARTITION variable=outne complete
     #pragma HLS ARRAY_PARTITION variable=outmu complete
 
-    pfalgo3_unpack_in(input, emcalo, hadcalo, track, mu);
-    pfalgo3(emcalo, hadcalo, track, mu, outch, outpho, outne, outmu);
+    pfalgo3_unpack_in(input, region, emcalo, hadcalo, track, mu);
+    pfalgo3(region, emcalo, hadcalo, track, mu, outch, outpho, outne, outmu);
     pfalgo3_pack_out(outch, outpho, outne, outmu, output);
 }
 
-void pfalgo3_pack_in(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN]) {
-    assert(NTRACK+NEMCALO+NCALO+NMU <= PACKING_NCHANN);
-    const int EMCALO_OFFS = 0, HADCALO_OFFS = NEMCALO, TRACK_OFFS = HADCALO_OFFS + NCALO, MU_OFFS = TRACK_OFFS + NTRACK;
+void pfalgo3_pack_in(const PFRegion & region, const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], ap_uint<PFALGO3_DATA_SIZE> input[PFALGO3_NCHANN_IN]) {
+    const unsigned int TRACK_OFFS = 1, EMCALO_OFFS = TRACK_OFFS + NTRACK, HADCALO_OFFS = EMCALO_OFFS+NEMCALO, MU_OFFS = HADCALO_OFFS + NCALO;
+    input[0] = region.pack();
+    l1pf_pattern_pack<NTRACK,  TRACK_OFFS  >(track,   input);
     l1pf_pattern_pack<NEMCALO, EMCALO_OFFS >(emcalo,  input);
     l1pf_pattern_pack<NCALO,   HADCALO_OFFS>(hadcalo, input);
-    l1pf_pattern_pack<NTRACK,  TRACK_OFFS  >(track,   input);
     l1pf_pattern_pack<NMU,     MU_OFFS     >(mu,      input);
 }
 
-void pfalgo3_unpack_in(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], EmCaloObj emcalo[NEMCALO], HadCaloObj hadcalo[NCALO], TkObj track[NTRACK], MuObj mu[NMU]) {
+void pfalgo3_unpack_in(const ap_uint<PFALGO3_DATA_SIZE> input[PFALGO3_NCHANN_IN], PFRegion & region, EmCaloObj emcalo[NEMCALO], HadCaloObj hadcalo[NCALO], TkObj track[NTRACK], MuObj mu[NMU]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=emcalo complete
     #pragma HLS ARRAY_PARTITION variable=hadcalo complete
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=mu complete    
     #pragma HLS inline
-    assert(NTRACK+NPHOTON+NSELCALO+NMU <= PACKING_NCHANN);
-    const int EMCALO_OFFS = 0, HADCALO_OFFS = NEMCALO, TRACK_OFFS = HADCALO_OFFS + NCALO, MU_OFFS = TRACK_OFFS + NTRACK;
+    const unsigned int TRACK_OFFS = 1, EMCALO_OFFS = TRACK_OFFS + NTRACK, HADCALO_OFFS = EMCALO_OFFS+NEMCALO, MU_OFFS = HADCALO_OFFS + NCALO;
+    region = PFRegion::unpack(input[0]);
+    l1pf_pattern_unpack<NTRACK,  TRACK_OFFS  >(input, track);
     l1pf_pattern_unpack<NEMCALO, EMCALO_OFFS >(input, emcalo);
     l1pf_pattern_unpack<NCALO,   HADCALO_OFFS>(input, hadcalo);
-    l1pf_pattern_unpack<NTRACK,  TRACK_OFFS  >(input, track);
     l1pf_pattern_unpack<NMU,     MU_OFFS     >(input, mu);
 }
 
-void pfalgo3_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) {
+void pfalgo3_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU], ap_uint<PFALGO3_DATA_SIZE> output[PFALGO3_NCHANN_OUT]) {
     #pragma HLS ARRAY_PARTITION variable=output complete
     #pragma HLS ARRAY_PARTITION variable=outch complete
     #pragma HLS ARRAY_PARTITION variable=outpho complete
@@ -426,22 +427,17 @@ void pfalgo3_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outph
     #pragma HLS ARRAY_PARTITION variable=outmu complete
     #pragma HLS inline
 
-    assert(NTRACK+NPHOTON+NSELCALO+NMU <= PACKING_NCHANN);
-    const int PFCH_OFFS = 0, PFPH_OFFS = PFCH_OFFS + NTRACK, PFNE_OFFS = PFPH_OFFS + NPHOTON, PFMU_OFFS = PFNE_OFFS + NSELCALO;
+    const unsigned int PFCH_OFFS = 0, PFPH_OFFS = PFCH_OFFS + NTRACK, PFNE_OFFS = PFPH_OFFS + NPHOTON, PFMU_OFFS = PFNE_OFFS + NSELCALO;
     l1pf_pattern_pack<NTRACK,  PFCH_OFFS>(outch,  output);
     l1pf_pattern_pack<NPHOTON, PFPH_OFFS>(outpho, output);
     l1pf_pattern_pack<NSELCALO,PFNE_OFFS>(outne,  output);
     l1pf_pattern_pack<NMU,     PFMU_OFFS>(outmu,  output);
 }
 
-void pfalgo3_unpack_out(const ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN], PFChargedObj outch[NTRACK], PFNeutralObj outpho[NPHOTON], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
-    assert(NTRACK+NPHOTON+NSELCALO+NMU <= PACKING_NCHANN);
-    const int PFCH_OFFS = 0, PFPH_OFFS = PFCH_OFFS + NTRACK, PFNE_OFFS = PFPH_OFFS + NPHOTON, PFMU_OFFS = PFNE_OFFS + NSELCALO;
+void pfalgo3_unpack_out(const ap_uint<PFALGO3_DATA_SIZE> output[PFALGO3_NCHANN_OUT], PFChargedObj outch[NTRACK], PFNeutralObj outpho[NPHOTON], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) {
+    const unsigned int PFCH_OFFS = 0, PFPH_OFFS = PFCH_OFFS + NTRACK, PFNE_OFFS = PFPH_OFFS + NPHOTON, PFMU_OFFS = PFNE_OFFS + NSELCALO;
     l1pf_pattern_unpack<NTRACK,  PFCH_OFFS>(output, outch);
     l1pf_pattern_unpack<NPHOTON, PFPH_OFFS>(output, outpho);
     l1pf_pattern_unpack<NSELCALO,PFNE_OFFS>(output, outne);
     l1pf_pattern_unpack<NMU,     PFMU_OFFS>(output, outmu);
 }
-
-#endif
-

@@ -31,13 +31,20 @@ int main() {
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
     cfg.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
  
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-    PatternSerializer serPatternsIn("pfalgo2hgc_input_patterns.txt"), serPatternsOut("pfalgo2hgc_output_patterns.txt");
-    ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
-#else
-    HumanReadablePatternSerializer debugDump("pfalgo2hgc_debug.txt");
+#ifndef BOARD_none
+    printf("Multiplicities per region: Region %d, Tk %d, EmCalo %d, HadCalo %d, Mu %d => %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d => %d\n",
+        1, NTRACK, NEMCALO, NCALO, NMU, PFALGO2HGC_NCHANN_IN,
+        NTRACK, NPHOTON, NSELCALO, NMU, PFALGO2HGC_NCHANN_OUT);
+
+    printf("Packing bit sizes: EmCalo %3d, HadCalo %3d, Tk %3d, Mu %3d, PFCharged %3d, PFNeutral %3d\n",
+        EmCaloObj::BITWIDTH, HadCaloObj::BITWIDTH, TkObj::BITWIDTH, MuObj::BITWIDTH, PFChargedObj::BITWIDTH, PFNeutralObj::BITWIDTH);
+    const unsigned int nchann64_in = 2*PFALGO2HGC_NCHANN_IN, nchann64_out = 2*PFALGO2HGC_NCHANN_OUT, nmux = 1;
+    PatternSerializer serPatternsIn("pfalgo2hgc_input_patterns.txt", nchann64_in, nmux), serPatternsOut("pfalgo2hgc_output_patterns.txt", nchann64_out, nmux);
+    ap_uint<PFALGO2HGC_DATA_SIZE> packed_input[PFALGO2HGC_NCHANN_IN], packed_output[PFALGO2HGC_NCHANN_OUT];
+    std::fill(packed_input, packed_input+PFALGO2HGC_NCHANN_IN, 0);
+    std::fill(packed_output, packed_output+PFALGO2HGC_NCHANN_OUT, 0);
 #endif
+    HumanReadablePatternSerializer debugDump("pfalgo2hgc_debug.txt");
     
     // -----------------------------------------
     // run multiple tests
@@ -45,11 +52,11 @@ int main() {
         // get the inputs from the input object
         if (!inputs.nextRegion(region, calo, emcalo, track, mu, hwZPV)) break;
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
+#ifndef BOARD_none
         pfalgo2hgc_pack_in(region, calo, track, mu, packed_input); 
-        serPatternsIn(packed_input);
+        serPatternsIn.packAndWrite(PFALGO2HGC_NCHANN_IN, packed_input);
         packed_pfalgo2hgc(packed_input, packed_output);
-        serPatternsOut(packed_output);
+        serPatternsOut.packAndWrite(PFALGO2HGC_NCHANN_OUT, packed_output);
         pfalgo2hgc_unpack_out(packed_output, outch, outne, outmupf);
 #else
         pfalgo2hgc(region, calo, track, mu, outch, outne, outmupf);

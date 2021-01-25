@@ -32,14 +32,21 @@ int main() {
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
     cfg.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
  
+#ifndef BOARD_none
+    printf("Multiplicities per region: Region %d, Tk %d, EmCalo %d, HadCalo %d, Mu %d => %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d => %d\n",
+        1, NTRACK, NEMCALO, NCALO, NMU, PFALGO3_NCHANN_IN,
+        NTRACK, NPHOTON, NSELCALO, NMU, PFALGO3_NCHANN_OUT);
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-    PatternSerializer serPatternsIn("pfalgo3_input_patterns.txt"), serPatternsOut("pfalgo3_output_patterns.txt");
-    ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
-#else
-    HumanReadablePatternSerializer debugDump("pfalgo3_debug.txt");
+    printf("Packing bit sizes: EmCalo %3d, HadCalo %3d, Tk %3d, Mu %3d, PFCharged %3d, PFNeutral %3d\n",
+        EmCaloObj::BITWIDTH, HadCaloObj::BITWIDTH, TkObj::BITWIDTH, MuObj::BITWIDTH, PFChargedObj::BITWIDTH, PFNeutralObj::BITWIDTH);
+
+    const unsigned int nchann64_in = 2*PFALGO3_NCHANN_IN, nchann64_out = 2*PFALGO3_NCHANN_OUT, nmux = 1;
+    PatternSerializer serPatternsIn("pfalgo3_input_patterns.txt", nchann64_in, nmux), serPatternsOut("pfalgo3_output_patterns.txt", nchann64_out, nmux);
+    ap_uint<PFALGO3_DATA_SIZE> packed_input[PFALGO3_NCHANN_IN], packed_output[PFALGO3_NCHANN_OUT];
+    std::fill(packed_input, packed_input+PFALGO3_NCHANN_IN, 0);
+    std::fill(packed_output, packed_output+PFALGO3_NCHANN_OUT, 0);
 #endif
+    HumanReadablePatternSerializer debugDump("pfalgo3_debug.txt");
 
     // -----------------------------------------
     // run multiple tests
@@ -47,15 +54,15 @@ int main() {
         // get the inputs from the input object
         if (!inputs.nextRegion(region, hadcalo, emcalo, track, mu, hwZPV)) break;
 
-        bool verbose = false; // can set this on to get detailed printout of some test
+        bool verbose = (test < 10); // can set this on to get detailed printout of some test
         pfalgo3_set_debug(verbose);
         pfalgo3_ref_set_debug(verbose);
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
+#ifndef BOARD_none
         pfalgo3_pack_in(region, emcalo, hadcalo, track, mu, packed_input); 
-        serPatternsIn(packed_input);
+        serPatternsIn.packAndWrite(PFALGO3_NCHANN_IN, packed_input);
         packed_pfalgo3(packed_input, packed_output);
-        serPatternsOut(packed_output);
+        serPatternsOut.packAndWrite(PFALGO3_NCHANN_OUT, packed_output);
         pfalgo3_unpack_out(packed_output, outch, outpho, outne, outmupf);
 #else
         pfalgo3(region, emcalo, hadcalo, track, mu, outch, outpho, outne, outmupf);

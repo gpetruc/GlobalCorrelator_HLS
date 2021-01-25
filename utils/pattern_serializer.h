@@ -6,11 +6,11 @@
 #include "../dataformats/pf.h"
 
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
+#if defined(PACKING_DATA_SIZE)
 class PatternSerializer {
     public:
         /** 
-         *  each event corresponds to N=PACKING_NCHANN words of PACKING_DATA_SIZE bits
+         *  each event corresponds to N of PACKING_DATA_SIZE bits
          *
          *  each event is serialized as <NMUX> frames, where the first <NMUX> words are send on the first link, etc.
          *  e.g. if event[i] = [ w0[i] w1[i] ... w(N-1)[i] ] then
@@ -59,11 +59,18 @@ class PatternSerializer {
 
         typedef ap_uint<PACKING_DATA_SIZE> Word;
 
-        PatternSerializer(const std::string &fname, unsigned int nmux=1, unsigned int nzero=0, bool zero_valid=true, unsigned int nprefix=0, unsigned int npostfix=0, const std::string &boardName = "Board L1PF") ;
+        PatternSerializer(const std::string &fname, unsigned int nchann, unsigned int nmux=1, unsigned int nzero=0, bool zero_valid=true, unsigned int nprefix=0, unsigned int npostfix=0, const std::string &boardName = "Board L1PF") ;
         ~PatternSerializer() ;
         
-        void operator()(const Word event[PACKING_NCHANN], bool valid=true) ;
-        void operator()(const Word event[PACKING_NCHANN], const bool valid[PACKING_NCHANN]) ;
+        void operator()(const Word event[], bool valid=true) ;
+        void operator()(const Word event[], const bool valid[]) ;
+
+        template<int NB>
+        void packAndWrite(unsigned int N, const ap_uint<NB> event[], bool valid=true) ;
+
+        template<int NB>
+        void packAndWrite(unsigned int N, const ap_uint<NB> event[], const bool valid[]) ;
+
     
         template<typename T> void print(const T & event, bool valid = true, unsigned int ifirst = 0, unsigned int stride = 1);
         template<typename T, typename TV> void printv(const T & event, const TV & valid, unsigned int ifirst = 0, unsigned int stride = 1);
@@ -76,6 +83,79 @@ class PatternSerializer {
         unsigned int ipattern_;
         std::vector<Word> zeroframe_;
 };
+
+
+
+template<int NB>
+void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], bool valid) {
+    //printf("Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", N, NB, nin_, PACKING_DATA_SIZE);
+    if (NB <= PACKING_DATA_SIZE) {
+        assert(N <= nin_);
+        std::unique_ptr<Word[]> words(new Word[nin_]);
+
+        for (unsigned int i = 0; i < nin_; ++i) {
+            words[i] = (i < N ? Word(event[i]) : Word(0));
+        }
+
+        this->operator()(words.get(), valid);
+    } else if (NB <= 2*PACKING_DATA_SIZE) {
+        assert(2*N <= nin_);
+        std::unique_ptr<Word[]> words(new Word[nin_]);
+
+        unsigned int rest = NB - PACKING_DATA_SIZE;
+        for (unsigned int i = 0; i < N; ++i) {
+            words[2*i+0](PACKING_DATA_SIZE-1, 0) = event[i](PACKING_DATA_SIZE-1, 0);
+            words[2*i+1] = 0;
+            words[2*i+1](rest-1, 0) = event[i](NB-1, PACKING_DATA_SIZE);
+        }
+        for (unsigned int i = 2*N; i < nin_; ++i) {
+            words[i] = 0;
+        }
+
+        this->operator()(words.get(), valid);
+    } else {
+        assert(false);
+    }
+}
+
+
+template<int NB>
+void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], const bool valid[]) {
+    //printf("Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", N, NB, nin_, PACKING_DATA_SIZE);
+    if (NB <= PACKING_DATA_SIZE) {
+        assert(N <= nin_);
+        std::unique_ptr<Word[]> words(new Word[nin_]);
+        std::unique_ptr<bool[]> bits(new bool[nin_]);
+
+        for (unsigned int i = 0; i < nin_; ++i) {
+            words[i] = (i < N ? event[i] : Word(0));
+            bits[i]  = (i < N ? valid[i] : false  );
+        }
+
+        this->operator()(words.get(), bits.get());
+    } else if (NB <= 2*PACKING_DATA_SIZE) {
+        assert(2*N <= nin_);
+        std::unique_ptr<Word[]> words(new Word[nin_]);
+        std::unique_ptr<bool[]> bits(new bool[nin_]);
+
+        unsigned int rest = NB - PACKING_DATA_SIZE;
+        for (unsigned int i = 0; i < N; ++i) {
+            words[2*i+0](PACKING_DATA_SIZE-1, 0) = event[i](PACKING_DATA_SIZE-1, 0);
+            words[2*i+1] = 0;
+            words[2*i+1](rest-1, 0) = event[i](NB-1, PACKING_DATA_SIZE);
+            bits[2*i+0] = valid[i];
+            bits[2*i+1] = valid[i];
+        }
+        for (unsigned int i = 2*N; i < nin_; ++i) {
+            words[i] = 0; bits[i] = false;
+        }
+
+        this->operator()(words.get(), bits.get());
+    } else {
+        assert(false);
+    }
+}
+
 #endif
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
