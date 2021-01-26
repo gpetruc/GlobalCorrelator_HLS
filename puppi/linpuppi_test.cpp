@@ -28,6 +28,8 @@ int main() {
                           LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
                           LINPUPPI_priorNe, LINPUPPI_priorPh,
                           Scales::makePt(LINPUPPI_ptCut));
+    printf("Multiplicities per region: Tk %d, EmCalo %d, HadCalo %d, Mu %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d, Puppi All %d => Sel %d\n",
+        NTRACK, NEMCALO, NCALO, NMU, NTRACK, NPHOTON, NSELCALO, NMU, NALLNEUTRALS, NNEUTRALS);
 #elif defined(REG_HGCal)
     DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
     pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
@@ -57,14 +59,21 @@ int main() {
     PuppiObj outallne[NALLNEUTRALS], outallne_ref_nocut[NALLNEUTRALS], outallne_ref[NALLNEUTRALS], outallne_flt_nocut[NALLNEUTRALS], outallne_flt[NALLNEUTRALS];
     PuppiObj outselne[NNEUTRALS], outselne_ref[NNEUTRALS], outselne_flt[NNEUTRALS];
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-    PatternSerializer serPatternsIn("linpuppi_input_patterns.txt"), serPatternsOut("linpuppi_output_patterns.txt");
-    PatternSerializer serPatternsChsIn("linpuppi_chs_input_patterns.txt"), serPatternsChsOut("linpuppi_chs_output_patterns.txt");
-    ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_input_chs[PACKING_NCHANN], packed_output[PACKING_NCHANN], packed_output_chs[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_input_chs[i] = 0; packed_output[i] = 0; packed_output_chs[i] = 0; }
-#else
-    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
+#if !defined(BOARD_none) && !defined(TEST_PUPPI_STREAM)
+    printf("Packing bit sizes: EmCalo %d, HadCalo %d, Tk %d, Mu %d, PFCharged %d, PFNeutral %d, Puppi %d\n",
+        EmCaloObj::BITWIDTH, HadCaloObj::BITWIDTH, TkObj::BITWIDTH, MuObj::BITWIDTH, PFChargedObj::BITWIDTH, PFNeutralObj::BITWIDTH, PuppiObj::BITWIDTH);
+
+    const unsigned int nchann64_in = 2*LINPUPPI_NCHANN_IN, nchann64_chs_in = 2*LINPUPPI_CHS_NCHANN_IN, nmux = 1;
+    PatternSerializer serPatternsIn("linpuppi_input_patterns.txt", nchann64_in, nmux), serPatternsOut("linpuppi_output_patterns.txt", LINPUPPI_NCHANN_OUTNC, nmux);
+    PatternSerializer serPatternsChsIn("linpuppi_chs_input_patterns.txt", nchann64_chs_in, nmux), serPatternsChsOut("linpuppi_chs_output_patterns.txt", LINPUPPI_CHS_NCHANN_OUT, nmux);
+    ap_uint<LINPUPPI_DATA_SIZE_IN> packed_input[LINPUPPI_NCHANN_IN], packed_input_chs[LINPUPPI_CHS_NCHANN_IN];
+    ap_uint<LINPUPPI_DATA_SIZE_OUT> packed_output[LINPUPPI_NCHANN_OUTNC], packed_output_chs[LINPUPPI_CHS_NCHANN_OUT];
+    std::fill(packed_input, packed_input+LINPUPPI_NCHANN_IN, 0);
+    std::fill(packed_output, packed_output+LINPUPPI_NCHANN_OUTNC, 0);
+    std::fill(packed_input_chs, packed_input_chs+LINPUPPI_CHS_NCHANN_IN, 0);
+    std::fill(packed_output_chs, packed_output_chs+LINPUPPI_CHS_NCHANN_OUT, 0);
 #endif
+    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
 
     PuppiChecker checker;
 
@@ -92,22 +101,26 @@ int main() {
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-        linpuppi_chs_pack_in(hwZPV, pfch, packed_input_chs); serPatternsChsIn(packed_input_chs);
-        linpuppi_pack_in(track, hwZPV, pfallne, packed_input); serPatternsIn(packed_input);
+#if defined(TEST_PUPPI_STREAM)
+        packed_linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
+        packed_linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
+#elif !defined(BOARD_none)
+        linpuppi_chs_pack_in(hwZPV, pfch, packed_input_chs); 
+        linpuppi_pack_in(track, hwZPV, pfallne, packed_input); 
+        serPatternsChsIn.packAndWrite(LINPUPPI_CHS_NCHANN_IN, packed_input_chs);
+        serPatternsIn.packAndWrite(LINPUPPI_NCHANN_IN, packed_input);
         packed_linpuppi_chs(packed_input_chs, packed_output_chs);
     #if defined(TEST_PUPPI_NOCROP)
         packed_linpuppiNoCrop(packed_input, packed_output);
+        serPatternsOut.packAndWrite(NALLNEUTRALS, packed_output); 
         l1pf_pattern_unpack<NALLNEUTRALS,0>(packed_output, outallne);
-    #elif defined(TEST_PUPPI_STREAM)
-        packed_linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
-        packed_linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
     #else
         packed_linpuppi(packed_input, packed_output);
+        serPatternsOut.packAndWrite(NNEUTRALS, packed_output); 
         l1pf_pattern_unpack<NNEUTRALS,0>(packed_output, outselne);
     #endif
         l1pf_pattern_unpack<NTRACK,0>(packed_output_chs, outallch);
-        serPatternsOut(packed_output); serPatternsChsOut(packed_output_chs);
+        serPatternsChsOut.packAndWrite(NTRACK,packed_output_chs);
 #else
         linpuppi_chs(hwZPV, pfch, outallch);
     #if defined(TEST_PUPPI_NOCROP)

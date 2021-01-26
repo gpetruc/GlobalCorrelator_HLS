@@ -25,6 +25,7 @@ int main() {
                         Scales::makePt(LINPUPPI_ptCut));
     
     // input TP objects (used)
+    PFRegion region;
     HadCaloObj calo[NCALO];
 
     // input TP objects (unused, but needed to read the inputs)
@@ -38,19 +39,19 @@ int main() {
     PuppiObj outallne_ref_nocut[NCALO], outallne_ref[NCALO];
     PuppiObj outallne_flt_nocut[NCALO], outallne_flt[NCALO];
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-    PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt"), serPatternsOut("fwlinpuppi_output_patterns.txt");
-    ap_uint<PACKING_DATA_SIZE> packed_input[PACKING_NCHANN], packed_output[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
-#else
-    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
+#ifndef BOARD_none
+    PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt", LINPUPPI_NCHANN_FWDNC);
+    PatternSerializer serPatternsOut("fwlinpuppi_output_patterns.txt", LINPUPPI_NCHANN_FWDNC);
+    ap_uint<LINPUPPI_DATA_SIZE_FWD> packed_input[LINPUPPI_NCHANN_FWDNC], packed_output[LINPUPPI_NCHANN_FWDNC];
+    for (unsigned int i = 0; i < LINPUPPI_NCHANN_FWDNC; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
 #endif
+    HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
 
     PuppiChecker checker;
 
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(calo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextRegion(region, calo, emcalo, track, mu, hwZPV)) break;
 
 #ifdef TEST_PT_CUT
         float minpt = 0;
@@ -65,7 +66,7 @@ int main() {
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
+#ifndef BOARD_none
         l1pf_pattern_pack<NCALO,0>(calo, packed_input);
         serPatternsIn(packed_input);
   #if defined(TEST_PUPPI_NOCROP)

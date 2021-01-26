@@ -29,27 +29,33 @@ PuppiObj linpuppi_chs_one(const PFChargedObj pfch, z0_t pvZ0) ;
 void linpuppiNoCrop_streamed(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) ;
 void linpuppi_chs_streamed(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) ;
 
-
 // neutrals, forward
 void fwdlinpuppi(const HadCaloObj caloin[NCALO], PuppiObj pfselne[NNEUTRALS]);
 void fwdlinpuppiNoCrop(const HadCaloObj caloin[NCALO], PuppiObj pfallne[NCALO]);
 
-#if defined(PACKING_DATA_SIZE) && defined(PACKING_NCHANN)
-void packed_fwdlinpuppi(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) ;
-void packed_fwdlinpuppiNoCrop(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]) ;
+#define LINPUPPI_DATA_SIZE_IN 72
+#define LINPUPPI_DATA_SIZE_OUT 64
+#define LINPUPPI_DATA_SIZE_FWD 64
+#define LINPUPPI_NCHANN_IN (1+NTRACK+NALLNEUTRALS)
+#define LINPUPPI_NCHANN_OUTNC (NALLNEUTRALS)
+#define LINPUPPI_NCHANN_OUT (NNEUTRALS)
+#define LINPUPPI_CHS_NCHANN_IN (1+NTRACK)
+#define LINPUPPI_CHS_NCHANN_OUT (NTRACK)
+#define LINPUPPI_NCHANN_FWDNC (NCALO)
+#define LINPUPPI_NCHANN_FWD (NNEUTRALS)
 
-void packed_linpuppi_chs(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]);
-void packed_linpuppi(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]);
-void packed_linpuppiNoCrop(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], ap_uint<PACKING_DATA_SIZE> output[PACKING_NCHANN]);
+void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD]) ;
+void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWDNC]) ;
 
-void linpuppi_pack_in(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN]);
-void linpuppi_unpack_in(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], TkObj track[NTRACK], z0_t & pvZ0, PFNeutralObj pfallne[NALLNEUTRALS]);
-void linpuppi_chs_pack_in(z0_t pvZ0, const PFChargedObj pfch[NTRACK], ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN]);
-void linpuppi_chs_unpack_in(const ap_uint<PACKING_DATA_SIZE> input[PACKING_NCHANN], z0_t & pvZ0, PFChargedObj pfch[NTRACK]);
-void linpuppi_pack_pv(z0_t pvZ0, ap_uint<PACKING_DATA_SIZE> & word);
-void linpuppi_unpack_pv(ap_uint<PACKING_DATA_SIZE> word, z0_t & pvZ0);
+void packed_linpuppi_chs(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_CHS_NCHANN_OUT]);
+void packed_linpuppi(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_NCHANN_OUT]);
+void packed_linpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_NCHANN_OUTNC]);
 
-#if PACKING_DATA_SIZE == 64
+void linpuppi_pack_in(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
+void linpuppi_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], TkObj track[NTRACK], z0_t & pvZ0, PFNeutralObj pfallne[NALLNEUTRALS]);
+void linpuppi_chs_pack_in(z0_t pvZ0, const PFChargedObj pfch[NTRACK], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
+void linpuppi_chs_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], z0_t & pvZ0, PFChargedObj pfch[NTRACK]);
+
 typedef ap_uint<17+eta_t::width+phi_t::width> packed_linpuppi_refobj;
 inline linpuppi_refobj linpuppi_refobj_unpack(const packed_linpuppi_refobj & src) {
     linpuppi_refobj ret;
@@ -66,17 +72,13 @@ inline packed_linpuppi_refobj linpuppi_refobj_pack(const linpuppi_refobj & src) 
     return ret;
 }
 
-packed_linpuppi_refobj packed_linpuppi_prepare_track(const ap_uint<64> & track, const ap_uint<64> & pvZ0);
-ap_uint<64> packed_linpuppi_one(const ap_uint<64> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]);
-ap_uint<64> packed_linpuppi_chs_one(const ap_uint<64> & pfch, const ap_uint<64> & pvZ0) ;
+packed_linpuppi_refobj packed_linpuppi_prepare_track(const ap_uint<TkObj::BITWIDTH> & track, const z0_t & pvZ0);
+ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_one(const ap_uint<PFNeutralObj::BITWIDTH> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]);
+ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_chs_one(const ap_uint<PFChargedObj::BITWIDTH> & pfch, const z0_t & pvZ0) ;
 
 // these two call the packed versions internally, and are used for valiation (they are not synthethized directly)
 void packed_linpuppiNoCrop_streamed(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) ;
 void packed_linpuppi_chs_streamed(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) ;
-
-#endif //packing = 64
-
-#endif // packing
 
 void linpuppi_set_debug(bool debug);
 

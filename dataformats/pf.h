@@ -892,7 +892,7 @@ struct PuppiObj {
   float floatZ0() const { return Scales::floatZ0(hwZ0()); }
   float floatDxy() const { return Scales::floatDxy(hwDxy()); }
 
-  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + 3 + DATA_BITS_TOTAL;
+  static const int BITWIDTH = pt_t::width + glbeta_t::width + glbphi_t::width + 3 + DATA_BITS_TOTAL;
   inline ap_uint<BITWIDTH> pack() const {
         ap_uint<BITWIDTH> ret; unsigned int start = 0;
         _pack_into_bits(ret, start, hwPt);

@@ -88,9 +88,11 @@ class PatternSerializer {
 
 template<int NB>
 void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], bool valid) {
-    //printf("Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", N, NB, nin_, PACKING_DATA_SIZE);
     if (NB <= PACKING_DATA_SIZE) {
-        assert(N <= nin_);
+        if (N > nin_) { 
+            printf("ERROR: %s : Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", fname_.c_str(), N, NB, nin_, PACKING_DATA_SIZE);
+            assert(false);
+        }
         std::unique_ptr<Word[]> words(new Word[nin_]);
 
         for (unsigned int i = 0; i < nin_; ++i) {
@@ -99,7 +101,10 @@ void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], 
 
         this->operator()(words.get(), valid);
     } else if (NB <= 2*PACKING_DATA_SIZE) {
-        assert(2*N <= nin_);
+        if (2*N > nin_) { 
+            printf("ERROR: %s :Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", fname_.c_str(), N, NB, nin_, PACKING_DATA_SIZE);
+            assert(false);
+        }
         std::unique_ptr<Word[]> words(new Word[nin_]);
 
         unsigned int rest = NB - PACKING_DATA_SIZE;
@@ -121,9 +126,11 @@ void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], 
 
 template<int NB>
 void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], const bool valid[]) {
-    //printf("Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", N, NB, nin_, PACKING_DATA_SIZE);
     if (NB <= PACKING_DATA_SIZE) {
-        assert(N <= nin_);
+        if (N > nin_) { 
+            printf("ERROR: %s : Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", fname_.c_str(), N, NB, nin_, PACKING_DATA_SIZE);
+            assert(false);
+        }
         std::unique_ptr<Word[]> words(new Word[nin_]);
         std::unique_ptr<bool[]> bits(new bool[nin_]);
 
@@ -134,7 +141,10 @@ void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], 
 
         this->operator()(words.get(), bits.get());
     } else if (NB <= 2*PACKING_DATA_SIZE) {
-        assert(2*N <= nin_);
+        if (2*N > nin_) { 
+            printf("ERROR: %s : Would like to pack %u items of %d bits, and I have %u channels of %d bits\n", fname_.c_str(), N, NB, nin_, PACKING_DATA_SIZE);
+            assert(false);
+        }
         std::unique_ptr<Word[]> words(new Word[nin_]);
         std::unique_ptr<bool[]> bits(new bool[nin_]);
 
