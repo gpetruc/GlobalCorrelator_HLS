@@ -606,10 +606,12 @@ struct PFCommonObj {
 };
 
 struct PFChargedObj : public PFCommonObj {
-  tkdeta_t hwDEta; // relative to the region center, at calo
-  tkdphi_t hwDPhi; // relative to the region center, at calo
+  // WARNING: for whatever reason, maybe connected with datamember alignment,
+  //          in 2019.2 synthesis fails if DEta & DPhi are put before Z0 & Dxy
   z0_t hwZ0;
   dxy_t hwDxy;
+  tkdeta_t hwDEta; // relative to the region center, at calo
+  tkdphi_t hwDPhi; // relative to the region center, at calo
   tkquality_t hwTkQuality;
 
   phi_t hwVtxPhi() const {

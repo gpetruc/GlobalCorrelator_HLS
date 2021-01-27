@@ -541,7 +541,7 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
         int val = (ptSlopePh*Scales::ptToInt(caloin.hwPt) - ptSlopePh*ptZeroPh) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - priorPh : 2047; // saturate
 #elif LINPUPPI_etaBins == 2
-        int val = ((ietaBin ? ptSlopePh_1 : ptSlopePh_0)*caloin.hwPt - (ietaBin ? ptSlopePh_1*ptZeroPh_1 : ptSlopePh_0*ptZeroPh_0)) >> (ptSlope_bits + 2 - x2_bits);
+        int val = ((ietaBin ? ptSlopePh_1 : ptSlopePh_0)*Scales::ptToInt(caloin.hwPt) - (ietaBin ? ptSlopePh_1*ptZeroPh_1 : ptSlopePh_0*ptZeroPh_0)) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - (ietaBin ? priorPh_1 : priorPh_0) : 2047; // saturate
 #endif
     } else {
@@ -549,7 +549,7 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
         int val = (ptSlopeNe*Scales::ptToInt(caloin.hwPt) - ptSlopeNe*ptZeroNe) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - priorNe : 2047; // saturate
 #elif LINPUPPI_etaBins == 2
-        int val = ((ietaBin ? ptSlopeNe_1 : ptSlopeNe_0)*caloin.hwPt - (ietaBin ? ptSlopeNe_1*ptZeroNe_1 : ptSlopeNe_0*ptZeroNe_0)) >> (ptSlope_bits + 2 - x2_bits);
+        int val = ((ietaBin ? ptSlopeNe_1 : ptSlopeNe_0)*Scales::ptToInt(caloin.hwPt) - (ietaBin ? ptSlopeNe_1*ptZeroNe_1 : ptSlopeNe_0*ptZeroNe_0)) >> (ptSlope_bits + 2 - x2_bits);
         x2ptp =  val < 2047 ? val - (ietaBin ? priorNe_1 : priorNe_0) : 2047; // saturate
 #endif
     }
