@@ -1,37 +1,46 @@
-# GlobalCorrelator_HLS
-Vivado High Level Synthesis framework for Global Correlator
+# Correlator common repository
+
+Algorithms for Correlator Layer 1 and Layer 2
 
 ## Structure of this repository:
- * `firmware` directory: core firmware for the L1PF, and associated dataformat header files
- * `ref` directory: reference L1PF implementation for bitwise validation in the HLS testbench
- * `run_hls_*.tcl` files: files to run the c++ simulation and synthesis of L1PF
- * `*_test.cpp` files: c++ testbench files for L1PF
- * `data` directory: input data files used by the testbench
- * `utils` directory: utilities used by the testbench (e.g. to read input data files or do validation)
 
-Additional subdirectories contain other projects. In particular, `puppi` contains the L1 linearized puppi implementation, with a structure similar to the current one
+General directories
+ * `dataformats`: header files defining the object formats and some other constants (e.g. layer 1 object multiplicites)
+ * `data`: data files dumped from CMSSW simulation, for testing
+ * `utils`: algorithm-independent utilities, e.g. to dump pattern files from vectors of `ap_uint` or to load data files 
+
+Algorithm directories:
+ * `pf`: PF algo
+ * `puppi`: Linearized Puppi algo, both within tracker coverage and outside
+ * `l1-regionizer/tdr`: Layer 1 regionizer from the TDR, used in the Barrel 
+ * `l1-regionizer/multififo` : Layer 1 regionizer with a matrix of FIFOs, used in the HGCal
+ * `l1-converters` code for the conversions of layer 1 input objects to the format used by PF
+
 
 ## Setup of the code
 
-The compilation of the firmware depends on some compile-time constants defining the detector region, input object multiplicities, parameters of the algorithm, and test setup used.
+Within each algorithm directory, there should be a readme file, and HLS code for synthesis should be in a `firmware` directory. 
 
-The detector region is set with `-DREG_(region)` with region being one of `Barrel`, `HGCal`, `HGCalNoTK`, `HF`. This drives the configuration of the object multiplicities (set in `firmware/data.h` and potentially further customized depending on the test board used), and the parameters of the algorithms (set in the corresponding header files; currently this is the case only for puppi, not for PF).
+Some compile-time constants are defined to defining the detector region (for layer 1), and the setup used:
+ * The detector region is set with `-DREG_(region)` with region being one of `Barrel`, `HGCal`, `HGCalNoTK`, `HF`. This drives the configuration of the object multiplicities (set in `firmware/data.h` and potentially further customized depending on the test board used), and the parameters of the algorithms (set in the corresponding header files; currently this is the case only for puppi, not for PF).
+ * The board used is set with `-DBOARD_(board)`, which drives the code used to serialize the inputs and outputs. A generic setup in which the algorithms are run without any wrapper is defined with `-DBOARD_none`
 
-The board used is set with `-DBOARD_(board)`, which drives the code used to serialize the inputs and outputs (word size and number of channels), and possibly customizes the multiplicies, all in `firmware/data.h`. If no board is defined, or `-DBOARD_none`, the testbench will just run the algorithm without input and output data packing.
+## Implementation status
 
-## Implementation status for L1PF & L1 Linearized Puppi
-
-* PFAlgo3 (i.e. using emcalo, hadcalo, tracks, muons) is implemented and tested but only in the Barrel region. &Delta;R cuts are synchronized with CMSSW, but other parameters have not been checked recently.
-* PFAlgo2HGC (i.e. using calo, tracks, muons) is implemented and tested but only in the HGCal region. &Delta;R cuts are synchronized with CMSSW, but other parameters have not been checked recently.
-* Linearized puppi inside the tracker coverage is implemented and tested both in the Barrel and in the HGCal (where it has parameters split in 2 eta bins). Parameters are also synchronized with CMSSW
-* In the forward region outside tracker coverage, linearized puppi goes in one step from calo clusters to puppi candidates, and is implemented and tested for both HF and HGCalNoTK. Parameters are also synchronized with CMSSW.
+* PF compiles, runs and synthethizes, both in the barrel (pfalgo3) and hgcal (pfalgo2hgc). An example wrapping is tested for `BOARD_VCU118`, where inputs and outputs are serialized as 72 bit objects (and dumped as two 64 bit words in the pattern file)
+* Puppi compiles, runs and synthethizes in all detector regions. In the wrapped version, inputs are 72-bit wide while outputs are 64-bit wide.
+* Everything else is not tested and most likely won't even compile yet
 
 ## Pending items
 
-In random order:
-* Investigate whether we can define integer coordinates in a clever way to have 2&pi; be equal to a power of 2, so that the wrapping of &Delta;&phi; would happen automatically, and we could use global coordinates.
-* Separate in the inputs the tracks regionized using calorimeter (eta, phi) - for PF - and the tracks regionized using vertex (eta, phi) - for Puppi.
-* Puppi implementation can probably be cleaned up using `ap_fixed` instead of bitshifts by hand
-* LinearPuppi firmware implementation with eta bins can probably be cleaned up
-* Introduce options to customize the pattern file layout depending on the board (now it can be done only by changing the options passed in the constructor in the testbench source)
-* Cleanup & resurrect the remaining elements of the TDR demonstrator (vertexing, regionizer, layer 2, ...)
+* Improve PF & Puppi emulator to make it more C++-like and take configurations as floats. Eventually replace the CMSSW algo.
+   * Also avoid using firmware headers in emulator algorithms. 
+* Improve Puppi implementation: use `ap_fixed` instead of bitshifts by hand, and use 2D LUT instead of the current ugly LUT-generating macro.
+* Introduce the fiducial cut and shift to global coordinates in Puppi
+* Replace the DiscretePFInput objects with objects inheriting from the HLS ones and just adding extra datamembers. 
+   * Update the corresponding readers and writers, and regenerate the dump files.
+* Split the dataformats into multiple header files, move multiplicites and similar into another files.
+* Introduce header files for the inputs and the decoders
+* Get the rest of the code compiling and synthetizing
+* Introduce scripts for testing code before integration
+* Sync code with CMSSW, run code-checks & code-format
