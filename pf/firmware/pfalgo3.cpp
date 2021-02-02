@@ -3,14 +3,15 @@
 #include <cassert>
 #ifndef __SYNTHESIS__
 #include <cstdio>
-bool gdebug_;
+int gdebug_ = 0;
 void pfalgo3_set_debug(bool debug) { gdebug_ = debug; }
 #else
 void pfalgo3_set_debug(bool debug) { }
 #endif
 
+using namespace l1ct;
+
 #include "pfalgo_common.icc"
-#include "../../dataformats/l1pf_encoding.h"
 
 template<int DR2MAX>
 void tk2em_drvals(const EmCaloObj calo[NEMCALO], const TkObj track[NTRACK], const bool isMu[NTRACK], tk2em_dr_t calo_track_drval[NTRACK][NEMCALO]) {

@@ -1,7 +1,7 @@
 #include "test_utils.h"
 #include <cstdio>
 
-bool had_equals(const HadCaloObj &out_ref, const HadCaloObj &out, const char *what, int idx) {
+bool had_equals(const l1ct::HadCaloObj &out_ref, const l1ct::HadCaloObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEmPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwId %1d %1d\n", what, idx,
@@ -9,7 +9,7 @@ bool had_equals(const HadCaloObj &out_ref, const HadCaloObj &out, const char *wh
     }
     return ret;
 }
-bool em_equals(const EmCaloObj &out_ref, const EmCaloObj &out, const char *what, int idx) {
+bool em_equals(const l1ct::EmCaloObj &out_ref, const l1ct::EmCaloObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwPtErr % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d\n", what, idx,
@@ -18,7 +18,7 @@ bool em_equals(const EmCaloObj &out_ref, const EmCaloObj &out, const char *what,
     return ret;
 }
 
-bool track_equals(const TkObj &out_ref, const TkObj &out, const char *what, int idx) {
+bool track_equals(const l1ct::TkObj &out_ref, const l1ct::TkObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwDEta %+7d %+7d  hwDPhi %+7d %+7d  hwZ0 %+7d %+7d  hwDxy %+7d %+7d    hwCharge %1d %1d   hwQuality %1d %1d\n", what, idx,
@@ -29,7 +29,7 @@ bool track_equals(const TkObj &out_ref, const TkObj &out, const char *what, int 
     }
     return ret;
 }
-bool mu_equals(const MuObj &out_ref, const MuObj &out, const char *what, int idx) {
+bool mu_equals(const l1ct::MuObj &out_ref, const l1ct::MuObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwDEta %+7d %+7d  hwDPhi %+7d %+7d  hwZ0 %+7d %+7d  hwDxy %+7d %+7d    hwCharge %1d %1d   hwQuality %1d %1d\n", what, idx,
@@ -41,7 +41,7 @@ bool mu_equals(const MuObj &out_ref, const MuObj &out, const char *what, int idx
     return ret;
 }
 
-bool pf_equals(const PFChargedObj &out_ref, const PFChargedObj &out, const char *what, int idx) {
+bool pf_equals(const l1ct::PFChargedObj &out_ref, const l1ct::PFChargedObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwId %1d %1d      hwDEta %+7d %+7d  hwDPhi %+7d %+7d  hwZ0 %+7d %+7d  hwDxy %+7d %+7d  hwTkQuality %1d %1d  \n", what, idx,
@@ -54,7 +54,7 @@ bool pf_equals(const PFChargedObj &out_ref, const PFChargedObj &out, const char 
     }
     return ret;
 }
-bool pf_equals(const PFNeutralObj &out_ref, const PFNeutralObj &out, const char *what, int idx) {
+bool pf_equals(const l1ct::PFNeutralObj &out_ref, const l1ct::PFNeutralObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwId %1d %1d     hwEmPt  % 7d % 7d      hwEmID %7d %7d  hwPUID  %7d %7d\n", what, idx,
@@ -67,7 +67,7 @@ bool pf_equals(const PFNeutralObj &out_ref, const PFNeutralObj &out, const char 
     }
     return ret;
 }
-bool puppi_equals(const PuppiObj &out_ref, const PuppiObj &out, const char *what, int idx) {
+bool puppi_equals(const l1ct::PuppiObj &out_ref, const l1ct::PuppiObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
         printf("Mismatch at %s[%d] ref vs test, hwPt % 7d % 7d   hwEta %+7d %+7d   hwPhi %+7d %+7d   hwId %1d %1d      hwData % 7d % 7d   \n", what, idx,

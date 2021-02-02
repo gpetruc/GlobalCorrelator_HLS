@@ -6,12 +6,14 @@
 #include <algorithm>
 #include <memory>
 
+namespace l1ct {
+    int g_pfalgo2hgc_debug_ref_ = 0;
+}
 
-int g_pfalgo2hgc_debug_ref_ = 0;
 
-void pfalgo2hgc_ref_set_debug(int debug) { g_pfalgo2hgc_debug_ref_ = debug; }
+void l1ct::pfalgo2hgc_ref_set_debug(int debug) { g_pfalgo2hgc_debug_ref_ = debug; }
 
-void pfalgo2hgc_ref(const pfalgo_config &cfg, const PFRegion & region, const HadCaloObj calo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) {
+void l1ct::pfalgo2hgc_ref(const l1ct::pfalgo_config &cfg, const l1ct::PFRegion & region, const l1ct::HadCaloObj calo[/*cfg.nCALO*/], const l1ct::TkObj track[/*cfg.nTRACK*/], const l1ct::MuObj mu[/*cfg.nMU*/], l1ct::PFChargedObj outch[/*cfg.nTRACK*/], l1ct::PFNeutralObj outne[/*cfg.nSELCALO*/], l1ct::PFChargedObj outmu[/*cfg.nMU*/]) {
 
     if (g_pfalgo2hgc_debug_ref_) {
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;

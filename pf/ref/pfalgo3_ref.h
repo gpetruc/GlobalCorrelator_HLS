@@ -1,8 +1,9 @@
 #ifndef PFALGO3_REF_H
 #define PFALGO3_REF_H
 
-#include "../firmware/pfalgo3.h"
 #include "pfalgo_common_ref.h"
+
+namespace l1ct {
 
 struct pfalgo3_config : public pfalgo_config {
     unsigned int nEMCALO, nPHOTON, nALLNEUTRAL;
@@ -24,4 +25,7 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
 void pfalgo3_ref(const pfalgo3_config &cfg, const PFRegion & region, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) ;
 
 void pfalgo3_merge_neutrals_ref(const pfalgo3_config &cfg, const PFNeutralObj pho[/*cfg.nPHOTON*/], const PFNeutralObj ne[/*cfg.nSELCALO*/], PFNeutralObj allne[/*cfg.nALLNEUTRALS*/]);
+
+} // namespace
+
 #endif

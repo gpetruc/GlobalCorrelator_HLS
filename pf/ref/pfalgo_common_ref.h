@@ -1,12 +1,14 @@
 #ifndef PFALGO_COMMON_REF_H
 #define PFALGO_COMMON_REF_H
 
+#include "../../dataformats/layer1_objs.h"
 #include "../../dataformats/pf.h"
-#include "../firmware/pfalgo_common.h"
+#include "../firmware/pfalgo_types.h"
+
 #include <algorithm>
 #include <vector>
 
-template <typename T> inline int sqr(const T & t) { return t*t; }
+namespace l1ct {
 
 template<typename CO_t>
 int best_match_with_pt_ref(int nCAL, int dR2MAX, const CO_t calo[/*nCAL*/], const TkObj & track) ;
@@ -73,5 +75,7 @@ void ptsort_ref(int nIn, int nOut, const TV & in/*[nIn]*/, T out[/*nOut*/]) {
         }
     }
 }
+
+} // namespace
 
 #endif

@@ -1,5 +1,4 @@
 #include "linpuppi.h"
-#include "../../dataformats/l1pf_encoding.h"
 #include <algorithm>
 #include <cassert>
 
@@ -11,15 +10,16 @@ void linpuppi_set_debug(bool debug) { gdebug_ = debug; }
 void linpuppi_set_debug(bool debug) {}
 #endif
 
+using namespace l1ct;
+
 void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]);
 void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]);
 void fwdlinpuppiPt(const HadCaloObj caloin[NCALO], pt_t puppiPts[NCALO], puppiWgt_t puppiWgts[NCALO]);
 
 
-inline int dr2_int(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2) {
+inline int dr2_int_fw(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2) {
     ap_int<eta_t::width+1> deta = (eta1-eta2);
     ap_int<phi_t::width+1> dphi = (phi1-phi2);
-    //ap_int<phi_t::width> dphi = (phi1-phi2); // intentional wrap-around
 #ifdef LINPUPPI_DR2_LATENCY3
     int deta2 = deta*deta;
     int dphi2 = dphi*dphi;
@@ -239,7 +239,7 @@ void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]) {
         ap_uint<32> sum = 0;
         for (int it = 0; it < NCALO; ++it) {
             if (it == in) continue;
-            int dr2 = dr2_int(caloin[it].hwEta, caloin[it].hwPhi, caloin[in].hwEta, caloin[in].hwPhi); 
+            int dr2 = dr2_int_fw(caloin[it].hwEta, caloin[it].hwPhi, caloin[in].hwEta, caloin[in].hwPhi); 
             if (dr2 <= DR2MAX) { // if dr is inside puppi cone
                 ap_uint<9> dr2short = dr2 >> 5; // reduce precision to make divide LUT cheaper
                 if (dr2short < DR2MIN_SHIFT) dr2short = DR2MIN_SHIFT;
@@ -480,7 +480,7 @@ void linpuppiSum(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj caloin
     for (int in = 0; in < NALLNEUTRALS; ++in) {
         ap_uint<32> sum = 0;
         for (int it = 0; it < NTRACK; ++it) {
-            int dr2 = dr2_int(track[it].hwEta, track[it].hwPhi, caloin[in].hwEta, caloin[in].hwPhi); 
+            int dr2 = dr2_int_fw(track[it].hwEta, track[it].hwPhi, caloin[in].hwEta, caloin[in].hwPhi); 
             if (dr2 <= DR2MAX && fromPV[it]) { // if dr is inside puppi cone
                 ap_uint<9> dr2short = dr2 >> 5; // reduce precision to make divide LUT cheaper
                 if (dr2short < DR2MIN_SHIFT) dr2short = DR2MIN_SHIFT;
@@ -706,7 +706,7 @@ PuppiObj linpuppi_one(const PFNeutralObj & in, const linpuppi_refobj sel_track[N
     #pragma HLS ARRAY_PARTITION variable=term complete
     for (int it = 0; it < NTRACK; ++it) {
         #pragma HLS unroll
-        int dr2 = dr2_int(sel_track[it].hwEta, sel_track[it].hwPhi, in.hwEta, in.hwPhi); 
+        int dr2 = dr2_int_fw(sel_track[it].hwEta, sel_track[it].hwPhi, in.hwEta, in.hwPhi); 
         if (dr2 <= DR2MAX) { // if dr is inside puppi cone
             ap_uint<9> dr2short = dr2 >> 5; // reduce precision to make divide LUT cheaper
             if (dr2short < DR2MIN_SHIFT) dr2short = DR2MIN_SHIFT;

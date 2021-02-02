@@ -1,8 +1,10 @@
 #include "pfalgo2hgc.h"
 #include <cassert>
 
+using namespace l1ct;
+
 #include "pfalgo_common.icc"
-#include "../../dataformats/l1pf_encoding.h"
+
 
 void tk2calo_sumtk_hgc(const TkObj track[NTRACK], const bool isMu[NTRACK], const pt2_t tkerr2[NTRACK], const ap_uint<NCALO> calo_track_link_bit[NTRACK], pt_t sumtk[NCALO], pt2_t sumtkerr2[NCALO]) {
     for (int icalo = 0; icalo < NCALO; ++icalo) {

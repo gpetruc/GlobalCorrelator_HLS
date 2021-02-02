@@ -137,7 +137,7 @@ void HumanReadablePatternSerializer::endframe() {
     if (file_ == stdout) fflush(file_);
     ipattern_++;
 }
-void HumanReadablePatternSerializer::operator()(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) 
+void HumanReadablePatternSerializer::operator()(const l1ct::EmCaloObj emcalo[NEMCALO], const l1ct::HadCaloObj hadcalo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outpho[NPHOTON], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) 
 {
     if (!startframe()) return;
     dump_inputs(emcalo,hadcalo,track,mu);
@@ -145,7 +145,7 @@ void HumanReadablePatternSerializer::operator()(const EmCaloObj emcalo[NEMCALO],
     endframe();
 }
 
-void HumanReadablePatternSerializer::operator()(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) 
+void HumanReadablePatternSerializer::operator()(const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) 
 {
     if (!startframe()) return;
     dump_inputs(calo,track,mu);
@@ -153,41 +153,19 @@ void HumanReadablePatternSerializer::operator()(const HadCaloObj calo[NCALO], co
     endframe();
 }
 
-void HumanReadablePatternSerializer::operator()(const PFChargedObj inch[NTRACK], const PFChargedObj inem[NPHOTON], const PFChargedObj inne[NSELCALO], const PFChargedObj inmu[NMU], unsigned int DATA_SIZE, const PFChargedObj outpart[/*DATA_SIZE*/]) 
-{
-    if (!startframe()) return;
-    fprintf(file_, "Frame %04u:\n", ipattern_);
-    dump_pf(NTRACK,    "in ch", inch); // FIXME: do we want to dump PF or Puppi here?
-    dump_pf(NPHOTON,   "in em", inem); 
-    dump_pf(NSELCALO,  "in ne", inne);
-    dump_pf(NMU,       "in mu", inmu);
-    dump_pf(DATA_SIZE, "out  ", outpart); // FIXME: do we want to dump PF or Puppi here?
-    endframe();
-}
-
-
-void HumanReadablePatternSerializer::operator()(unsigned int DATA_SIZE, const PFChargedObj outpart[/*DATA_SIZE*/], unsigned int NTAU, const PFChargedObj outtau[/*NTAU*/]) 
-{
-    if (!startframe()) return;
-    fprintf(file_, "Frame %04u:\n", ipattern_);
-    dump_pf(DATA_SIZE, "input puppi", outpart);
-    dump_pf(NTAU,      "output taus", outtau); // FIXME: do we want to dump PF or Puppi here?
-    endframe();
-}
-
-void HumanReadablePatternSerializer::dump_inputs(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU]) {
+void HumanReadablePatternSerializer::dump_inputs(const l1ct::EmCaloObj emcalo[NEMCALO], const l1ct::HadCaloObj hadcalo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU]) {
     dump_hadcalo(hadcalo);
     dump_emcalo(emcalo);
     dump_track(track);
     dump_mu(mu);
 }
-void HumanReadablePatternSerializer::dump_inputs(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU]) {
+void HumanReadablePatternSerializer::dump_inputs(const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU]) {
     dump_hadcalo(calo);
     dump_track(track);
     dump_mu(mu);
 }
 
-void HumanReadablePatternSerializer::dump_outputs(const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) 
+void HumanReadablePatternSerializer::dump_outputs(const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outpho[NPHOTON], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) 
 {
     dump_pf(NTRACK,   "charged pf", outch);
     dump_pf(NPHOTON,  "photon  pf", outpho);
@@ -195,7 +173,7 @@ void HumanReadablePatternSerializer::dump_outputs(const PFChargedObj outch[NTRAC
     dump_pf(NMU,      "muon    pf", outmu);
 }
 
-void HumanReadablePatternSerializer::dump_outputs(const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) 
+void HumanReadablePatternSerializer::dump_outputs(const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) 
 {
     dump_pf(NTRACK,   "charged pf", outch);
     dump_pf(NSELCALO, "neutral pf", outne);
@@ -203,28 +181,28 @@ void HumanReadablePatternSerializer::dump_outputs(const PFChargedObj outch[NTRAC
 }
 
 
-void HumanReadablePatternSerializer::dump_hadcalo(const HadCaloObj hadcalo[NCALO], unsigned int N) {
+void HumanReadablePatternSerializer::dump_hadcalo(const l1ct::HadCaloObj hadcalo[NCALO], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !hadcalo[i].hwPt) continue;
         fprintf(file_, "   calo  %3d, hwPt % 7d   hwEmPt  % 7d    hwEta %+7d   hwPhi %+7d   hwIsEM %1d\n", i, hadcalo[i].intPt(), hadcalo[i].intEmPt(), hadcalo[i].intEta(), hadcalo[i].intPhi(), int(hadcalo[i].hwIsEM));
     }
     if (file_ == stdout) fflush(file_);
 }
-void HumanReadablePatternSerializer::dump_emcalo(const EmCaloObj emcalo[NEMCALO], unsigned int N) {
+void HumanReadablePatternSerializer::dump_emcalo(const l1ct::EmCaloObj emcalo[NEMCALO], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !emcalo[i].hwPt) continue;
         fprintf(file_, "   em    %3d, hwPt % 7d   hwPtErr % 7d    hwEta %+7d   hwPhi %+7d\n", i, emcalo[i].intPt(), emcalo[i].intPtErr(), emcalo[i].intEta(), emcalo[i].intPhi());
     }
     if (file_ == stdout) fflush(file_);
 }
-void HumanReadablePatternSerializer::dump_track(const TkObj track[NTRACK], unsigned int N) {
+void HumanReadablePatternSerializer::dump_track(const l1ct::TkObj track[NTRACK], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !track[i].hwPt) continue;
         fprintf(file_, "   track %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d     hwZ0 %+7d   tight %1d\n", i, track[i].intPt(), track[i].intEta(), track[i].intPhi(), int(track[i].hwZ0), int(track[i].isPFTight()));
     }
     if (file_ == stdout) fflush(file_);
 }
-void HumanReadablePatternSerializer::dump_mu(const MuObj mu[NMU], unsigned int N) {
+void HumanReadablePatternSerializer::dump_mu(const l1ct::MuObj mu[NMU], unsigned int N) {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !mu[i].hwPt) continue;
         fprintf(file_, "   muon  %3d, hwPt % 7d                      hwEta %+7d   hwPhi %+7d\n", i, mu[i].intPt(), mu[i].intEta(), mu[i].intPhi());
@@ -232,7 +210,7 @@ void HumanReadablePatternSerializer::dump_mu(const MuObj mu[NMU], unsigned int N
     if (file_ == stdout) fflush(file_);
 }
 
-void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const PFChargedObj outch[/*N*/]) 
+void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const l1ct::PFChargedObj outch[/*N*/]) 
 {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outch[i].hwPt) continue;
@@ -240,7 +218,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
                 outch[i].intPt(), outch[i].intEta(), outch[i].intPhi(), outch[i].oldId(), int(outch[i].hwZ0));
     }
 }
-void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const PFNeutralObj outne[/*N*/]) 
+void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, const l1ct::PFNeutralObj outne[/*N*/]) 
 {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outne[i].hwPt) continue;
@@ -249,7 +227,7 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     }
     if (file_ == stdout) fflush(file_);
 }
-void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *label, const PuppiObj outpuppi[/*N*/]) 
+void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *label, const l1ct::PuppiObj outpuppi[/*N*/]) 
 {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outpuppi[i].hwPt) continue; 

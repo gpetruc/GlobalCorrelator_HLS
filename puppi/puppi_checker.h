@@ -10,13 +10,13 @@ class PuppiChecker {
             sumDiff_(0), sumAbsDiff_(0) {}
 
         template<typename T, unsigned int N>
-        void checkIntVsFloat(const T input[N], const PuppiObj puppi[N], const PuppiObj puppi_flt[N], bool verbose) ;
+        void checkIntVsFloat(const T input[N], const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_flt[N], bool verbose) ;
 
         template<unsigned int N>
-        bool check(const PuppiObj puppi[N], const PuppiObj puppi_ref[N], const PuppiObj puppi_flt[N]) ;
+        bool check(const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N], const l1ct::PuppiObj puppi_flt[N]) ;
 
         template<unsigned int N>
-        bool checkChs(z0_t pvZ0, const PuppiObj puppi[N], const PuppiObj puppi_ref[N]);
+        bool checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N]);
 
         void printIntVsFloatReport() {
             int nmiss = n1bit_ + nalmostok_ + nbad_, nall = nok_ + nmiss;
@@ -25,8 +25,8 @@ class PuppiChecker {
             printf("  -   filled   : %6d  (%6.2f%% )   [ pT >= 2 GeV ]\n", npt2_,  npt2_ * 100.0 * fall);
             printf("  - exact match: %6d  (%6.2f%% )\n", nok_,   nok_ * 100.0 * fall);
             printf("  - mismatch   : %6d  (%6.2f%% )\n", nmiss, nmiss * 100.0 * fall);
-            printf("  -   by 1*LSB : %6d  (%6.2f%% )   [ 1 unit, %.2f GeV ]\n", n1bit_, n1bit_ * 100.0 * fall, Scales::INTPT_LSB);
-            printf("  -      small : %6d  (%6.2f%% )   [ %.2f < delta(pt) <= 1 GeV + 1% ]\n", nalmostok_, nalmostok_ * 100.0 * fall, Scales::INTPT_LSB);
+            printf("  -   by 1*LSB : %6d  (%6.2f%% )   [ 1 unit, %.2f GeV ]\n", n1bit_, n1bit_ * 100.0 * fall, l1ct::Scales::INTPT_LSB);
+            printf("  -      small : %6d  (%6.2f%% )   [ %.2f < delta(pt) <= 1 GeV + 1% ]\n", nalmostok_, nalmostok_ * 100.0 * fall, l1ct::Scales::INTPT_LSB);
             printf("  -      big   : %6d  (%6.2f%% )   [ delta(pt) > 1 GeV + 1% ]\n", (nbad_), (nbad_) * 100.0 * fall);
             printf("  - average pT  diff   %+8.4f  (on all)    %+8.4f  (on mismatch)\n", sumDiff_*fall, sumDiff_*fmiss);
             printf("  - average pT |diff|  % 8.4f  (on all)    % 8.4f  (on mismatch)\n", sumAbsDiff_*fall, sumAbsDiff_*fmiss);
@@ -38,18 +38,18 @@ class PuppiChecker {
 };
 
 template<typename T, unsigned int N>
-void PuppiChecker::checkIntVsFloat(const T input[N], const PuppiObj puppi[N], const PuppiObj puppi_flt[N], bool verbose) {
+void PuppiChecker::checkIntVsFloat(const T input[N], const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_flt[N], bool verbose) {
     for (int i = 0; i < N; ++i){
         if (input[i].hwPt > 0) {
             if (puppi_flt[i].floatPt() >= 2) npt2_++;
 
-            dpt_t hwPtDiff = dpt_t(puppi_flt[i].hwPt) - dpt_t(puppi[i].hwPt);
-            float ptDiff = Scales::floatPt(hwPtDiff);
+            l1ct::dpt_t hwPtDiff = l1ct::dpt_t(puppi_flt[i].hwPt) - l1ct::dpt_t(puppi[i].hwPt);
+            float ptDiff = l1ct::Scales::floatPt(hwPtDiff);
 
             int warn = 0;
             if (hwPtDiff == 0) {
                 nok_++; 
-            } else if (std::abs(Scales::intPt(hwPtDiff)) == 1) {
+            } else if (std::abs(l1ct::Scales::intPt(hwPtDiff)) == 1) {
                 n1bit_++;
             } else if (std::abs(ptDiff)< 1 + 0.01 * puppi_flt[i].floatPt()) {
                 nalmostok_++;
@@ -70,7 +70,7 @@ void PuppiChecker::checkIntVsFloat(const T input[N], const PuppiObj puppi[N], co
 
 
 template<unsigned int N>
-bool PuppiChecker::check(const PuppiObj puppi[N], const PuppiObj puppi_ref[N], const PuppiObj puppi_flt[N]) {
+bool PuppiChecker::check(const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N], const l1ct::PuppiObj puppi_flt[N]) {
     bool ret = true;
     for (int i = 0; i < N; ++i){
         if (!puppi_equals(puppi_ref[i], puppi[i], "Puppi", i)) {
@@ -89,7 +89,7 @@ bool PuppiChecker::check(const PuppiObj puppi[N], const PuppiObj puppi_ref[N], c
 }
 
 template<unsigned int N>
-bool PuppiChecker::checkChs(z0_t pvZ0, const PuppiObj puppi[N], const PuppiObj puppi_ref[N]) {
+bool PuppiChecker::checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N]) {
     bool ret = true;
     for (int i = 0; i < N; ++i){
         if (!puppi_equals(puppi_ref[i], puppi[i], "PFCHS", i)) {

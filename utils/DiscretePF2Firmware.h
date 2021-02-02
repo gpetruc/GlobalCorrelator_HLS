@@ -3,80 +3,82 @@
 
 /// NOTE: this include is not standalone, since the path to DiscretePFInputs is different in CMSSW & Vivado_HLS
 
+#include "../dataformats/layer1_objs.h"
 #include "../dataformats/pf.h"
+#include "../dataformats/puppi.h"
 #include <vector>
 
 namespace dpf2fw {
 
     // convert inputs from discrete to firmware
-    inline void convert(const l1tpf_impl::PropagatedTrack & in, TkObj &out) {
+    inline void convert(const l1tpf_impl::PropagatedTrack & in, l1ct::TkObj &out) {
         out.clear();
-        out.hwPt = Scales::makePt(in.hwPt);
+        out.hwPt = l1ct::Scales::makePt(in.hwPt);
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
         out.hwZ0 = in.hwZ0;
-        out.hwQuality = TkObj::PFLOOSE + (in.hwStubs >= 6 && in.hwChi2 < 500 ? TkObj::PFTIGHT : 0);
+        out.hwQuality = l1ct::TkObj::PFLOOSE + (in.hwStubs >= 6 && in.hwChi2 < 500 ? l1ct::TkObj::PFTIGHT : 0);
     }
 
-    inline TkObj transformConvert(const l1tpf_impl::PropagatedTrack & in) {
-        TkObj out;
+    inline l1ct::TkObj transformConvert(const l1tpf_impl::PropagatedTrack & in) {
+        l1ct::TkObj out;
         convert(in, out);
         return out;
     }
 
-    inline void convert(const l1tpf_impl::CaloCluster & in, HadCaloObj & out) {
+    inline void convert(const l1tpf_impl::CaloCluster & in, l1ct::HadCaloObj & out) {
         out.clear();
-        out.hwPt = Scales::makePt(in.hwPt);
-        out.hwEmPt = Scales::makePt(in.hwEmPt);
+        out.hwPt = l1ct::Scales::makePt(in.hwPt);
+        out.hwEmPt = l1ct::Scales::makePt(in.hwEmPt);
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
         out.hwIsEM = in.isEM;
     }
-    inline void convert(const l1tpf_impl::CaloCluster & in, EmCaloObj & out) {
+    inline void convert(const l1tpf_impl::CaloCluster & in, l1ct::EmCaloObj & out) {
         out.clear();
-        out.hwPt = Scales::makePt(in.hwPt);
-        out.hwPtErr = Scales::makePt(in.hwPtErr);
+        out.hwPt = l1ct::Scales::makePt(in.hwPt);
+        out.hwPtErr = l1ct::Scales::makePt(in.hwPtErr);
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
     }
-    inline void convert(const l1tpf_impl::Muon & in, MuObj & out) {
+    inline void convert(const l1tpf_impl::Muon & in, l1ct::MuObj & out) {
         out.clear();
-        out.hwPt = Scales::makePt(in.hwPt);
+        out.hwPt = l1ct::Scales::makePt(in.hwPt);
         out.hwEta = in.hwEta; // @calo
         out.hwPhi = in.hwPhi; // @calo
     }
 
-    inline void convert(const l1tpf_impl::PFParticle &src, PFChargedObj & pf) {
+    inline void convert(const l1tpf_impl::PFParticle &src, l1ct::PFChargedObj & pf) {
         pf.clear();
-        pf.hwPt = Scales::makePt(src.hwPt);
+        pf.hwPt = l1ct::Scales::makePt(src.hwPt);
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
-            case 0: pf.hwId = ParticleID::mkChHad(src.track.hwCharge); break;
-            case 1: pf.hwId = ParticleID::mkElectron(src.track.hwCharge); break;
-            case 2: pf.hwId = ParticleID::HADZERO; assert(false); break;
-            case 3: pf.hwId = ParticleID::PHOTON; break;
-            case 4: pf.hwId = ParticleID::mkMuon(src.track.hwCharge); break;
+            case 0: pf.hwId = l1ct::ParticleID::mkChHad(src.track.hwCharge); break;
+            case 1: pf.hwId = l1ct::ParticleID::mkElectron(src.track.hwCharge); break;
+            case 2: pf.hwId = l1ct::ParticleID::HADZERO; assert(false); break;
+            case 3: pf.hwId = l1ct::ParticleID::PHOTON; break;
+            case 4: pf.hwId = l1ct::ParticleID::mkMuon(src.track.hwCharge); break;
         }
         pf.hwZ0 = src.track.hwZ0;
     }
-    inline void convert(const l1tpf_impl::PFParticle &src, PFNeutralObj & pf) {
+    inline void convert(const l1tpf_impl::PFParticle &src, l1ct::PFNeutralObj & pf) {
         pf.clear();
-        pf.hwPt = Scales::makePt(src.hwPt);
+        pf.hwPt = l1ct::Scales::makePt(src.hwPt);
         pf.hwEta = src.hwEta;
         pf.hwPhi = src.hwPhi;
         switch(src.hwId) {
-            case 0: pf.hwId = ParticleID::mkChHad(src.track.hwCharge); assert(false); break;
-            case 1: pf.hwId = ParticleID::mkElectron(src.track.hwCharge); assert(false); break;
-            case 2: pf.hwId = ParticleID::HADZERO; break;
-            case 3: pf.hwId = ParticleID::PHOTON; break;
-            case 4: pf.hwId = ParticleID::mkMuon(src.track.hwCharge); assert(false); break;
+            case 0: pf.hwId = l1ct::ParticleID::mkChHad(src.track.hwCharge); assert(false); break;
+            case 1: pf.hwId = l1ct::ParticleID::mkElectron(src.track.hwCharge); assert(false); break;
+            case 2: pf.hwId = l1ct::ParticleID::HADZERO; break;
+            case 3: pf.hwId = l1ct::ParticleID::PHOTON; break;
+            case 4: pf.hwId = l1ct::ParticleID::mkMuon(src.track.hwCharge); assert(false); break;
         }
     }
 
 
-    inline void convert(const l1tpf_impl::InputRegion & src, PFRegion & region) {
-        region.hwEtaCenter = Scales::makeGlbEta(src.etaCenter);
+    inline void convert(const l1tpf_impl::InputRegion & src, l1ct::PFRegion & region) {
+        region.hwEtaCenter = l1ct::Scales::makeGlbEta(src.etaCenter);
     }
 
     template<unsigned int NMAX, typename In, typename Out>

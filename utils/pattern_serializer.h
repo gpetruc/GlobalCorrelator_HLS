@@ -3,7 +3,10 @@
 
 #include <cstdio>
 #include <vector>
+#include "../dataformats/layer1_objs.h"
+#include "../dataformats/layer1_multiplicities.h"
 #include "../dataformats/pf.h"
+#include "../dataformats/puppi.h"
 
 
 #if defined(PACKING_DATA_SIZE)
@@ -176,24 +179,21 @@ class HumanReadablePatternSerializer {
         HumanReadablePatternSerializer(const std::string &fname, bool zerosuppress=false) ;
         ~HumanReadablePatternSerializer() ;
         
-        void operator()(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) ;
-        void operator()(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) ;
-        // layer 2 examples // FIXME: why PFCharged for the neutrals? 
-        void operator()(const PFChargedObj inch[NTRACK], const PFChargedObj inem[NPHOTON], const PFChargedObj inne[NSELCALO], const PFChargedObj inmu[NMU], unsigned int DATA_SIZE, const PFChargedObj outpart[/*DATA_SIZE*/]) ;
-        void operator()(unsigned int DATA_SIZE, const PFChargedObj outpart[/*DATA_SIZE*/], unsigned int NTAU, const PFChargedObj outtau[/*NTAU*/]) ;
+        void operator()(const l1ct::EmCaloObj emcalo[NEMCALO], const l1ct::HadCaloObj hadcalo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outpho[NPHOTON], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) ;
+        void operator()(const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) ;
         // PF all-in-one
-        void dump_inputs(const EmCaloObj emcalo[NEMCALO], const HadCaloObj hadcalo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU]) ;
-        void dump_inputs(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU]) ;
-        void dump_outputs(const PFChargedObj outch[NTRACK], const PFNeutralObj outpho[NPHOTON], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) ;
-        void dump_outputs(const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU]) ;
+        void dump_inputs(const l1ct::EmCaloObj emcalo[NEMCALO], const l1ct::HadCaloObj hadcalo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU]) ;
+        void dump_inputs(const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU]) ;
+        void dump_outputs(const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outpho[NPHOTON], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) ;
+        void dump_outputs(const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU]) ;
         // Individual pieces
-        void dump_emcalo(const EmCaloObj emcalo[NEMCALO], unsigned int N = NEMCALO) ;
-        void dump_hadcalo(const HadCaloObj hadcalo[NCALO], unsigned int N = NCALO) ;
-        void dump_track(const TkObj track[NTRACK], unsigned int N = NTRACK) ;
-        void dump_mu(const MuObj mu[NMU], unsigned int N = NMU) ;
-        void dump_pf(unsigned int N, const char *label, const PFChargedObj outch[/*N*/]) ;
-        void dump_pf(unsigned int N, const char *label, const PFNeutralObj outch[/*N*/]) ;
-        void dump_puppi(unsigned int N, const char *label, const PuppiObj outpuppi[/*N*/]) ;
+        void dump_emcalo(const l1ct::EmCaloObj emcalo[NEMCALO], unsigned int N = NEMCALO) ;
+        void dump_hadcalo(const l1ct::HadCaloObj hadcalo[NCALO], unsigned int N = NCALO) ;
+        void dump_track(const l1ct::TkObj track[NTRACK], unsigned int N = NTRACK) ;
+        void dump_mu(const l1ct::MuObj mu[NMU], unsigned int N = NMU) ;
+        void dump_pf(unsigned int N, const char *label, const l1ct::PFChargedObj outch[/*N*/]) ;
+        void dump_pf(unsigned int N, const char *label, const l1ct::PFNeutralObj outch[/*N*/]) ;
+        void dump_puppi(unsigned int N, const char *label, const l1ct::PuppiObj outpuppi[/*N*/]) ;
         bool startframe();
         void endframe();
     protected:

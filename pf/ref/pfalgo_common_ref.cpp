@@ -3,7 +3,7 @@
 #include <cmath>
 #include <cstdio>
 
-void pfalgo_config::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[]) {
+void l1ct::pfalgo_config::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[]) {
     ptErrBins.resize(nbins);
     for (unsigned int i = 0; i < nbins; ++i) {
         ptErrBins[i].abseta = Scales::makeGlbEta(absetas[i]);
@@ -18,7 +18,7 @@ void pfalgo_config::loadPtErrBins(unsigned int nbins, const float absetas[], con
     }
 }
 
-pt_t ptErr_ref(const pfalgo_config & cfg, const PFRegion & region, const TkObj & track) {
+l1ct::pt_t l1ct::ptErr_ref(const l1ct::pfalgo_config & cfg, const l1ct::PFRegion & region, const l1ct::TkObj & track) {
     glbeta_t abseta = region.hwGlbEta(track.hwEta);
     if (abseta < 0) abseta = -abseta;
     
@@ -37,7 +37,7 @@ pt_t ptErr_ref(const pfalgo_config & cfg, const PFRegion & region, const TkObj &
     return ptErr;
 }
 
-void pfalgo_mu_ref(const pfalgo_config &cfg, const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], bool isMu[/*cfg.nTRACK*/], PFChargedObj outmu[/*cfg.nMU*/], bool debug) {
+void l1ct::pfalgo_mu_ref(const l1ct::pfalgo_config &cfg, const l1ct::TkObj track[/*cfg.nTRACK*/], const l1ct::MuObj mu[/*cfg.nMU*/], bool isMu[/*cfg.nTRACK*/], l1ct::PFChargedObj outmu[/*cfg.nMU*/], bool debug) {
 
     // init
     for (unsigned int ipf = 0; ipf < cfg.nMU; ++ipf) clear(outmu[ipf]);

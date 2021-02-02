@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <cassert>
+#include "../dataformats/layer1_objs.h"
 #include "../dataformats/pf.h"
 #include "DiscretePFInputs.h"
 #include "DiscretePFInputsIO.h"
@@ -48,7 +49,7 @@ class DiscretePFInputsReader {
         }
         ~DiscretePFInputsReader() { fclose(file_); }
         // for region-by-region approach
-        bool nextRegion(PFRegion & region, HadCaloObj calo[NCALO], EmCaloObj emcalo[NEMCALO], TkObj track[NTRACK], MuObj mu[NMU], z0_t & hwZPV) {
+        bool nextRegion(l1ct::PFRegion & region, l1ct::HadCaloObj calo[NCALO], l1ct::EmCaloObj emcalo[NEMCALO], l1ct::TkObj track[NTRACK], l1ct::MuObj mu[NMU], l1ct::z0_t & hwZPV) {
             if (!nextRegion()) return false;
             const Region &r = event_.regions[iregion_];
             dpf2fw::convert(r, region);
@@ -77,7 +78,7 @@ class DiscretePFInputsReader {
         const Region & region() const { return event_.regions[iregion_-1]; }
 
         template<unsigned int EVNTRACKS>
-        void allTracks(TkObj track[EVNTRACKS]){
+        void allTracks(l1ct::TkObj track[EVNTRACKS]){
             for(int i = 0; i < EVNTRACKS; i++){
                 clear(track[i]);
             }
@@ -86,7 +87,7 @@ class DiscretePFInputsReader {
                 const std::vector<l1tpf_impl::PropagatedTrack> & rTracks = event_.regions[ir].track;
                 evTracks.insert(evTracks.end(), rTracks.begin(), rTracks.end());
             } 
-            std::vector<TkObj> evTracksHW(evTracks.size());
+            std::vector<l1ct::TkObj> evTracksHW(evTracks.size());
             std::transform(evTracks.begin(), evTracks.end(), evTracksHW.begin(), dpf2fw::transformConvert); 
             int lim = EVNTRACKS < evTracksHW.size() ? EVNTRACKS : evTracksHW.size();
             for(int i = 0; i < lim; i++){

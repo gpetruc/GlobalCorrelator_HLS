@@ -9,16 +9,17 @@
 
 #include "pfalgo_common.h"
 
-void pfalgo2hgc(const PFRegion & region, const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) ;
+void pfalgo2hgc(const l1ct::PFRegion & region, const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], l1ct::PFChargedObj outch[NTRACK], l1ct::PFNeutralObj outne[NSELCALO], l1ct::PFChargedObj outmu[NMU]) ;
 
 #define PFALGO2HGC_DATA_SIZE 72
 #define PFALGO2HGC_NCHANN_IN (1+NTRACK+NCALO+NMU)
 #define PFALGO2HGC_NCHANN_OUT (NTRACK+NSELCALO+NMU)
 void packed_pfalgo2hgc(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN], ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT]) ;
-void pfalgo2hgc_pack_in(const PFRegion & region, const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const MuObj mu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN]) ;
-void pfalgo2hgc_unpack_in(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN], PFRegion & region, HadCaloObj calo[NCALO], TkObj track[NTRACK], MuObj mu[NMU]) ;
-void pfalgo2hgc_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj outne[NSELCALO], const PFChargedObj outmu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT]) ;
-void pfalgo2hgc_unpack_out(const ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT], PFChargedObj outch[NTRACK], PFNeutralObj outne[NSELCALO], PFChargedObj outmu[NMU]) ;
+void pfalgo2hgc_pack_in(const l1ct::PFRegion & region, const l1ct::HadCaloObj calo[NCALO], const l1ct::TkObj track[NTRACK], const l1ct::MuObj mu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN]) ;
+void pfalgo2hgc_unpack_in(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_NCHANN_IN], l1ct::PFRegion & region, l1ct::HadCaloObj calo[NCALO], l1ct::TkObj track[NTRACK], l1ct::MuObj mu[NMU]) ;
+void pfalgo2hgc_pack_out(const l1ct::PFChargedObj outch[NTRACK], const l1ct::PFNeutralObj outne[NSELCALO], const l1ct::PFChargedObj outmu[NMU], ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT]) ;
+void pfalgo2hgc_unpack_out(const ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC_NCHANN_OUT], l1ct::PFChargedObj outch[NTRACK], l1ct::PFNeutralObj outne[NSELCALO], l1ct::PFChargedObj outmu[NMU]) ;
+
 
 #ifndef CMSSW_GIT_HASH
 #define PFALGO_DR2MAX_TK_CALO 525

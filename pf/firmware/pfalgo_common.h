@@ -1,17 +1,17 @@
 #ifndef FIRMWARE_PFALGO_COMMON_H
 #define FIRMWARE_PFALGO_COMMON_H
 
+#include "../../dataformats/layer1_objs.h"
+#include "../../dataformats/layer1_multiplicities.h"
 #include "../../dataformats/pf.h"
 #include "pfalgo_types.h"
 
-inline int dr2_int(eta_t eta1, phi_t phi1, eta_t eta2, phi_t phi2) {
-    ap_int<eta_t::width+1> deta = (eta1-eta2);
-    ap_int<phi_t::width+1> dphi = (phi1-phi2);
-    //ap_int<phi_t::width> dphi = (phi1-phi2); // intentional wrap-around
-    return deta*deta + dphi*dphi;
-}
+namespace l1ct {
 
 pt_t ptErr(pt_t pt, eta_t eta, glbeta_t eta0) ;
+
+} // namespace
+
 
 #ifndef CMSSW_GIT_HASH
 

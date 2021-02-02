@@ -6,12 +6,15 @@
 #include <vector>
 #include <memory>
 
+namespace l1ct {
+    int g_pfalgo3_debug_ref_ = 0;
+    int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::EmCaloObj calo[/*nCAL*/], const l1ct::TkObj & track) ;
+    int em_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::HadCaloObj calo[/*nCAL*/], const l1ct::EmCaloObj & em) ;
+}
 
-int g_pfalgo3_debug_ref_ = 0;
+void l1ct::pfalgo3_ref_set_debug(int debug) { g_pfalgo3_debug_ref_ = debug; }
 
-void pfalgo3_ref_set_debug(int debug) { g_pfalgo3_debug_ref_ = debug; }
-
-int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const EmCaloObj calo[/*nCAL*/], const TkObj & track) {
+int l1ct::tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::EmCaloObj calo[/*nCAL*/], const l1ct::TkObj & track) {
     int  drmin = dR2MAX, ibest = -1;
     for (unsigned int ic = 0; ic < nCAL; ++ic) {
             if (calo[ic].hwPt <= 0) continue;
@@ -20,7 +23,7 @@ int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const EmCaloObj ca
     }
     return ibest;
 }
-int em_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const HadCaloObj calo[/*nCAL*/], const EmCaloObj & em) {
+int l1ct::em_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::HadCaloObj calo[/*nCAL*/], const l1ct::EmCaloObj & em) {
     pt_t emPtMin = em.hwPt >> 1;
     int  drmin = dR2MAX, ibest = -1;
     for (unsigned int ic = 0; ic < nCAL; ++ic) {
@@ -32,7 +35,7 @@ int em_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const HadCaloObj c
 }
 
 
-void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const bool isMu[/*cfg.nTRACK*/], bool isEle[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], HadCaloObj hadcalo_out[/*cfg.nCALO*/]) {
+void l1ct::pfalgo3_em_ref(const l1ct::pfalgo3_config &cfg, const l1ct::EmCaloObj emcalo[/*cfg.nEMCALO*/], const l1ct::HadCaloObj hadcalo[/*cfg.nCALO*/], const l1ct::TkObj track[/*cfg.nTRACK*/], const bool isMu[/*cfg.nTRACK*/], bool isEle[/*cfg.nTRACK*/], l1ct::PFNeutralObj outpho[/*cfg.nPHOTON*/], l1ct::HadCaloObj hadcalo_out[/*cfg.nCALO*/]) {
     // constants
     const int DR2MAX_TE = cfg.dR2MAX_TK_EM;
     const int DR2MAX_EH = cfg.dR2MAX_EM_CALO;
@@ -144,7 +147,7 @@ void pfalgo3_em_ref(const pfalgo3_config &cfg, const EmCaloObj emcalo[/*cfg.nEMC
     }
 }
 
-void pfalgo3_ref(const pfalgo3_config &cfg, const PFRegion & region, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) {
+void l1ct::pfalgo3_ref(const l1ct::pfalgo3_config &cfg, const l1ct::PFRegion & region, const l1ct::EmCaloObj emcalo[/*cfg.nEMCALO*/], const l1ct::HadCaloObj hadcalo[/*cfg.nCALO*/], const l1ct::TkObj track[/*cfg.nTRACK*/], const l1ct::MuObj mu[/*cfg.nMU*/], l1ct::PFChargedObj outch[/*cfg.nTRACK*/], l1ct::PFNeutralObj outpho[/*cfg.nPHOTON*/], l1ct::PFNeutralObj outne[/*cfg.nSELCALO*/], l1ct::PFChargedObj outmu[/*cfg.nMU*/]) {
 
     if (g_pfalgo3_debug_ref_) {
         for (unsigned int i = 0; i < cfg.nTRACK; ++i) { if (track[i].hwPt == 0) continue;
@@ -292,7 +295,7 @@ void pfalgo3_ref(const pfalgo3_config &cfg, const PFRegion & region, const EmCal
 
 }
 
-void pfalgo3_merge_neutrals_ref(const pfalgo3_config &cfg, const PFNeutralObj pho[/*cfg.nPHOTON*/], const PFNeutralObj ne[/*cfg.nSELCALO*/], PFNeutralObj allne[/*cfg.nALLNEUTRALS*/]) 
+void l1ct::pfalgo3_merge_neutrals_ref(const l1ct::pfalgo3_config &cfg, const l1ct::PFNeutralObj pho[/*cfg.nPHOTON*/], const l1ct::PFNeutralObj ne[/*cfg.nSELCALO*/], l1ct::PFNeutralObj allne[/*cfg.nALLNEUTRALS*/]) 
 {
     int j = 0;
     for (unsigned int i = 0; i < cfg.nPHOTON;  ++i, ++j) allne[j] = pho[i];

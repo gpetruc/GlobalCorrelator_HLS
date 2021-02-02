@@ -7,6 +7,8 @@
 
 #define NTEST 1000
 
+using namespace l1ct;
+
 int main() {
     HumanReadablePatternSerializer debugHR("-", /*zerosuppress=*/true); // this will print on stdout, we'll use it for errors
 

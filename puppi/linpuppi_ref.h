@@ -1,12 +1,13 @@
 #ifndef LINPUPPI_REF_H
 #define LINPUPPI_REF_H
 
-#ifdef CMSSW_GIT_HASH
-  #include "../firmware/linpuppi.h"
-#else
-  #include "firmware/linpuppi.h"
-#endif
+#include "../dataformats/layer1_objs.h"
+#include "../dataformats/pf.h"
+#include "../dataformats/puppi.h"
+
 #include <vector>
+
+namespace l1ct {
 
 struct linpuppi_config {
     unsigned int nTrack, nIn, nOut; // nIn, nOut refer to the calorimeter clusters or neutral PF candidates as input and as output (after sorting)
@@ -66,4 +67,7 @@ void fwdlinpuppi_flt(const linpuppi_config &cfg, const HadCaloObj caloin[/*cfg.n
 
 // utility
 void puppisort_and_crop_ref(unsigned int nIn, unsigned int nOut, const PuppiObj in[/*nIn*/], PuppiObj out[/*nOut*/]) ;
+
+} // namespace
+
 #endif

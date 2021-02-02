@@ -8,6 +8,7 @@
 
 #define NTEST 500
 
+using namespace l1ct;
 
 int main() {
 #if defined(REG_HGCalNoTK)

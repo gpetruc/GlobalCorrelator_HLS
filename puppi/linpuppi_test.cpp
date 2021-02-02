@@ -7,13 +7,16 @@
 #include "puppi_checker.h"
 
 #if defined(REG_Barrel)
+    #include "../pf/firmware/pfalgo3.h"
     #include "../pf/ref/pfalgo3_ref.h"
 #elif defined(REG_HGCal)
+    #include "../pf/firmware/pfalgo2hgc.h"
     #include "../pf/ref/pfalgo2hgc_ref.h"
 #endif
 
 #define NTEST 1000
 
+using namespace l1ct;
 
 int main() {
 #if defined(REG_Barrel)
