@@ -5,9 +5,17 @@
 
 namespace l1ct {
 
-void pfalgo2hgc_ref_set_debug(int debug) ;
+    class PFAlgo2HGCEmulator : public PFAlgoEmulatorBase {
+        public:
+            PFAlgo2HGCEmulator(unsigned int nTrack, unsigned int nCalo, unsigned int nMu, unsigned int nSelCalo,
+                  unsigned int dR2Max_Tk_Mu, unsigned int dR2Max_Tk_Calo,
+                  pt_t tk_MaxInvPt_Loose, pt_t tk_MaxInvPt_Tight) :
+                PFAlgoEmulatorBase(nTrack, nCalo, nMu, nSelCalo, dR2Max_Tk_Mu, dR2Max_Tk_Calo, tk_MaxInvPt_Loose, tk_MaxInvPt_Tight) {}
 
-void pfalgo2hgc_ref(const pfalgo_config &cfg, const PFRegion & region, const HadCaloObj calo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) ;
+            virtual ~PFAlgo2HGCEmulator() override {}
+
+            void pfalgo2hgc_ref(const PFRegion & region, const HadCaloObj calo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) const ;
+    };
 
 } // namespace
 

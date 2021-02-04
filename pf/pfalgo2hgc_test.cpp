@@ -24,13 +24,13 @@ int main() {
     PFNeutralObj outne[NSELCALO], outne_ref[NSELCALO];
     PFChargedObj outmupf[NMU], outmupf_ref[NMU];
 
-    pfalgo_config cfg(NTRACK,NCALO,NMU, NSELCALO,
+    PFAlgo2HGCEmulator emulator(NTRACK,NCALO,NMU, NSELCALO,
                       PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                       Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
-    cfg.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
+    emulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
  
 #ifndef BOARD_none
     printf("Multiplicities per region: Region %d, Tk %d, EmCalo %d, HadCalo %d, Mu %d => %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d => %d\n",
@@ -63,7 +63,7 @@ int main() {
         pfalgo2hgc(region, calo, track, mu, outch, outne, outmupf);
 #endif
 
-        pfalgo2hgc_ref(cfg, region, calo, track, mu, outch_ref, outne_ref, outmupf_ref);
+        emulator.pfalgo2hgc_ref(region, calo, track, mu, outch_ref, outne_ref, outmupf_ref);
 
         // -----------------------------------------
         // validation against the reference algorithm

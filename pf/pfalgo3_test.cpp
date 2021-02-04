@@ -25,14 +25,14 @@ int main() {
     PFNeutralObj outpho[NPHOTON], outpho_ref[NPHOTON];
     PFChargedObj outmupf[NMU], outmupf_ref[NMU];
 
-    pfalgo3_config cfg(NTRACK,NEMCALO,NCALO,NMU, 
+    PFAlgo3Emulator emulator(NTRACK,NEMCALO,NCALO,NMU, 
                        NPHOTON,NSELCALO,NALLNEUTRALS,
                        PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
                        Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
-    cfg.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
+    emulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
  
 #ifndef BOARD_none
     printf("Multiplicities per region: Region %d, Tk %d, EmCalo %d, HadCalo %d, Mu %d => %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d => %d\n",
@@ -58,7 +58,7 @@ int main() {
 
         bool verbose = (test < 10); // can set this on to get detailed printout of some test
         pfalgo3_set_debug(verbose);
-        pfalgo3_ref_set_debug(verbose);
+        emulator.setDebug(verbose);
 
 #ifndef BOARD_none
         pfalgo3_pack_in(region, emcalo, hadcalo, track, mu, packed_input); 
@@ -70,7 +70,7 @@ int main() {
         pfalgo3(region, emcalo, hadcalo, track, mu, outch, outpho, outne, outmupf);
 #endif
 
-        pfalgo3_ref(cfg, region, emcalo, hadcalo, track, mu, outch_ref, outpho_ref, outne_ref, outmupf_ref);
+        emulator.pfalgo3_ref(region, emcalo, hadcalo, track, mu, outch_ref, outpho_ref, outne_ref, outmupf_ref);
 
         // -----------------------------------------
         // validation against the reference algorithm

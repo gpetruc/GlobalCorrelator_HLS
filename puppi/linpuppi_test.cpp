@@ -21,7 +21,7 @@ using namespace l1ct;
 int main() {
 #if defined(REG_Barrel)
     DumpFileReader inputs("TTbar_PU200_Barrel.dump");
-    pfalgo3_config pfcfg(NTRACK,NEMCALO,NCALO,NMU, 
+    PFAlgo3Emulator emulator(NTRACK,NEMCALO,NCALO,NMU, 
                          NPHOTON,NSELCALO,NALLNEUTRALS,
                          PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
                          PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
@@ -35,7 +35,7 @@ int main() {
         NTRACK, NEMCALO, NCALO, NMU, NTRACK, NPHOTON, NSELCALO, NMU, NALLNEUTRALS, NNEUTRALS);
 #elif defined(REG_HGCal)
     DumpFileReader inputs("TTbar_PU200_HGCal.dump");
-    pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
+    PFAlgo2HGCEmulator emulator(NTRACK,NCALO,NMU, NSELCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                         PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     linpuppi_config pucfg(NTRACK, NALLNEUTRALS, NNEUTRALS,
@@ -94,10 +94,10 @@ int main() {
 #endif
 
 #if defined(REG_Barrel)
-        pfalgo3_ref(pfcfg, region, emcalo, hadcalo, track, mu, pfch, pfpho, pfne, pfmu);
-        pfalgo3_merge_neutrals_ref(pfcfg, pfpho, pfne, pfallne);
+        emulator.pfalgo3_ref(region, emcalo, hadcalo, track, mu, pfch, pfpho, pfne, pfmu);
+        emulator.pfalgo3_merge_neutrals_ref(pfpho, pfne, pfallne);
 #elif defined(REG_HGCal)
-        pfalgo2hgc_ref(pfcfg, region, hadcalo, track, mu, pfch, pfallne, pfmu); 
+        emulator.pfalgo2hgc_ref(region, hadcalo, track, mu, pfch, pfallne, pfmu); 
 #endif
 
         bool verbose = 0;

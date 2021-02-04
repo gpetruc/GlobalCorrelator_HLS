@@ -3,28 +3,30 @@
 #include <cmath>
 #include <cstdio>
 
-void l1ct::pfalgo_config::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[]) {
-    ptErrBins.resize(nbins);
-    for (unsigned int i = 0; i < nbins; ++i) {
-        ptErrBins[i].abseta = Scales::makeGlbEta(absetas[i]);
-        ptErrBins[i].scale  = scales[i];
-        ptErrBins[i].offs   = offs[i];
+l1ct::PFAlgoEmulatorBase::~PFAlgoEmulatorBase() {}
 
-        printf("loadPtErrBins: #%d: abseta %5.3f -> %8d, scale %7.4f -> %7.4f, offs %7.3f -> %7.4f\n",
+void l1ct::PFAlgoEmulatorBase::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[], bool verbose) {
+    ptErrBins_.resize(nbins);
+    for (unsigned int i = 0; i < nbins; ++i) {
+        ptErrBins_[i].abseta = Scales::makeGlbEta(absetas[i]);
+        ptErrBins_[i].scale  = scales[i];
+        ptErrBins_[i].offs   = offs[i];
+
+        if (verbose || debug_) printf("loadPtErrBins: #%d: abseta %5.3f -> %8d, scale %7.4f -> %7.4f, offs %7.3f -> %7.4f\n",
                 i, 
-                absetas[i], ptErrBins[i].abseta.to_int(), 
-                scales[i], ptErrBins[i].scale.to_float(),
-                offs[i], ptErrBins[i].offs.to_float());
+                absetas[i], ptErrBins_[i].abseta.to_int(), 
+                scales[i], ptErrBins_[i].scale.to_float(),
+                offs[i], ptErrBins_[i].offs.to_float());
     }
 }
 
-l1ct::pt_t l1ct::ptErr_ref(const l1ct::pfalgo_config & cfg, const l1ct::PFRegion & region, const l1ct::TkObj & track) {
+l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegion & region, const l1ct::TkObj & track) const {
     glbeta_t abseta = region.hwGlbEta(track.hwEta);
     if (abseta < 0) abseta = -abseta;
     
     ptErrScale_t scale = 0.3125;
     ptErrOffs_t offs = 7.0;
-    for (const auto & bin : cfg.ptErrBins) {
+    for (const auto & bin : ptErrBins_) {
         if (abseta < bin.abseta) {
            scale = bin.scale;
            offs  = bin.offs;
@@ -37,21 +39,21 @@ l1ct::pt_t l1ct::ptErr_ref(const l1ct::pfalgo_config & cfg, const l1ct::PFRegion
     return ptErr;
 }
 
-void l1ct::pfalgo_mu_ref(const l1ct::pfalgo_config &cfg, const l1ct::TkObj track[/*cfg.nTRACK*/], const l1ct::MuObj mu[/*cfg.nMU*/], bool isMu[/*cfg.nTRACK*/], l1ct::PFChargedObj outmu[/*cfg.nMU*/], bool debug) {
+void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const l1ct::TkObj track[/*nTRACK_*/], const l1ct::MuObj mu[/*nMU_*/], bool isMu[/*nTRACK_*/], l1ct::PFChargedObj outmu[/*nMU_*/]) const {
 
     // init
-    for (unsigned int ipf = 0; ipf < cfg.nMU; ++ipf) clear(outmu[ipf]);
-    for (unsigned int it = 0; it < cfg.nTRACK; ++it) isMu[it] = 0;
+    for (unsigned int ipf = 0; ipf < nMU_; ++ipf) clear(outmu[ipf]);
+    for (unsigned int it = 0; it < nTRACK_; ++it) isMu[it] = 0;
 
         // for each muon, find the closest track
-    for (unsigned int im = 0; im < cfg.nMU; ++im) {
+    for (unsigned int im = 0; im < nMU_; ++im) {
         if (mu[im].hwPt > 0) {
             int ibest = -1;
             pt_t dptmin = mu[im].hwPt >> 1;
-            for (unsigned int it = 0; it < cfg.nTRACK; ++it) {
+            for (unsigned int it = 0; it < nTRACK_; ++it) {
                 unsigned int dr = dr2_int(mu[im].hwEta, mu[im].hwPhi, track[it].hwEta, track[it].hwPhi);
-                //printf("deltaR2(mu %d float pt %5.1f, tk %2d float pt %5.1f) = int %d  (float deltaR = %.3f); int cut at %d\n", im, 0.25*int(mu[im].hwPt), it, 0.25*int(track[it].hwPt), dr, std::sqrt(float(dr))/229.2, cfg.dR2MAX_TK_MU);
-                if (dr < cfg.dR2MAX_TK_MU) { 
+                //printf("deltaR2(mu %d float pt %5.1f, tk %2d float pt %5.1f) = int %d  (float deltaR = %.3f); int cut at %d\n", im, 0.25*int(mu[im].hwPt), it, 0.25*int(track[it].hwPt), dr, std::sqrt(float(dr))/229.2, dR2MAX_TK_MU_);
+                if (dr < dR2MAX_TK_MU_) { 
                     dpt_t dpt = (dpt_t(track[it].hwPt) - dpt_t(mu[im].hwPt));
                     pt_t absdpt = dpt >= 0 ? pt_t(dpt) : pt_t(-dpt);
                     if (absdpt < dptmin) {
@@ -70,9 +72,9 @@ void l1ct::pfalgo_mu_ref(const l1ct::pfalgo_config &cfg, const l1ct::TkObj track
                 outmu[im].hwDxy = track[ibest].hwDxy;
                 outmu[im].hwTkQuality = track[ibest].hwQuality;
                 isMu[ibest] = 1;
-                if (debug) printf("FW  \t muon %3d linked to track %3d \n", im, ibest);
+                if (debug_) printf("FW  \t muon %3d linked to track %3d \n", im, ibest);
             } else {
-                if (debug) printf("FW  \t muon %3d not linked to any track\n", im);
+                if (debug_) printf("FW  \t muon %3d not linked to any track\n", im);
             }
         }
     }
