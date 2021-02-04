@@ -90,6 +90,13 @@ struct PuppiObj {
       hwData == other.hwData;
   }
 
+  inline bool operator>(const PuppiObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const PuppiObj &other) const { 
+      return hwPt < other.hwPt; 
+  }
+
   inline void clear() {
     hwPt = 0;
     hwEta = 0;

@@ -66,6 +66,14 @@ struct PFChargedObj : public PFCommonObj {
       hwTkQuality == other.hwTkQuality;
   }
 
+  inline bool operator>(const PFChargedObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const PFChargedObj &other) const { 
+      return hwPt < other.hwPt; 
+  }
+
+
   inline void clear() {
     hwPt = 0;
     hwEta = 0;
@@ -125,6 +133,13 @@ struct PFNeutralObj : public PFCommonObj {
       hwEmPt == other.hwEmPt &&
       hwEmID == other.hwEmID &&
       hwPUID == other.hwPUID;
+  }
+
+  inline bool operator>(const PFNeutralObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const PFNeutralObj &other) const { 
+      return hwPt < other.hwPt; 
   }
   
   inline void clear() {

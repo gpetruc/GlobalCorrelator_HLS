@@ -21,6 +21,13 @@ struct HadCaloObj {
       hwIsEM == other.hwIsEM;
   }
 
+  inline bool operator>(const HadCaloObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const HadCaloObj &other) const { 
+      return hwPt < other.hwPt; 
+  }
+
   inline void clear() {
     hwPt = 0;
     hwEta = 0;
@@ -69,12 +76,21 @@ struct EmCaloObj {
   pt_t hwPt, hwPtErr;
   eta_t hwEta; // relative to the region center, at calo
   phi_t hwPhi; // relative to the region center, at calo
+  ap_uint<4> hwFlags;
 
   inline bool operator==(const EmCaloObj & other) const {
     return hwPt == other.hwPt && 
       hwEta == other.hwEta && 
       hwPhi == other.hwPhi && 
-      hwPtErr == other.hwPtErr;
+      hwPtErr == other.hwPtErr &&
+      hwFlags == other.hwFlags;
+  }
+
+  inline bool operator>(const EmCaloObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const EmCaloObj &other) const { 
+      return hwPt < other.hwPt; 
   }
 
   inline void clear() {
@@ -82,6 +98,7 @@ struct EmCaloObj {
     hwPtErr = 0;
     hwEta = 0;
     hwPhi = 0;
+    hwFlags = 0;
   }
 
   int intPt() const { return Scales::intPt(hwPt); }
@@ -93,13 +110,14 @@ struct EmCaloObj {
   float floatEta() const { return Scales::floatEta(hwEta); }
   float floatPhi() const { return Scales::floatPhi(hwPhi); }
 
-  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width;
+  static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + pt_t::width + 4;
   inline ap_uint<BITWIDTH> pack() const {
         ap_uint<BITWIDTH> ret; unsigned int start = 0;
         _pack_into_bits(ret, start, hwPt);
         _pack_into_bits(ret, start, hwEta);
         _pack_into_bits(ret, start, hwPhi);
         _pack_into_bits(ret, start, hwPtErr);
+        _pack_into_bits(ret, start, hwFlags);
         return ret;
   }
   inline static EmCaloObj unpack(const ap_uint<BITWIDTH> & src) {
@@ -108,6 +126,7 @@ struct EmCaloObj {
         _unpack_from_bits(src, start, ret.hwEta);
         _unpack_from_bits(src, start, ret.hwPhi);
         _unpack_from_bits(src, start, ret.hwPtErr);
+        _unpack_from_bits(src, start, ret.hwFlags);
         return ret;
   }
 
@@ -132,6 +151,7 @@ struct TkObj {
   bool isPFTight() const { return hwQuality[1]; }
   phi_t hwVtxPhi() const { return hwCharge ? hwPhi + hwDPhi : hwPhi - hwDPhi; }
   eta_t hwVtxEta() const { return hwEta + hwDEta; }
+
   inline bool operator==(const TkObj & other) const {
     return hwPt == other.hwPt &&
       hwEta == other.hwEta &&
@@ -143,6 +163,14 @@ struct TkObj {
       hwCharge == other.hwCharge &&
       hwQuality == other.hwQuality;
   }
+
+  inline bool operator>(const TkObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const TkObj &other) const { 
+      return hwPt < other.hwPt; 
+  }
+
   inline void clear() {
     hwPt = 0;
     hwEta = 0;
@@ -224,6 +252,13 @@ struct MuObj {
       hwDxy == other.hwDxy &&
       hwCharge == other.hwCharge &&
       hwQuality == other.hwQuality;
+  }
+
+  inline bool operator>(const MuObj &other) const { 
+      return hwPt > other.hwPt; 
+  }
+  inline bool operator<(const MuObj &other) const { 
+      return hwPt < other.hwPt; 
   }
 
   inline void clear() {
