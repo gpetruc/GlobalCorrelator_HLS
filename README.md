@@ -29,18 +29,18 @@ Some compile-time constants are defined to defining the detector region (for lay
 
 * PF compiles, runs and synthethizes, both in the barrel (pfalgo3) and hgcal (pfalgo2hgc). An example wrapping is tested for `BOARD_VCU118`, where inputs and outputs are serialized as 72 bit objects (and dumped as two 64 bit words in the pattern file)
 * Puppi compiles, runs and synthethizes in all detector regions. In the wrapped version, inputs are 72-bit wide while outputs are 64-bit wide.
+* Dump files now contain new emulator classes that inherit from the firmware ones, replacing the DiscretePFInputs.
+* PF emulators have been converted to C++ classes, but the interface hasn't been cleaned up yet, and they still just use the bare classes from firmware.
 * Everything else is not tested and most likely won't even compile yet
 
 ## Pending items
 
-* Improve PF & Puppi emulator to make it more C++-like and take configurations as floats. Eventually replace the CMSSW algo.
-   * Also avoid using firmware headers in emulator algorithms. 
+* Improve PF & Puppi emulator to make it more C++-friendly, use the emulator types, and take configurations as floats. Eventually replace the CMSSW algo.
 * Improve Puppi implementation: use `ap_fixed` instead of bitshifts by hand, and use 2D LUT instead of the current ugly LUT-generating macro.
 * Introduce the fiducial cut and shift to global coordinates in Puppi
-* Replace the DiscretePFInput objects with objects inheriting from the HLS ones and just adding extra datamembers. 
-   * Update the corresponding readers and writers, and regenerate the dump files.
-* Split the dataformats into multiple header files, move multiplicites and similar into another files.
 * Introduce header files for the inputs and the decoders
+* Check if a better implementation of the packing and unpacking can be found, with zero overhead after synthesis.
+* See if the code for the lookup of the ptErr in the PF can be improved.
 * Get the rest of the code compiling and synthetizing
 * Introduce scripts for testing code before integration
 * Sync code with CMSSW, run code-checks & code-format
