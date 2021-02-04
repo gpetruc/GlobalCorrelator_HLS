@@ -1,7 +1,7 @@
 #include <cstdio>
 #include "firmware/linpuppi.h"
 #include "linpuppi_ref.h"
-#include "../utils/DiscretePFInputsReader.h"
+#include "../utils/DumpFileReader.h"
 #include "../utils/pattern_serializer.h"
 #include "../utils/test_utils.h"
 #include "puppi_checker.h"
@@ -12,10 +12,11 @@ using namespace l1ct;
 
 int main() {
 #if defined(REG_HGCalNoTK)
-    //DiscretePFInputsReader inputs("TTbar_PU200_HGCalNoTK.dump");
-    DiscretePFInputsReader inputs("VBFHToBB_PU200_HGCalNoTK.dump");
+    DumpFileReader inputs("TTbar_PU200_HGCalNoTK.dump");
+    //DumpFileReader inputs("VBFHToBB_PU200_HGCalNoTK.dump");
 #elif defined(REG_HF)
-    DiscretePFInputsReader inputs("VBFHToBB_PU200_HF.dump");
+    DumpFileReader inputs("TTbar_PU200_HF.dump");
+    //DumpFileReader inputs("VBFHToBB_PU200_HF.dump");
 #endif
 
     linpuppi_config cfg(NTRACK, NCALO, NNEUTRALS,

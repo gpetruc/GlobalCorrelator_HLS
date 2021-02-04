@@ -21,7 +21,6 @@ add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
 add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb ../utils/test_utils.cpp -cflags "${cflags}"
 add_files -tb ../data/TTbar_PU200_Barrel.dump
-add_files -tb ../data/TTbar_PU200_Barrel.newDump
 
 # reset the solution
 open_solution -reset "solution"

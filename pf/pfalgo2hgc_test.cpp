@@ -1,7 +1,7 @@
 #include <cstdio>
 #include "firmware/pfalgo2hgc.h"
 #include "ref/pfalgo2hgc_ref.h"
-#include "../utils/DiscretePFInputsReader.h"
+#include "../utils/DumpFileReader.h"
 #include "../utils/pattern_serializer.h"
 #include "../utils/test_utils.h"
 
@@ -12,7 +12,7 @@ using namespace l1ct;
 int main() {
     HumanReadablePatternSerializer debugHR("-", /*zerosuppress=*/true); // this will print on stdout, we'll use it for errors
 
-    DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
+    DumpFileReader inputs("TTbar_PU200_HGCal.dump");
     
     // input TP objects
     PFRegion region;

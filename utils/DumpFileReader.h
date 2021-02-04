@@ -25,7 +25,7 @@ class DumpFileReader {
             l1ct::toFirmware(r.muon, NMU, mu);
             hwZPV = event_.pvs.front().hwZ0;
 
-            printf("Read region %u with %lu tracks, %lu em calo, %lu had calo, %lu muons\n", iregion_, r.track.size(), r.emcalo.size(), r.hadcalo.size(), r.muon.size());
+            //printf("Read region %u with %lu tracks, %lu em calo, %lu had calo, %lu muons\n", iregion_, r.track.size(), r.emcalo.size(), r.hadcalo.size(), r.muon.size());
             iregion_++;
             return true;
         }

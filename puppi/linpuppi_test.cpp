@@ -1,7 +1,7 @@
 #include <cstdio>
 #include "firmware/linpuppi.h"
 #include "linpuppi_ref.h"
-#include "../utils/DiscretePFInputsReader.h"
+#include "../utils/DumpFileReader.h"
 #include "../utils/pattern_serializer.h"
 #include "../utils/test_utils.h"
 #include "puppi_checker.h"
@@ -20,7 +20,7 @@ using namespace l1ct;
 
 int main() {
 #if defined(REG_Barrel)
-    DiscretePFInputsReader inputs("TTbar_PU200_Barrel.dump");
+    DumpFileReader inputs("TTbar_PU200_Barrel.dump");
     pfalgo3_config pfcfg(NTRACK,NEMCALO,NCALO,NMU, 
                          NPHOTON,NSELCALO,NALLNEUTRALS,
                          PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
@@ -34,7 +34,7 @@ int main() {
     printf("Multiplicities per region: Tk %d, EmCalo %d, HadCalo %d, Mu %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d, Puppi All %d => Sel %d\n",
         NTRACK, NEMCALO, NCALO, NMU, NTRACK, NPHOTON, NSELCALO, NMU, NALLNEUTRALS, NNEUTRALS);
 #elif defined(REG_HGCal)
-    DiscretePFInputsReader inputs("TTbar_PU200_HGCal.dump");
+    DumpFileReader inputs("TTbar_PU200_HGCal.dump");
     pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                         PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);

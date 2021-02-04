@@ -17,6 +17,7 @@ add_files firmware/pfalgo2hgc.cpp -cflags "${cflags}"
 add_files -tb pfalgo2hgc_test.cpp  -cflags "${cflags}"
 add_files -tb ref/pfalgo2hgc_ref.cpp  -cflags "${cflags}"
 add_files -tb ref/pfalgo_common_ref.cpp  -cflags "${cflags}"
+add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
 add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb ../utils/test_utils.cpp -cflags "${cflags}"
 add_files -tb ../data/TTbar_PU200_HGCal.dump

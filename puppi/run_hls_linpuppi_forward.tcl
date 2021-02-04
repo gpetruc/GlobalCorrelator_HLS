@@ -17,10 +17,11 @@ add_files firmware/linpuppi.cpp  -cflags "${cflags}"
 add_files -tb linpuppi_ref.cpp   -cflags "${cflags}"
 add_files -tb ../utils/test_utils.cpp  -cflags "${cflags}"
 add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
+add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
 add_files -tb fwlinpuppi_test.cpp   -cflags "${cflags} -DTEST_PUPPI_NOCROP -DTEST_PT_CUT=120"
 #add_files -tb fwlinpuppi_test.cpp   -cflags "${cflags}  -DTEST_PT_CUT=120"
-#add_files -tb ../data/TTbar_PU200_${puppiReg}.dump
-add_files -tb ../data/VBFHToBB_PU200_${puppiReg}.dump
+add_files -tb ../data/TTbar_PU200_${puppiReg}.dump
+#add_files -tb ../data/VBFHToBB_PU200_${puppiReg}.dump
 
 # reset the solution
 open_solution -reset "solution"

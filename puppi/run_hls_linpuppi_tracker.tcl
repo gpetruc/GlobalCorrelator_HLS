@@ -19,6 +19,7 @@ add_files firmware/linpuppi.cpp  -cflags "${cflags}"
 add_files -tb linpuppi_ref.cpp   -cflags "${cflags}"
 add_files -tb ../utils/test_utils.cpp  -cflags "${cflags}"
 add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
+add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
 add_files -tb linpuppi_test.cpp   -cflags "${cflags} -DTEST_PUPPI_NOCROP -DTEST_PT_CUT=80" 
 #add_files -tb linpuppi_test.cpp   -cflags "${cflags} -DTEST_PT_CUT=80"
 if { $puppiReg == "Barrel" } {

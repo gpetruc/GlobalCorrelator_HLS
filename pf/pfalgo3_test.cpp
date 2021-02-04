@@ -1,20 +1,18 @@
 #include <cstdio>
 #include "firmware/pfalgo3.h"
 #include "ref/pfalgo3_ref.h"
-#include "../utils/DiscretePFInputsReader.h"
 #include "../utils/DumpFileReader.h"
 #include "../utils/pattern_serializer.h"
 #include "../utils/test_utils.h"
 
-#define NTEST 10
+#define NTEST 1000
 
 using namespace l1ct;
 
 int main() {
     HumanReadablePatternSerializer debugHR("-", /*zerosuppress=*/true); // this will print on stdout, we'll use it for errors
 
-    DiscretePFInputsReader inputs("TTbar_PU200_Barrel.dump");
-    DumpFileReader inputsNew("TTbar_PU200_Barrel.newDump");
+    DumpFileReader inputs("TTbar_PU200_Barrel.dump");
     
     // input TP objects
     PFRegion region;
@@ -51,16 +49,12 @@ int main() {
     std::fill(packed_output, packed_output+PFALGO3_NCHANN_OUT, 0);
 #endif
     HumanReadablePatternSerializer debugDump("pfalgo3_debug.txt");
-    HumanReadablePatternSerializer debugRead("reader_debug.txt"), debugReadNew("readerNew_debug.txt");
 
     // -----------------------------------------
     // run multiple tests
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputsNew.nextRegion(region, hadcalo, emcalo, track, mu, hwZPV)) break;
-        debugReadNew.dump_inputs(emcalo, hadcalo, track, mu);
         if (!inputs.nextRegion(region, hadcalo, emcalo, track, mu, hwZPV)) break;
-        debugRead.dump_inputs(emcalo, hadcalo, track, mu);
 
         bool verbose = (test < 10); // can set this on to get detailed printout of some test
         pfalgo3_set_debug(verbose);

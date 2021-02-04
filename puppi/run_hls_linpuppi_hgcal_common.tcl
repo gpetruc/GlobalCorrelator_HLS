@@ -37,6 +37,7 @@ proc make_puppi { puppiReg puppiBoard clk name kind cflags hlsIPVersion } {
     add_files -tb linpuppi_ref.cpp   -cflags "${cflags}"
     add_files -tb ../utils/test_utils.cpp  -cflags "${cflags}"
     add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
+    add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
     add_files -tb linpuppi_test.cpp   -cflags "${cflags} -D${test} -DTEST_PT_CUT=80" 
     if { $puppiReg == "Barrel" } {
         add_files -tb ../ref/pfalgo3_ref.cpp   -cflags "${cflags}"
