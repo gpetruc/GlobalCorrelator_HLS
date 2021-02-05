@@ -20,7 +20,7 @@ void l1ct::PFAlgoEmulatorBase::loadPtErrBins(unsigned int nbins, const float abs
     }
 }
 
-l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegion & region, const l1ct::TkObj & track) const {
+l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegionEmu & region, const l1ct::TkObjEmu & track) const {
     glbeta_t abseta = region.hwGlbEta(track.hwEta);
     if (abseta < 0) abseta = -abseta;
     
@@ -39,22 +39,26 @@ l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegion & region, co
     return ptErr;
 }
 
-void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const l1ct::TkObj track[/*nTRACK_*/], const l1ct::MuObj mu[/*nMU_*/], bool isMu[/*nTRACK_*/], l1ct::PFChargedObj outmu[/*nMU_*/]) const {
-
+//void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const l1ct::TkObj track[/*nTRACK_*/], const l1ct::MuObj mu[/*nMU_*/], bool isMu[/*nTRACK_*/], l1ct::PFChargedObj outmu[/*nMU_*/]) const {
+void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const PFInputRegion & in, OutputRegion & out, std::vector<int> & iMu) const {
     // init
-    for (unsigned int ipf = 0; ipf < nMU_; ++ipf) clear(outmu[ipf]);
-    for (unsigned int it = 0; it < nTRACK_; ++it) isMu[it] = 0;
+    unsigned int nTRACK = std::min<unsigned>(nTRACK_, in.track.size());
+    unsigned int nMU    = std::min<unsigned>(nMU_,    in.muon.size());
+    out.pfmuon.resize(nMU);
+    iMu.resize(nTRACK);
+    for (unsigned int ipf = 0; ipf < nMU; ++ipf) out.pfmuon[ipf].clear();
+    for (unsigned int it = 0; it < nTRACK; ++it) iMu[it] = -1;
 
         // for each muon, find the closest track
-    for (unsigned int im = 0; im < nMU_; ++im) {
-        if (mu[im].hwPt > 0) {
+    for (unsigned int im = 0; im < nMU; ++im) {
+        if (in.muon[im].hwPt > 0) {
             int ibest = -1;
-            pt_t dptmin = mu[im].hwPt >> 1;
-            for (unsigned int it = 0; it < nTRACK_; ++it) {
-                unsigned int dr = dr2_int(mu[im].hwEta, mu[im].hwPhi, track[it].hwEta, track[it].hwPhi);
-                //printf("deltaR2(mu %d float pt %5.1f, tk %2d float pt %5.1f) = int %d  (float deltaR = %.3f); int cut at %d\n", im, 0.25*int(mu[im].hwPt), it, 0.25*int(track[it].hwPt), dr, std::sqrt(float(dr))/229.2, dR2MAX_TK_MU_);
+            pt_t dptmin = in.muon[im].hwPt >> 1;
+            for (unsigned int it = 0; it < nTRACK; ++it) {
+                unsigned int dr = dr2_int(in.muon[im].hwEta, in.muon[im].hwPhi, in.track[it].hwEta, in.track[it].hwPhi);
+                //printf("deltaR2(mu %d float pt %5.1f, tk %2d float pt %5.1f) = int %d  (float deltaR = %.3f); int cut at %d\n", im, 0.25*int(in.muon[im].hwPt), it, 0.25*int(in.track[it].hwPt), dr, std::sqrt(float(dr))/229.2, dR2MAX_TK_MU_);
                 if (dr < dR2MAX_TK_MU_) { 
-                    dpt_t dpt = (dpt_t(track[it].hwPt) - dpt_t(mu[im].hwPt));
+                    dpt_t dpt = (dpt_t(in.track[it].hwPt) - dpt_t(in.muon[im].hwPt));
                     pt_t absdpt = dpt >= 0 ? pt_t(dpt) : pt_t(-dpt);
                     if (absdpt < dptmin) {
                         dptmin = absdpt; ibest = it; 
@@ -62,20 +66,59 @@ void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const l1ct::TkObj track[/*nTRACK_*/
                 }
             }
             if (ibest != -1) {
-                outmu[im].hwPt = track[ibest].hwPt;
-                outmu[im].hwEta = track[ibest].hwEta;
-                outmu[im].hwPhi = track[ibest].hwPhi;
-                outmu[im].hwId  = ParticleID::mkMuon(track[ibest].hwCharge);
-                outmu[im].hwDEta = track[ibest].hwDEta;
-                outmu[im].hwDPhi = track[ibest].hwDPhi;
-                outmu[im].hwZ0 = track[ibest].hwZ0;
-                outmu[im].hwDxy = track[ibest].hwDxy;
-                outmu[im].hwTkQuality = track[ibest].hwQuality;
-                isMu[ibest] = 1;
+                iMu[ibest] = im;
+                fillPFCand(in.track[ibest], out.pfmuon[im], /*isMu=*/true, /*isEle=*/false);
+                // extra emulator info
+                out.pfmuon[im].srcMu = in.muon[im].src;
                 if (debug_) printf("FW  \t muon %3d linked to track %3d \n", im, ibest);
             } else {
                 if (debug_) printf("FW  \t muon %3d not linked to any track\n", im);
             }
         }
     }
+}
+
+void l1ct::PFAlgoEmulatorBase::fillPFCand(const TkObjEmu & track, PFChargedObjEmu & pf, bool isMu, bool isEle) const {
+    assert(!(isEle && isMu));
+    pf.hwPt = track.hwPt;
+    pf.hwEta = track.hwEta;
+    pf.hwPhi = track.hwPhi;
+    pf.hwDEta = track.hwDEta;
+    pf.hwDPhi = track.hwDPhi;
+    pf.hwZ0 = track.hwZ0;
+    pf.hwDxy = track.hwDxy;
+    pf.hwTkQuality = track.hwQuality;
+    if (isMu) {
+        pf.hwId = ParticleID::mkMuon(track.hwCharge);
+    } else if (isEle) {
+        pf.hwId = ParticleID::mkElectron(track.hwCharge);
+    } else {
+        pf.hwId = ParticleID::mkChHad(track.hwCharge);
+    }
+    // extra emulator information
+    pf.srcTrack = track.src;
+}
+
+void l1ct::PFAlgoEmulatorBase::fillPFCand(const HadCaloObjEmu & calo, PFNeutralObjEmu & pf, bool isPhoton) const  {
+    pf.hwPt  = calo.hwPt;
+    pf.hwEta = calo.hwEta;
+    pf.hwPhi = calo.hwPhi;
+    pf.hwId  = isPhoton ? ParticleID::PHOTON : ParticleID::HADZERO;
+    pf.hwEmPt  = calo.hwEmPt; // FIXME
+    pf.hwEmID  = calo.hwIsEM;
+    pf.hwPUID  = 0;
+    // extra emulator information
+    pf.srcCluster = calo.src;
+}
+
+void l1ct::PFAlgoEmulatorBase::fillPFCand(const EmCaloObjEmu & calo, PFNeutralObjEmu & pf, bool isPhoton) const {
+    pf.hwPt  = calo.hwPt;
+    pf.hwEta = calo.hwEta;
+    pf.hwPhi = calo.hwPhi;
+    pf.hwId  = isPhoton ? ParticleID::PHOTON : ParticleID::HADZERO;
+    pf.hwEmPt  = calo.hwPt;
+    pf.hwEmID  = calo.hwFlags;
+    pf.hwPUID  = 0;
+    // more emulator info
+    pf.srcCluster = calo.src;
 }

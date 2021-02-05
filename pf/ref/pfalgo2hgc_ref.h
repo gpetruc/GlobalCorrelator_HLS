@@ -14,7 +14,11 @@ namespace l1ct {
 
             virtual ~PFAlgo2HGCEmulator() override {}
 
-            void pfalgo2hgc_ref(const PFRegion & region, const HadCaloObj calo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) const ;
+            virtual void run(const PFInputRegion & in, OutputRegion & out) const override;
+
+            void toFirmware(const PFInputRegion & in, PFRegion & region, HadCaloObj calo[/*nCALO*/], TkObj track[/*nTRACK*/], MuObj mu[/*nMU*/]) const ;
+            void toFirmware(const OutputRegion & out, PFChargedObj outch[/*nTRACK*/], PFNeutralObj outne[/*nSELCALO*/], PFChargedObj outmu[/*nMU*/]) const ;
+
     };
 
 } // namespace

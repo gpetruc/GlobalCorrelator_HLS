@@ -15,12 +15,20 @@ namespace l1ct {
         const l1t::PFCluster *src;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            HadCaloObj::clear();
+            src = nullptr;
+        }
     };
 
     struct EmCaloObjEmu : public EmCaloObj { 
         const l1t::PFCluster *src;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            EmCaloObj::clear();
+            src = nullptr;
+        }
     };
 
     struct TkObjEmu : public TkObj {
@@ -28,13 +36,23 @@ namespace l1ct {
         const l1t::PFTrack *src;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            TkObj::clear();
+            src = nullptr;
+            hwChi2 = 0;
+            hwStubs = 0;
+        }
     };
 
     struct MuObjEmu : public MuObj {
         const l1t::Muon *src;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
-    };
+        void clear() {
+            MuObj::clear();
+            src = nullptr;
+        }
+   };
 
     struct PFChargedObjEmu : public PFChargedObj {
         const l1t::PFCluster *srcCluster;
@@ -42,12 +60,22 @@ namespace l1ct {
         const l1t::Muon *srcMu;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            PFChargedObj::clear();
+            srcCluster = nullptr;
+            srcTrack = nullptr;
+            srcMu = nullptr;
+        }
     };
 
     struct PFNeutralObjEmu : public PFNeutralObj {
         const l1t::PFCluster *srcCluster;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            PFNeutralObj::clear();
+            srcCluster = nullptr;
+        }
     };
 
     struct PuppiObjEmu : public PuppiObj {
@@ -56,6 +84,12 @@ namespace l1ct {
         const l1t::Muon *srcMu;
         bool read(std::fstream & from) ;
         bool write(std::fstream & to) const ;
+        void clear() {
+            PuppiObj::clear();
+            srcCluster = nullptr;
+            srcTrack = nullptr;
+            srcMu = nullptr;
+        }
     };
 
 

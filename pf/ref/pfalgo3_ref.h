@@ -16,18 +16,22 @@ namespace l1ct {
 
             virtual ~PFAlgo3Emulator() override {} 
 
-            void pfalgo3_em_ref(const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const bool isMu[/*cfg.nTRACK*/], bool isEle[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], HadCaloObj hadcalo_out[/*cfg.nCALO*/]) const ;
-            void pfalgo3_ref(const PFRegion & region, const EmCaloObj emcalo[/*cfg.nEMCALO*/], const HadCaloObj hadcalo[/*cfg.nCALO*/], const TkObj track[/*cfg.nTRACK*/], const MuObj mu[/*cfg.nMU*/], PFChargedObj outch[/*cfg.nTRACK*/], PFNeutralObj outpho[/*cfg.nPHOTON*/], PFNeutralObj outne[/*cfg.nSELCALO*/], PFChargedObj outmu[/*cfg.nMU*/]) const ;
+            virtual void run(const PFInputRegion & in, OutputRegion & out) const override;
 
-            void pfalgo3_merge_neutrals_ref(const PFNeutralObj pho[/*cfg.nPHOTON*/], const PFNeutralObj ne[/*cfg.nSELCALO*/], PFNeutralObj allne[/*cfg.nALLNEUTRALS*/]) const ;
+            void toFirmware(const PFInputRegion & in, PFRegion & region, HadCaloObj calo[/*nCALO*/], EmCaloObj emcalo[/*nEMCALO*/], TkObj track[/*nTRACK*/], MuObj mu[/*nMU*/]) const ;
+            void toFirmware(const OutputRegion & out, PFChargedObj outch[/*nTRACK*/], PFNeutralObj outpho[/*nPHOTON*/], PFNeutralObj outne[/*nSELCALO*/], PFChargedObj outmu[/*nMU*/]) const ;
+
+            void merge_neutrals_ref(const PFNeutralObj pho[/*gnPHOTON*/], const PFNeutralObj ne[/*nSELCALO*/], PFNeutralObj allne[/*nALLNEUTRALS*/]) const ;
 
         protected:
             unsigned int nEMCALO_, nPHOTON_, nALLNEUTRAL_;
             unsigned int dR2MAX_TK_EM_;
             unsigned int dR2MAX_EM_CALO_;
 
-            int tk_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::EmCaloObj calo[/*nCAL*/], const l1ct::TkObj & track) const ;
-            int em_best_match_ref(unsigned int nCAL, unsigned int dR2MAX, const l1ct::HadCaloObj calo[/*nCAL*/], const l1ct::EmCaloObj & em) const ;
+            int tk_best_match_ref(unsigned int dR2MAX, const std::vector<l1ct::EmCaloObjEmu> & calo, const l1ct::TkObjEmu & track) const ;
+            int em_best_match_ref(unsigned int dR2MAX, const std::vector<l1ct::HadCaloObjEmu> & calo, const l1ct::EmCaloObjEmu & em) const ;
+
+            void pfalgo3_em_ref(const PFInputRegion & in, const std::vector<int> & iMu/*[nTRACK]*/, std::vector<int> & iEle/*[nTRACK]*/, OutputRegion & out, std::vector<HadCaloObjEmu> & hadcalo_out/*[nCALO]*/) const ;
 };
 
 

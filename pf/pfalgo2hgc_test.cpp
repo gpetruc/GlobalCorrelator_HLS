@@ -16,10 +16,11 @@ int main() {
     
     // input TP objects
     PFRegion region;
-    HadCaloObj calo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; z0_t hwZPV;
+    HadCaloObj calo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK];
     MuObj mu[NMU];
 
     // output PF objects
+    l1ct::OutputRegion out_ref; // emulator
     PFChargedObj outch[NTRACK], outch_ref[NTRACK];
     PFNeutralObj outne[NSELCALO], outne_ref[NSELCALO];
     PFChargedObj outmupf[NMU], outmupf_ref[NMU];
@@ -51,8 +52,12 @@ int main() {
     // run multiple tests
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(region, calo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextPFRegion()) break;
 
+        bool verbose = (test < 1);
+        emulator.setDebug(verbose);
+
+        emulator.toFirmware(inputs.pfregion(), region, calo, track, mu);
 #ifndef BOARD_none
         pfalgo2hgc_pack_in(region, calo, track, mu, packed_input); 
         serPatternsIn.packAndWrite(PFALGO2HGC_NCHANN_IN, packed_input);
@@ -63,7 +68,8 @@ int main() {
         pfalgo2hgc(region, calo, track, mu, outch, outne, outmupf);
 #endif
 
-        emulator.pfalgo2hgc_ref(region, calo, track, mu, outch_ref, outne_ref, outmupf_ref);
+        emulator.run(inputs.pfregion(), out_ref);
+        emulator.toFirmware(out_ref, outch_ref, outne_ref, outmupf_ref);
 
         // -----------------------------------------
         // validation against the reference algorithm

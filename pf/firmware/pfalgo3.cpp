@@ -102,7 +102,7 @@ void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const b
     for (int it = 0; it < NTRACK; ++it) {
         bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
         bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
-        if (good) {
+        if (good && track[it].hwPt != 0) {
             pfout[it].hwPt  = track[it].hwPt;
             pfout[it].hwEta = track[it].hwEta;
             pfout[it].hwPhi = track[it].hwPhi;
@@ -113,7 +113,7 @@ void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const b
             pfout[it].hwDxy = track[it].hwDxy;
             pfout[it].hwTkQuality = track[it].hwQuality;
         } else {
-            clear(pfout[it]);
+            pfout[it].clear();
         }
     }
 }
