@@ -30,12 +30,13 @@ Some compile-time constants are defined to defining the detector region (for lay
 * PF compiles, runs and synthethizes, both in the barrel (pfalgo3) and hgcal (pfalgo2hgc). An example wrapping is tested for `BOARD_VCU118`, where inputs and outputs are serialized as 72 bit objects (and dumped as two 64 bit words in the pattern file)
 * Puppi compiles, runs and synthethizes in all detector regions. In the wrapped version, inputs are 72-bit wide while outputs are 64-bit wide.
 * Dump files now contain new emulator classes that inherit from the firmware ones, replacing the DiscretePFInputs.
-* PF emulators have been converted to C++ classes, but the interface hasn't been cleaned up yet, and they still just use the bare classes from firmware.
+* PF emulators have been converted to C++ classes more similar to the CMSSW emulators
 * Everything else is not tested and most likely won't even compile yet
 
 ## Pending items
 
-* Improve PF & Puppi emulator to make it more C++-friendly, use the emulator types, and take configurations as floats. Eventually replace the CMSSW algo.
+* Finish cleaning up C++ interface of PF emulators. Eventually replace the CMSSW algo.
+* Improve Puppi emulator to make it C++, use the emulator types, and take configurations as floats. Eventually replace the CMSSW algo.
 * Improve Puppi implementation: use `ap_fixed` instead of bitshifts by hand, and use 2D LUT instead of the current ugly LUT-generating macro.
 * Introduce the fiducial cut and shift to global coordinates in Puppi
 * Introduce header files for the inputs and the decoders
