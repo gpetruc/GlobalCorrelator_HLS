@@ -686,7 +686,7 @@ linpuppi_refobj linpuppi_prepare_track(const TkObj & track, z0_t pvZ0) {
     ret.hwEta = track.hwEta;
     ret.hwPhi = track.hwPhi;
     if (linpuppi_fromPV(track, pvZ0)) {
-        int mypt2 = (track.hwPt*track.hwPt) >> 5; // reduce precision to make multiplication smaller later 
+        int mypt2 = (Scales::ptToInt(track.hwPt)*Scales::ptToInt(track.hwPt)) >> 5; // reduce precision to make multiplication smaller later 
         ret.pt2_shift = (mypt2 < PTMAX2_SHIFT? mypt2 : PTMAX2_SHIFT);
     } else {
         ret.pt2_shift = 0;
@@ -738,6 +738,12 @@ void linpuppiNoCrop_streamed(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutr
     }
 }
 
+
+void linpuppi_chs_streamed(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
+    for (int i = 0; i < NTRACK; ++i) {
+        outallch[i] = linpuppi_chs_one(pfch[i], pvZ0);
+    }
+}
 
 void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD]) {
     #pragma HLS ARRAY_PARTITION variable=input complete

@@ -49,11 +49,12 @@ int main() {
 #endif
     
     // input TP objects and PV
-    PFRegion region;
-    HadCaloObj hadcalo[NCALO]; EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; MuObj mu[NMU]; 
+    //PFRegion region;
+    TkObj track[NTRACK]; 
     z0_t hwZPV;
 
     // PF objects
+    l1ct::OutputRegion pfout;
     PFChargedObj pfch[NTRACK], pfmu[NMU];
     PFNeutralObj pfpho[NPHOTON], pfne[NSELCALO], pfallne[NALLNEUTRALS];
 
@@ -82,22 +83,26 @@ int main() {
 
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(region, hadcalo, emcalo, track, mu, hwZPV)) break;
+        if (!inputs.nextPFRegion()) break;
 
+        hwZPV = inputs.event().pvs.front().hwZ0;
+        
 #ifdef TEST_PT_CUT
         float minpt = 0;
-        for (unsigned int i = 0; i < NTRACK; ++i) minpt += track[i].floatPt();
+        for (const auto & tk : inputs.pfregion().track)  minpt += tk.floatPt();
         if (minpt < TEST_PT_CUT) { 
             //std::cout << "Skipping region with total calo pt " << minpt << " below threshold." << std::endl; 
             --test; continue; 
         }
 #endif
 
+        emulator.run(inputs.pfregion(), pfout);
+        l1ct::toFirmware(inputs.pfregion().track, NTRACK, track);
 #if defined(REG_Barrel)
-        emulator.pfalgo3_ref(region, emcalo, hadcalo, track, mu, pfch, pfpho, pfne, pfmu);
-        emulator.pfalgo3_merge_neutrals_ref(pfpho, pfne, pfallne);
+        emulator.toFirmware(pfout, pfch, pfpho, pfne, pfmu);
+        emulator.merge_neutrals_ref(pfpho, pfne, pfallne);
 #elif defined(REG_HGCal)
-        emulator.pfalgo2hgc_ref(region, hadcalo, track, mu, pfch, pfallne, pfmu); 
+        emulator.toFirmware(pfout, pfch, pfallne, pfmu);
 #endif
 
         bool verbose = 0;
@@ -105,8 +110,13 @@ int main() {
         linpuppi_set_debug(verbose);
 
 #if defined(TEST_PUPPI_STREAM)
+    #if !defined(BOARD_none)
         packed_linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
         packed_linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
+    #else
+        linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
+        linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
+    #endif
 #elif !defined(BOARD_none)
         linpuppi_chs_pack_in(hwZPV, pfch, packed_input_chs); 
         linpuppi_pack_in(track, hwZPV, pfallne, packed_input); 

@@ -40,11 +40,11 @@ proc make_puppi { puppiReg puppiBoard clk name kind cflags hlsIPVersion } {
     add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
     add_files -tb linpuppi_test.cpp   -cflags "${cflags} -D${test} -DTEST_PT_CUT=80" 
     if { $puppiReg == "Barrel" } {
-        add_files -tb ../ref/pfalgo3_ref.cpp   -cflags "${cflags}"
+        add_files -tb ../pf/ref/pfalgo3_ref.cpp   -cflags "${cflags}"
     } elseif { $puppiReg == "HGCal" } {
-        add_files -tb ../ref/pfalgo2hgc_ref.cpp   -cflags "${cflags}"
+        add_files -tb ../pf/ref/pfalgo2hgc_ref.cpp   -cflags "${cflags}"
     }
-    add_files -tb ../ref/pfalgo_common_ref.cpp   -cflags "${cflags}"
+    add_files -tb ../pf/ref/pfalgo_common_ref.cpp   -cflags "${cflags}"
     add_files -tb ../data/TTbar_PU200_${puppiReg}.dump
 
     # reset the solution

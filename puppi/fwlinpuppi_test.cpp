@@ -27,11 +27,8 @@ int main() {
                         Scales::makePt(LINPUPPI_ptCut));
     
     // input TP objects (used)
-    PFRegion region;
+    //PFRegion region;
     HadCaloObj calo[NCALO];
-
-    // input TP objects (unused, but needed to read the inputs)
-    EmCaloObj emcalo[NEMCALO]; TkObj track[NTRACK]; MuObj mu[NMU]; z0_t hwZPV;
 
     // input/output PFPUPPI objects
     PuppiObj outselne[NNEUTRALS];
@@ -53,16 +50,18 @@ int main() {
 
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
-        if (!inputs.nextRegion(region, calo, emcalo, track, mu, hwZPV)) break;
-
+        if (!inputs.nextPFRegion()) break;
 #ifdef TEST_PT_CUT
         float minpt = 0;
-        for (unsigned int i = 0; i < NCALO; ++i) minpt += calo[i].floatPt();
+        for (const auto & calo : inputs.pfregion().hadcalo) minpt += calo.floatPt();
         if (minpt < TEST_PT_CUT) { 
             //std::cout << "Skipping region with total calo pt " << minpt << " below threshold." << std::endl; 
             --test; continue; 
         }
 #endif
+
+        //region = inputs.pfregion().region;
+        l1ct::toFirmware(inputs.pfregion().hadcalo, NCALO, calo);
 
         bool verbose = 0;
         if (verbose) printf("test case %d\n", test);
