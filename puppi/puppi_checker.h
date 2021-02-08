@@ -9,14 +9,14 @@ class PuppiChecker {
             npt2_(0), nok_(0), n1bit_(0), nalmostok_(0), nbad_(0),
             sumDiff_(0), sumAbsDiff_(0) {}
 
-        template<typename T, unsigned int N>
-        void checkIntVsFloat(const T input[N], const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_flt[N], bool verbose) ;
+        template<typename T>
+        void checkIntVsFloat(const std::vector<T> & input, const std::vector<l1ct::PuppiObjEmu> & puppi, const std::vector<l1ct::PuppiObjEmu> & puppi_flt, bool verbose) ;
 
         template<unsigned int N>
-        bool check(const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N], const l1ct::PuppiObj puppi_flt[N]) ;
+        bool check(const l1ct::PuppiObj puppi[N], const std::vector<l1ct::PuppiObjEmu> & puppi_ref, const std::vector<l1ct::PuppiObjEmu> & puppi_flt) ;
 
         template<unsigned int N>
-        bool checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N]);
+        bool checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const std::vector<l1ct::PuppiObjEmu> & puppi_ref);
 
         void printIntVsFloatReport() {
             int nmiss = n1bit_ + nalmostok_ + nbad_, nall = nok_ + nmiss;
@@ -37,9 +37,10 @@ class PuppiChecker {
         float sumDiff_, sumAbsDiff_;
 };
 
-template<typename T, unsigned int N>
-void PuppiChecker::checkIntVsFloat(const T input[N], const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_flt[N], bool verbose) {
-    for (int i = 0; i < N; ++i){
+template<typename T>
+void PuppiChecker::checkIntVsFloat(const std::vector<T> & input, const std::vector<l1ct::PuppiObjEmu> & puppi, const std::vector<l1ct::PuppiObjEmu> & puppi_flt, bool verbose) {
+    assert(input.size() == puppi.size() && input.size() == puppi_flt.size());
+    for (int i = 0, n = input.size(); i < n; ++i){
         if (input[i].hwPt > 0) {
             if (puppi_flt[i].floatPt() >= 2) npt2_++;
 
@@ -70,37 +71,52 @@ void PuppiChecker::checkIntVsFloat(const T input[N], const l1ct::PuppiObj puppi[
 
 
 template<unsigned int N>
-bool PuppiChecker::check(const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N], const l1ct::PuppiObj puppi_flt[N]) {
+bool PuppiChecker::check(const l1ct::PuppiObj puppi[N], const std::vector<l1ct::PuppiObjEmu> & puppi_ref, const std::vector<l1ct::PuppiObjEmu> & puppi_flt) {
+    if (puppi_ref.size() > N || puppi_flt.size() > N) { 
+        printf("Size overflow in ref: hardware %d (static)  ref %d   flt %d\n", N, int(puppi_ref.size()), int(puppi_flt.size()));
+        return false;
+    }
     bool ret = true;
+    l1ct::PuppiObjEmu zero; zero.clear();
     for (int i = 0; i < N; ++i){
-        if (!puppi_equals(puppi_ref[i], puppi[i], "Puppi", i)) {
+        const l1ct::PuppiObjEmu & ref = ( i < puppi_ref.size() ? puppi_ref[i] : zero );
+        if (!puppi_equals(ref, puppi[i], "Puppi", i)) {
             ret = false;
         }
     }
     if (!ret) {
         for (int i = 0; i < N; ++i){
+            const l1ct::PuppiObjEmu & ref = ( i < puppi_ref.size() ? puppi_ref[i] : zero );
+            const l1ct::PuppiObjEmu & flt = ( i < puppi_flt.size() ? puppi_flt[i] : zero );
             printf("particle %02d:  puppiPt_hw %7.2f eta %+5d phi %+5d    puppiPt_ref %7.2f eta %+5d phi %+5d   puppiPt_flt %7.2f eta %+5d phi %+5d\n", i,
                     puppi[i].floatPt(),     int(puppi[i].hwEta), int(puppi[i].hwPhi),
-                    puppi_ref[i].floatPt(), int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), 
-                    puppi_flt[i].floatPt(), int(puppi_flt[i].hwEta), int(puppi_flt[i].hwPhi));
+                    ref.floatPt(), int(ref.hwEta), int(ref.hwPhi), 
+                    flt.floatPt(), int(flt.hwEta), int(flt.hwPhi));
         }
     }
     return ret;
 }
 
 template<unsigned int N>
-bool PuppiChecker::checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const l1ct::PuppiObj puppi_ref[N]) {
+bool PuppiChecker::checkChs(l1ct::z0_t pvZ0, const l1ct::PuppiObj puppi[N], const std::vector<l1ct::PuppiObjEmu> & puppi_ref) {
+    if (puppi_ref.size() > N) { 
+        printf("Size overflow in ref: hardware %d (static)  ref %d\n", N, int(puppi_ref.size()));
+        return false;
+    }
     bool ret = true;
+    l1ct::PuppiObjEmu zero; zero.clear();
     for (int i = 0; i < N; ++i){
-        if (!puppi_equals(puppi_ref[i], puppi[i], "PFCHS", i)) {
+        const l1ct::PuppiObjEmu & ref = ( i < puppi_ref.size() ? puppi_ref[i] : zero );
+        if (!puppi_equals(ref, puppi[i], "PFCHS", i)) {
             ret = false;
         }
     }
     if (!ret) {
         for (int i = 0; i < N; ++i){
+        const l1ct::PuppiObjEmu & ref = ( i < puppi_ref.size() ? puppi_ref[i] : zero );
             printf("particle %02d:  puppiPt_hw %7.2f eta %+5d phi %+5d dz %+5d   puppiPt_ref %7.2f eta %+5d phi %+5d dz %+5d\n", i,
                     puppi[i].floatPt(),     int(puppi[i].hwEta), int(puppi[i].hwPhi), int(puppi[i].hwZ0() - pvZ0),
-                    puppi_ref[i].floatPt(), int(puppi_ref[i].hwEta), int(puppi_ref[i].hwPhi), int(puppi_ref[i].hwZ0() - pvZ0)); 
+                    ref.floatPt(), int(ref.hwEta), int(ref.hwPhi), int(ref.hwZ0() - pvZ0)); 
         }
     }
     return ret;

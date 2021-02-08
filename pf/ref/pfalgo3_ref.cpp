@@ -300,10 +300,11 @@ void l1ct::PFAlgo3Emulator::run(const PFInputRegion & in, OutputRegion & out) co
 
 }
 
-void l1ct::PFAlgo3Emulator::merge_neutrals_ref(const l1ct::PFNeutralObj pho[/*nPHOTON_*/], const l1ct::PFNeutralObj ne[/*nSELCALO_*/], l1ct::PFNeutralObj allne[/*nALLNEUTRALS_*/]) const
+void l1ct::PFAlgo3Emulator::mergeNeutrals(OutputRegion & out) const 
 {
-    int j = 0;
-    for (unsigned int i = 0; i < nPHOTON_;  ++i, ++j) allne[j] = pho[i];
-    for (unsigned int i = 0; i < nSELCALO_; ++i, ++j) allne[j] = ne[i];
+    out.pfphoton.reserve(out.pfphoton.size() + out.pfneutral.size());
+    out.pfphoton.insert(out.pfphoton.end(), out.pfneutral.begin(), out.pfneutral.end());
+    out.pfphoton.swap(out.pfneutral);
+    out.pfphoton.clear();
 }
 

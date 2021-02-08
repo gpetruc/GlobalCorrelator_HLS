@@ -227,7 +227,9 @@ void HumanReadablePatternSerializer::dump_pf(unsigned int N, const char *label, 
     }
     if (file_ == stdout) fflush(file_);
 }
-void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *label, const l1ct::PuppiObj outpuppi[/*N*/]) 
+
+template<typename TV> 
+void HumanReadablePatternSerializer::dump_puppi_(unsigned int N, const char *label, const TV outpuppi) 
 {
     for (int i = 0; i < N; ++i) {
         if (zerosuppress_ && !outpuppi[i].hwPt) continue; 
@@ -240,3 +242,16 @@ void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *labe
         }
     }
 }
+
+void HumanReadablePatternSerializer::dump_puppi(unsigned int N, const char *label, const l1ct::PuppiObj outpuppi[/*N*/]) 
+{
+    dump_puppi_(N, label, outpuppi);
+}
+
+void HumanReadablePatternSerializer::dump_puppi(const char *label, const std::vector<l1ct::PuppiObjEmu> & outpuppi/*N*/) 
+{
+    dump_puppi_(outpuppi.size(), label, outpuppi);
+}
+
+
+

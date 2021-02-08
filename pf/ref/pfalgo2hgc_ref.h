@@ -16,6 +16,9 @@ namespace l1ct {
 
             virtual void run(const PFInputRegion & in, OutputRegion & out) const override;
 
+            /// moves all objects from out.pfphoton to the beginning of out.pfneutral: nothing to do for this algo
+            void mergeNeutrals(OutputRegion & out) const override {} 
+
             void toFirmware(const PFInputRegion & in, PFRegion & region, HadCaloObj calo[/*nCALO*/], TkObj track[/*nTRACK*/], MuObj mu[/*nMU*/]) const ;
             void toFirmware(const OutputRegion & out, PFChargedObj outch[/*nTRACK*/], PFNeutralObj outne[/*nSELCALO*/], PFChargedObj outmu[/*nMU*/]) const ;
 

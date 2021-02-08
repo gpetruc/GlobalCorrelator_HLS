@@ -21,7 +21,8 @@ namespace l1ct {
             void toFirmware(const PFInputRegion & in, PFRegion & region, HadCaloObj calo[/*nCALO*/], EmCaloObj emcalo[/*nEMCALO*/], TkObj track[/*nTRACK*/], MuObj mu[/*nMU*/]) const ;
             void toFirmware(const OutputRegion & out, PFChargedObj outch[/*nTRACK*/], PFNeutralObj outpho[/*nPHOTON*/], PFNeutralObj outne[/*nSELCALO*/], PFChargedObj outmu[/*nMU*/]) const ;
 
-            void merge_neutrals_ref(const PFNeutralObj pho[/*gnPHOTON*/], const PFNeutralObj ne[/*nSELCALO*/], PFNeutralObj allne[/*nALLNEUTRALS*/]) const ;
+            /// moves all objects from out.pfphoton to the beginning of out.pfneutral
+            void mergeNeutrals(OutputRegion & out) const override ;
 
         protected:
             unsigned int nEMCALO_, nPHOTON_, nALLNEUTRAL_;

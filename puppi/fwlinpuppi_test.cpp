@@ -19,7 +19,7 @@ int main() {
     //DumpFileReader inputs("VBFHToBB_PU200_HF.dump");
 #endif
 
-    linpuppi_config cfg(NTRACK, NCALO, NNEUTRALS,
+    LinPuppiEmulator puEmulator(NTRACK, NCALO, NNEUTRALS,
                         LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
                         LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                         LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
@@ -32,11 +32,10 @@ int main() {
 
     // input/output PFPUPPI objects
     PuppiObj outselne[NNEUTRALS];
-    PuppiObj outselne_ref[NNEUTRALS];
-    PuppiObj outselne_flt[NNEUTRALS];
+    std::vector<PuppiObjEmu> outselne_ref, outselne_flt;
     PuppiObj outallne[NCALO];
-    PuppiObj outallne_ref_nocut[NCALO], outallne_ref[NCALO];
-    PuppiObj outallne_flt_nocut[NCALO], outallne_flt[NCALO];
+    std::vector<PuppiObjEmu> outallne_ref_nocut, outallne_ref;
+    std::vector<PuppiObjEmu> outallne_flt_nocut, outallne_flt;
 
 #ifndef BOARD_none
     PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt", LINPUPPI_NCHANN_FWDNC);
@@ -66,6 +65,7 @@ int main() {
         bool verbose = 0;
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
+        puEmulator.setDebug(verbose);
 
 #ifndef BOARD_none
         l1pf_pattern_pack<NCALO,0>(calo, packed_input);
@@ -86,19 +86,19 @@ int main() {
   #endif
 #endif
 
-        fwdlinpuppi_ref(cfg, calo, outallne_ref_nocut, outallne_ref, outselne_ref, verbose);
-        fwdlinpuppi_flt(cfg, calo, outallne_flt_nocut, outallne_flt, outselne_flt, verbose);
+        puEmulator.fwdlinpuppi_ref(inputs.pfregion().hadcalo, outallne_ref_nocut, outallne_ref, outselne_ref);
+        puEmulator.fwdlinpuppi_flt(inputs.pfregion().hadcalo, outallne_flt_nocut, outallne_flt, outselne_flt);
 
         // validate numerical accuracy 
-        checker.checkIntVsFloat<HadCaloObj,NCALO>(calo, outallne_ref_nocut, outallne_flt_nocut, verbose);
+        checker.checkIntVsFloat(inputs.pfregion().hadcalo, outallne_ref_nocut, outallne_flt_nocut, verbose);
 
 #if defined(TEST_PUPPI_NOCROP)
         debugDump.dump_puppi(NALLNEUTRALS, "all    ", outallne);
 #else
         debugDump.dump_puppi(NNEUTRALS,    "sel    ", outselne);
 #endif
-        debugDump.dump_puppi(NALLNEUTRALS, "all rnc", outallne_ref_nocut);
-        debugDump.dump_puppi(NALLNEUTRALS, "all flt", outallne_flt_nocut);
+        debugDump.dump_puppi("all rnc", outallne_ref_nocut);
+        debugDump.dump_puppi("all flt", outallne_flt_nocut);
 
 
         // check vs reference
@@ -111,9 +111,9 @@ int main() {
             printf("FAILED test %d\n", test);
             HumanReadablePatternSerializer dumper("-", true);
             dumper.dump_puppi(NCALO, "    ", outallne);
-            dumper.dump_puppi(NCALO, "ref ", outallne_ref);
-            dumper.dump_puppi(NCALO, "rnc ", outallne_ref_nocut);
-            dumper.dump_puppi(NCALO, "flt ", outallne_flt_nocut);
+            dumper.dump_puppi("ref ", outallne_ref);
+            dumper.dump_puppi("rnc ", outallne_ref_nocut);
+            dumper.dump_puppi("flt ", outallne_flt_nocut);
             return 1;
         }
 

@@ -21,11 +21,11 @@ using namespace l1ct;
 int main() {
 #if defined(REG_Barrel)
     DumpFileReader inputs("TTbar_PU200_Barrel.dump");
-    PFAlgo3Emulator emulator(NTRACK,NEMCALO,NCALO,NMU, 
+    PFAlgo3Emulator pfEmulator(NTRACK,NEMCALO,NCALO,NMU, 
                          NPHOTON,NSELCALO,NALLNEUTRALS,
                          PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
                          PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
-    linpuppi_config pucfg(NTRACK, NALLNEUTRALS, NNEUTRALS,
+    LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NNEUTRALS,
                           LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
@@ -35,10 +35,10 @@ int main() {
         NTRACK, NEMCALO, NCALO, NMU, NTRACK, NPHOTON, NSELCALO, NMU, NALLNEUTRALS, NNEUTRALS);
 #elif defined(REG_HGCal)
     DumpFileReader inputs("TTbar_PU200_HGCal.dump");
-    PFAlgo2HGCEmulator emulator(NTRACK,NCALO,NMU, NSELCALO,
+    PFAlgo2HGCEmulator pfEmulator(NTRACK,NCALO,NMU, NSELCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                         PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
-    linpuppi_config pucfg(NTRACK, NALLNEUTRALS, NNEUTRALS,
+    LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NNEUTRALS,
                           LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
                           LINPUPPI_etaCut, LINPUPPI_invertEta,
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
@@ -55,13 +55,16 @@ int main() {
 
     // PF objects
     l1ct::OutputRegion pfout;
-    PFChargedObj pfch[NTRACK], pfmu[NMU];
-    PFNeutralObj pfpho[NPHOTON], pfne[NSELCALO], pfallne[NALLNEUTRALS];
+    PFChargedObj pfch[NTRACK];
+    PFNeutralObj pfallne[NALLNEUTRALS];
 
     // Puppi objects
-    PuppiObj outallch[NTRACK], outallch_ref[NTRACK];
-    PuppiObj outallne[NALLNEUTRALS], outallne_ref_nocut[NALLNEUTRALS], outallne_ref[NALLNEUTRALS], outallne_flt_nocut[NALLNEUTRALS], outallne_flt[NALLNEUTRALS];
-    PuppiObj outselne[NNEUTRALS], outselne_ref[NNEUTRALS], outselne_flt[NNEUTRALS];
+    PuppiObj outallch[NTRACK];
+    PuppiObj outallne[NALLNEUTRALS];
+    PuppiObj outselne[NNEUTRALS];
+    std::vector<PuppiObjEmu> outallch_ref;
+    std::vector<PuppiObjEmu> outallne_ref_nocut, outallne_ref, outallne_flt_nocut, outallne_flt;
+    std::vector<PuppiObjEmu> outselne_ref, outselne_flt;
 
 #if !defined(BOARD_none) && !defined(TEST_PUPPI_STREAM)
     printf("Packing bit sizes: EmCalo %d, HadCalo %d, Tk %d, Mu %d, PFCharged %d, PFNeutral %d, Puppi %d\n",
@@ -85,7 +88,8 @@ int main() {
         // get the inputs from the input object
         if (!inputs.nextPFRegion()) break;
 
-        hwZPV = inputs.event().pvs.front().hwZ0;
+        const PVObjEmu & pv = inputs.event().pvs.front();
+        hwZPV = pv.hwZ0;
         
 #ifdef TEST_PT_CUT
         float minpt = 0;
@@ -96,18 +100,16 @@ int main() {
         }
 #endif
 
-        emulator.run(inputs.pfregion(), pfout);
+        pfEmulator.run(inputs.pfregion(), pfout);
+        pfEmulator.mergeNeutrals(pfout);
         l1ct::toFirmware(inputs.pfregion().track, NTRACK, track);
-#if defined(REG_Barrel)
-        emulator.toFirmware(pfout, pfch, pfpho, pfne, pfmu);
-        emulator.merge_neutrals_ref(pfpho, pfne, pfallne);
-#elif defined(REG_HGCal)
-        emulator.toFirmware(pfout, pfch, pfallne, pfmu);
-#endif
+        l1ct::toFirmware(pfout.pfcharged, NTRACK, pfch);
+        l1ct::toFirmware(pfout.pfneutral, NALLNEUTRALS, pfallne);
 
-        bool verbose = 0;
+        bool verbose = (test <= 15);
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
+        puEmulator.setDebug(verbose);
 
 #if defined(TEST_PUPPI_STREAM)
     #if !defined(BOARD_none)
@@ -146,12 +148,12 @@ int main() {
     #endif
 #endif
 
-        linpuppi_chs_ref(pucfg, hwZPV, pfch, outallch_ref, verbose);
-        linpuppi_ref(pucfg, track, hwZPV, pfallne, outallne_ref_nocut, outallne_ref, outselne_ref, verbose);
-        linpuppi_flt(pucfg, track, hwZPV, pfallne, outallne_flt_nocut, outallne_flt, outselne_flt, verbose);
+        puEmulator.linpuppi_chs_ref(pv, pfout.pfcharged, outallch_ref);
+        puEmulator.linpuppi_ref(inputs.pfregion().track, pv, pfout.pfneutral, outallne_ref_nocut, outallne_ref, outselne_ref);
+        puEmulator.linpuppi_flt(inputs.pfregion().track, pv, pfout.pfneutral, outallne_flt_nocut, outallne_flt, outselne_flt);
 
         // validate numerical accuracy 
-        checker.checkIntVsFloat<PFNeutralObj,NALLNEUTRALS>(pfallne, outallne_ref_nocut, outallne_flt_nocut, verbose);
+        checker.checkIntVsFloat(pfout.pfneutral, outallne_ref_nocut, outallne_flt_nocut, verbose);
 
         bool ok = checker.checkChs<NTRACK>(hwZPV, outallch, outallch_ref) && 
 #if defined(TEST_PUPPI_NOCROP) or defined(TEST_PUPPI_STREAM)
@@ -165,21 +167,21 @@ int main() {
 #else
         debugDump.dump_puppi(NNEUTRALS,    "sel    ", outselne);
 #endif
-        debugDump.dump_puppi(NALLNEUTRALS, "all rnc", outallne_ref_nocut);
-        debugDump.dump_puppi(NALLNEUTRALS, "all flt", outallne_flt_nocut);
+        debugDump.dump_puppi("all rnc", outallne_ref_nocut);
+        debugDump.dump_puppi("all flt", outallne_flt_nocut);
 
         if (!ok) {
             printf("FAILED test %d\n", test);
             HumanReadablePatternSerializer dumper("-", true);
 #if defined(TEST_PUPPI_NOCROP) or defined(TEST_PUPPI_STREAM)
             dumper.dump_puppi(NALLNEUTRALS, "all    ", outallne);
-            dumper.dump_puppi(NALLNEUTRALS, "all ref", outallne_ref);
+            dumper.dump_puppi("all ref", outallne_ref);
 #else
             dumper.dump_puppi(NNEUTRALS,    "sel    ", outselne);
-            dumper.dump_puppi(NNEUTRALS,    "sel ref", outselne_ref);
+            dumper.dump_puppi("sel ref", outselne_ref);
 #endif
-            dumper.dump_puppi(NALLNEUTRALS, "all rnc", outallne_ref_nocut);
-            dumper.dump_puppi(NALLNEUTRALS, "all flt", outallne_flt_nocut);
+            dumper.dump_puppi("all rnc", outallne_ref_nocut);
+            dumper.dump_puppi("all flt", outallne_flt_nocut);
             return 1;
         }
 

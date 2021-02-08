@@ -7,6 +7,7 @@
 #include "../dataformats/layer1_multiplicities.h"
 #include "../dataformats/pf.h"
 #include "../dataformats/puppi.h"
+#include "../dataformats/layer1_emulator.h"
 
 
 #if defined(PACKING_DATA_SIZE)
@@ -194,6 +195,7 @@ class HumanReadablePatternSerializer {
         void dump_pf(unsigned int N, const char *label, const l1ct::PFChargedObj outch[/*N*/]) ;
         void dump_pf(unsigned int N, const char *label, const l1ct::PFNeutralObj outch[/*N*/]) ;
         void dump_puppi(unsigned int N, const char *label, const l1ct::PuppiObj outpuppi[/*N*/]) ;
+        void dump_puppi(const char *label, const std::vector<l1ct::PuppiObjEmu> & outpuppi/*N*/) ;
         bool startframe();
         void endframe();
     protected:
@@ -201,6 +203,10 @@ class HumanReadablePatternSerializer {
         bool zerosuppress_;
         FILE *file_; // may be stdout
         unsigned int ipattern_;
+
+    private:
+        template<typename TV> 
+        void dump_puppi_(unsigned int N, const char *label, const TV outpuppi) ;
     
 };
 

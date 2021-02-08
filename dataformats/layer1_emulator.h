@@ -90,6 +90,27 @@ namespace l1ct {
             srcTrack = nullptr;
             srcMu = nullptr;
         }
+        inline void fill(const PFChargedObjEmu &src) {
+            PuppiObj::fill(src);
+            srcCluster = src.srcCluster;
+            srcTrack = src.srcTrack;
+            srcMu = src.srcMu;
+        }
+        inline void fill(const PFNeutralObjEmu &src, pt_t puppiPt,
+                puppiWgt_t puppiWgt) {
+            PuppiObj::fill(src, puppiPt, puppiWgt);
+            srcCluster = src.srcCluster;
+            srcTrack = nullptr;
+            srcMu = nullptr;
+        }
+        inline void fill(const HadCaloObjEmu &src, pt_t puppiPt,
+                puppiWgt_t puppiWgt) {
+            PuppiObj::fill(src, puppiPt, puppiWgt);
+            srcCluster = src.src;
+            srcTrack = nullptr;
+            srcMu = nullptr;
+        }
+
     };
 
 

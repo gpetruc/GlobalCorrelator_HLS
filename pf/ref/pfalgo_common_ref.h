@@ -28,6 +28,9 @@ namespace l1ct {
 
             virtual void run(const PFInputRegion & in, OutputRegion & out) const = 0;
 
+            /// moves all objects from out.pfphoton to the beginning of out.pfneutral
+            virtual void mergeNeutrals(OutputRegion & out) const = 0;
+
         protected:
             // config
             unsigned int nTRACK_, nCALO_, nMU_;
