@@ -3,6 +3,8 @@
 
 #include "pfalgo_common_ref.h"
 
+namespace edm { class ParameterSet; }
+
 namespace l1ct {
 
     class PFAlgo3Emulator : public PFAlgoEmulatorBase {
@@ -13,6 +15,9 @@ namespace l1ct {
                     pt_t tk_MaxInvPt_Loose, pt_t tk_MaxInvPt_Tight): 
                 PFAlgoEmulatorBase(nTrack, nCalo, nMu, nSelCalo, dR2Max_Tk_Mu, dR2Max_Tk_Calo, tk_MaxInvPt_Loose, tk_MaxInvPt_Tight),
                 nEMCALO_(nEmCalo), nPHOTON_(nPhoton), nALLNEUTRAL_(nAllNeutral), dR2MAX_TK_EM_(dR2Max_Tk_Em), dR2MAX_EM_CALO_(dR2Max_Em_Calo) {}
+
+            // note: this one will work only in CMSSW
+            PFAlgo3Emulator(const edm::ParameterSet & iConfig) ;
 
             virtual ~PFAlgo3Emulator() override {} 
 

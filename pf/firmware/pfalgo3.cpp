@@ -18,7 +18,7 @@ void tk2em_drvals(const EmCaloObj calo[NEMCALO], const TkObj track[NTRACK], cons
     const tk2em_dr_t eDR2MAX = DR2MAX;
     for (int it = 0; it < NTRACK; ++it) {
         for (int icalo = 0; icalo < NEMCALO; ++icalo) {
-            if (isMu[it] || track[it].hwPt == 0 || calo[icalo].hwPt == 0) {calo_track_drval[it][icalo] = eDR2MAX; } // set to DR max if the track is a muon or null
+            if (!track[it].isPFLoose() || isMu[it] || track[it].hwPt == 0 || calo[icalo].hwPt == 0) {calo_track_drval[it][icalo] = eDR2MAX; } // set to DR max if the track is a muon or null
             else { calo_track_drval[it][icalo] = dr2_int_cap(track[it].hwEta, track[it].hwPhi, calo[icalo].hwEta, calo[icalo].hwPhi, eDR2MAX); } 
         }
     }
@@ -101,7 +101,7 @@ void tk2calo_tkalgo(const TkObj track[NTRACK], const bool isEle[NTRACK], const b
     const pt_t TKPT_MAX_TIGHT = Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT); // 20 * PT_SCALE;
     for (int it = 0; it < NTRACK; ++it) {
         bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
-        bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
+        bool good = track[it].isPFLoose() && (isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce());
         if (good && track[it].hwPt != 0) {
             pfout[it].hwPt  = track[it].hwPt;
             pfout[it].hwEta = track[it].hwEta;

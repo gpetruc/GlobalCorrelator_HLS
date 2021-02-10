@@ -3,6 +3,10 @@
 #include <cmath>
 #include <cstdio>
 
+#ifdef CMSSW_GIT_HASH
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#endif
+
 l1ct::PFAlgoEmulatorBase::~PFAlgoEmulatorBase() {}
 
 void l1ct::PFAlgoEmulatorBase::loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[], bool verbose) {
@@ -19,6 +23,18 @@ void l1ct::PFAlgoEmulatorBase::loadPtErrBins(unsigned int nbins, const float abs
                 offs[i], ptErrBins_[i].offs.to_float());
     }
 }
+
+#ifdef CMSSW_GIT_HASH
+void l1ct::PFAlgoEmulatorBase::loadPtErrBins(const edm::ParameterSet &iConfig) {
+    const edm::ParameterSet &resol = iConfig.getParameter<edm::ParameterSet>("caloResolution");
+    std::vector<float> absetas, scales, offs;
+    for (auto & v : resol.getParameter<std::vector<double>>("etaBins")) absetas.push_back(v);
+    for (auto & v : resol.getParameter<std::vector<double>>("scale")) scales.push_back(v);
+    for (auto & v : resol.getParameter<std::vector<double>>("offset")) offs.push_back(v);
+    loadPtErrBins(absetas.size(), &absetas[0], &scales[0], &offs[0]);
+}
+
+#endif
 
 l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegionEmu & region, const l1ct::TkObjEmu & track) const {
     glbeta_t abseta = region.hwGlbEta(track.hwEta);
@@ -39,7 +55,6 @@ l1ct::pt_t l1ct::PFAlgoEmulatorBase::ptErr_ref(const l1ct::PFRegionEmu & region,
     return ptErr;
 }
 
-//void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const l1ct::TkObj track[/*nTRACK_*/], const l1ct::MuObj mu[/*nMU_*/], bool isMu[/*nTRACK_*/], l1ct::PFChargedObj outmu[/*nMU_*/]) const {
 void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const PFInputRegion & in, OutputRegion & out, std::vector<int> & iMu) const {
     // init
     unsigned int nTRACK = std::min<unsigned>(nTRACK_, in.track.size());
@@ -55,6 +70,7 @@ void l1ct::PFAlgoEmulatorBase::pfalgo_mu_ref(const PFInputRegion & in, OutputReg
             int ibest = -1;
             pt_t dptmin = in.muon[im].hwPt >> 1;
             for (unsigned int it = 0; it < nTRACK; ++it) {
+                if (!in.track[it].isPFLoose()) continue;
                 unsigned int dr = dr2_int(in.muon[im].hwEta, in.muon[im].hwPhi, in.track[it].hwEta, in.track[it].hwPhi);
                 //printf("deltaR2(mu %d float pt %5.1f, tk %2d float pt %5.1f) = int %d  (float deltaR = %.3f); int cut at %d\n", im, 0.25*int(in.muon[im].hwPt), it, 0.25*int(in.track[it].hwPt), dr, std::sqrt(float(dr))/229.2, dR2MAX_TK_MU_);
                 if (dr < dR2MAX_TK_MU_) { 

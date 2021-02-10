@@ -1,12 +1,18 @@
 #ifndef PFALGO_COMMON_REF_H
 #define PFALGO_COMMON_REF_H
 
+#ifdef CMSSW_GIT_HASH
+#include "../dataformats/layer1_emulator.h"
+#include "pfalgo_types.h"
+#else
 #include "../../dataformats/layer1_emulator.h"
-#include "../../dataformats/pf.h"
 #include "../firmware/pfalgo_types.h"
+#endif
 
 #include <algorithm>
 #include <vector>
+
+namespace edm { class ParameterSet; }
 
 namespace l1ct {
 
@@ -23,6 +29,7 @@ namespace l1ct {
             virtual ~PFAlgoEmulatorBase() ;
 
             void loadPtErrBins(unsigned int nbins, const float absetas[], const float scales[], const float offs[], bool verbose=false) ;
+            void loadPtErrBins(const edm::ParameterSet & iConfig);
 
             void setDebug(bool debug = true) { debug_ = debug; }
 

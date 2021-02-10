@@ -5,6 +5,8 @@
 
 #include <vector>
 
+namespace edm { class ParameterSet; }
+
 namespace l1ct {
 
     class LinPuppiEmulator {
@@ -44,6 +46,8 @@ namespace l1ct {
                 ptCut_(ptCut),
                 debug_(false) {}
 
+            LinPuppiEmulator(const edm::ParameterSet &iConfig) ;
+
             // charged
             void linpuppi_chs_ref(const PVObjEmu & pv, const std::vector<PFChargedObjEmu> & pfch/*[nTrack]*/, std::vector<PuppiObjEmu> & outallch/*[nTrack]*/) const ;
 
@@ -56,8 +60,10 @@ namespace l1ct {
             void fwdlinpuppi_flt(const std::vector<HadCaloObjEmu> & caloin/*[nIn]*/, std::vector<PuppiObjEmu> & outallne_nocut/*[nIn]*/, std::vector<PuppiObjEmu> & outallne/*[nIn]*/, std::vector<PuppiObjEmu> & outselne/*[nOut]*/) const ;
 
             // utility
-            void puppisort_and_crop_ref(const std::vector<PuppiObjEmu> & in, std::vector<PuppiObjEmu> & out/*nOut*/) const ;
+            void puppisort_and_crop_ref(unsigned int nOutMax, const std::vector<PuppiObjEmu> & in, std::vector<PuppiObjEmu> & out/*nOut*/) const ;
 
+            // for CMSSW
+            void run(const PFInputRegion & in, const std::vector<l1ct::PVObjEmu> & pvs, OutputRegion & out) const ;
 
             void setDebug(bool debug=true) { debug_ = debug; }
 

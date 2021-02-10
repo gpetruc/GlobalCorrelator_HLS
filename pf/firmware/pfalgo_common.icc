@@ -125,39 +125,6 @@ ptscale_t calc_dptscale(pt_t trackHwPtErr) {
 }
 
 template<int DR2MAX>
-void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track[NTRACK], const pt_t tkPtErr[NTRACK], tk2calo_dq_t calo_track_drval[NTRACK][NCALO]) {
-    const tk2calo_dq_t eDR2MAX = DR2MAX;
-    const tk2calo_dq_t eDQMAX  = 5*DR2MAX; // at most we're 2 sigma away in pt, so that's a factor 4
-    // now, DR2MAX is 10 bits, so dptscale max is at most 10+8 bits = 18 bits // FIXME: GP: this is no longer correct
-    for (int it = 0; it < NTRACK; ++it) {
-        pt_t caloPtMin = track[it].hwPt - 2*tkPtErr[it];
-        ptscale_t dptscale  = calc_dptscale<DR2MAX>(tkPtErr[it]);
-        assert(false);
-        if (caloPtMin < 0) caloPtMin = 0;
-        for (int icalo = 0; icalo < NCALO; ++icalo) {
-#if 1 // original version
-            if (calo[icalo].hwPt > caloPtMin) {
-                calo_track_drval[it][icalo] = dr2_dpt_int_cap(track[it].hwEta, track[it].hwPhi, calo[icalo].hwEta, calo[icalo].hwPhi, track[it].hwPt, calo[icalo].hwPt, dptscale, eDR2MAX, eDQMAX);
-//#ifndef __SYNTHESIS__
-//                if (gdebug_ && it == 15) printf("track %2d calo %2d: dr2 = %7d, dq = %7d\n", it, icalo, dr2_int(track[it].hwEta, track[it].hwPhi, calo[icalo].hwEta, calo[icalo].hwPhi), int(calo_track_drval[it][icalo]));
-//#endif
-            } else {
-                calo_track_drval[it][icalo] = eDQMAX;
-            }
-#else // alternative, used when saving dr2 for later
-            int dr2 = dr2_int_cap(track[it].hwEta, track[it].hwPhi, calo[icalo].hwEta, calo[icalo].hwPhi, eDR2MAX);
-            if (calo[icalo].hwPt > caloPtMin) {
-                calo_track_drval[it][icalo] = dr2_plus_dpt_int_cap(dr2, track[it].hwPt, calo[icalo].hwPt, dptscale, eDR2MAXcut, eDQMAX);
-            } else {
-                calo_track_drval[it][icalo] = eDQMAX;
-            }
-
-#endif
-        }
-    }
-}
-
-template<int DR2MAX>
 void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track, const pt_t tkPtErr, tk2calo_dq_t calo_track_drval[NCALO]) {
     const tk2calo_dq_t eDR2MAX = DR2MAX;
     const tk2calo_dq_t eDQMAX  = 5*DR2MAX; // at most we're 2 sigma away in pt, so that's a factor 4
@@ -166,7 +133,7 @@ void tk2calo_drdptvals(const HadCaloObj calo[NCALO], const TkObj track, const pt
     ptscale_t dptscale  = calc_dptscale<DR2MAX>(tkPtErr);
     if (caloPtMin < 0) caloPtMin = 0;
     for (int icalo = 0; icalo < NCALO; ++icalo) {
-        if (calo[icalo].hwPt > caloPtMin) {
+        if (track.isPFLoose() && calo[icalo].hwPt > caloPtMin) {
             calo_track_drval[icalo] = dr2_dpt_int_cap(track.hwEta, track.hwPhi, calo[icalo].hwEta, calo[icalo].hwPhi, track.hwPt, calo[icalo].hwPt, dptscale, eDR2MAX, eDQMAX);
         } else {
             calo_track_drval[icalo] = eDQMAX;
@@ -321,7 +288,7 @@ void mu2trk_dptvals(const MuObj mu[NMU], const TkObj track[NTRACK], pt_t mu_trac
     for (int im = 0; im < NMU; ++im) {
         for (int it = 0; it < NTRACK; ++it) {
             dpt_t dpt = mu[im].hwPt - track[it].hwPt;
-            if (dr2_int_cap<12>(mu[im].hwEta, mu[im].hwPhi, track[it].hwEta, track[it].hwPhi, DR2MAX) < DR2MAX) {
+            if (track[it].isPFLoose() && dr2_int_cap<12>(mu[im].hwEta, mu[im].hwPhi, track[it].hwEta, track[it].hwPhi, DR2MAX) < DR2MAX) {
                 mu_track_dptval[im][it] = (dpt > 0 ? pt_t(dpt) : pt_t(-dpt));
             } else {
                 mu_track_dptval[im][it] = mu[im].hwPt >> 1;

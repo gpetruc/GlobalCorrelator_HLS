@@ -34,7 +34,7 @@ void tk2calo_tkalgo_hgc(const TkObj track[NTRACK], const bool isEle[NTRACK], con
     for (int it = 0; it < NTRACK; ++it) {
         bool goodByPt = track[it].hwPt < (track[it].isPFTight() ? TKPT_MAX_TIGHT : TKPT_MAX_LOOSE);
         bool good = isMu[it] || isEle[it] || goodByPt || calo_track_link_bit[it].or_reduce();
-        bool nonnull = track[it].hwPt != 0;
+        bool nonnull = track[it].isPFLoose() && track[it].hwPt != 0;
         if (nonnull && good) {
             pfout[it].hwPt  = track[it].hwPt;
             pfout[it].hwEta = track[it].hwEta;
