@@ -204,7 +204,8 @@ void pfalgo2hgc_unpack_in(const ap_uint<PFALGO2HGC_DATA_SIZE> input[PFALGO2HGC_N
     #pragma HLS ARRAY_PARTITION variable=calo complete
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=mu complete    
-    #pragma HLS inline
+    #pragma HLS inline 
+    #pragma HLS inline region recursive
     const unsigned int TRACK_OFFS = 1, CALO_OFFS = TRACK_OFFS + NTRACK, MU_OFFS = CALO_OFFS + NCALO;
     region = PFRegion::unpack(input[0]);
     l1pf_pattern_unpack<NTRACK,TRACK_OFFS>(input, track);
@@ -218,6 +219,7 @@ void pfalgo2hgc_pack_out(const PFChargedObj outch[NTRACK], const PFNeutralObj ou
     #pragma HLS ARRAY_PARTITION variable=outne complete
     #pragma HLS ARRAY_PARTITION variable=outmu complete
     #pragma HLS inline
+    #pragma HLS inline region recursive
 
     const int PFCH_OFFS = 0, PFNE_OFFS = PFCH_OFFS + NTRACK, PFMU_OFFS = PFNE_OFFS + NSELCALO;
     l1pf_pattern_pack<NTRACK,  PFCH_OFFS>(outch, output);
