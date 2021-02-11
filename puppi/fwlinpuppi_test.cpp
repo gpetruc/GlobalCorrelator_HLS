@@ -27,7 +27,7 @@ int main() {
                         Scales::makePt(LINPUPPI_ptCut));
     
     // input TP objects (used)
-    //PFRegion region;
+    PFRegion region;
     HadCaloObj calo[NCALO];
 
     // input/output PFPUPPI objects
@@ -50,6 +50,7 @@ int main() {
     for (int test = 1; test <= NTEST; ++test) {
         // get the inputs from the input object
         if (!inputs.nextPFRegion()) break;
+        region = inputs.pfregion().region;
 #ifdef TEST_PT_CUT
         float minpt = 0;
         for (const auto & calo : inputs.pfregion().hadcalo) minpt += calo.floatPt();
@@ -68,7 +69,8 @@ int main() {
         puEmulator.setDebug(verbose);
 
 #ifndef BOARD_none
-        l1pf_pattern_pack<NCALO,0>(calo, packed_input);
+        packed_input[0] = region.pack();
+        l1pf_pattern_pack<NCALO,1>(calo, packed_input);
         serPatternsIn(packed_input);
   #if defined(TEST_PUPPI_NOCROP)
         packed_fwdlinpuppiNoCrop(packed_input, packed_output);
@@ -80,14 +82,14 @@ int main() {
         serPatternsOut(packed_output);
 #else
   #if defined(TEST_PUPPI_NOCROP)
-        fwdlinpuppiNoCrop(calo, outallne);
+        fwdlinpuppiNoCrop(region, calo, outallne);
   #else
-        fwdlinpuppi(calo, outselne);
+        fwdlinpuppi(region, calo, outselne);
   #endif
 #endif
 
-        puEmulator.fwdlinpuppi_ref(inputs.pfregion().hadcalo, outallne_ref_nocut, outallne_ref, outselne_ref);
-        puEmulator.fwdlinpuppi_flt(inputs.pfregion().hadcalo, outallne_flt_nocut, outallne_flt, outselne_flt);
+        puEmulator.fwdlinpuppi_ref(inputs.pfregion().region, inputs.pfregion().hadcalo, outallne_ref_nocut, outallne_ref, outselne_ref);
+        puEmulator.fwdlinpuppi_flt(inputs.pfregion().region, inputs.pfregion().hadcalo, outallne_flt_nocut, outallne_flt, outselne_flt);
 
         // validate numerical accuracy 
         checker.checkIntVsFloat(inputs.pfregion().hadcalo, outallne_ref_nocut, outallne_flt_nocut, verbose);

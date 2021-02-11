@@ -40,7 +40,7 @@ int main() {
                         PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NNEUTRALS,
                           LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
-                          LINPUPPI_etaCut, LINPUPPI_invertEta,
+                          Scales::makeGlbEta(LINPUPPI_etaCut), 
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
@@ -49,7 +49,7 @@ int main() {
 #endif
     
     // input TP objects and PV
-    //PFRegion region;
+    PFRegion region;
     TkObj track[NTRACK]; 
     z0_t hwZPV;
 
@@ -90,6 +90,7 @@ int main() {
 
         const PVObjEmu & pv = inputs.event().pvs.front();
         hwZPV = pv.hwZ0;
+        region = inputs.pfregion().region;
         
 #ifdef TEST_PT_CUT
         float minpt = 0;
@@ -106,25 +107,25 @@ int main() {
         l1ct::toFirmware(pfout.pfcharged, NTRACK, pfch);
         l1ct::toFirmware(pfout.pfneutral, NALLNEUTRALS, pfallne);
 
-        bool verbose = (test <= 15);
+        bool verbose = (test == 80);
         if (verbose) printf("test case %d\n", test);
         linpuppi_set_debug(verbose);
         puEmulator.setDebug(verbose);
 
 #if defined(TEST_PUPPI_STREAM)
     #if !defined(BOARD_none)
-        packed_linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
-        packed_linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
+        packed_linpuppiNoCrop_streamed(region, track, hwZPV, pfallne, outallne);
+        packed_linpuppi_chs_streamed(region, hwZPV, pfch, outallch);  // we call this again, with the streamed version
     #else
-        linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
-        linpuppi_chs_streamed(hwZPV, pfch, outallch);  // we call this again, with the streamed version
+        linpuppiNoCrop_streamed(region, track, hwZPV, pfallne, outallne);
+        linpuppi_chs_streamed(region, hwZPV, pfch, outallch);  // we call this again, with the streamed version
     #endif
 #elif !defined(BOARD_none)
-        linpuppi_chs_pack_in(hwZPV, pfch, packed_input_chs); 
-        linpuppi_pack_in(track, hwZPV, pfallne, packed_input); 
+        linpuppi_chs_pack_in(region, hwZPV, pfch, packed_input_chs); 
+        linpuppi_pack_in(region, track, hwZPV, pfallne, packed_input); 
         serPatternsChsIn.packAndWrite(LINPUPPI_CHS_NCHANN_IN, packed_input_chs);
         serPatternsIn.packAndWrite(LINPUPPI_NCHANN_IN, packed_input);
-        packed_linpuppi_chs(packed_input_chs, packed_output_chs);
+        packed_linpuppi_chs(region, packed_input_chs, packed_output_chs);
     #if defined(TEST_PUPPI_NOCROP)
         packed_linpuppiNoCrop(packed_input, packed_output);
         serPatternsOut.packAndWrite(NALLNEUTRALS, packed_output); 
@@ -137,20 +138,20 @@ int main() {
         l1pf_pattern_unpack<NTRACK,0>(packed_output_chs, outallch);
         serPatternsChsOut.packAndWrite(NTRACK,packed_output_chs);
 #else
-        linpuppi_chs(hwZPV, pfch, outallch);
+        linpuppi_chs(region, hwZPV, pfch, outallch);
     #if defined(TEST_PUPPI_NOCROP)
-        linpuppiNoCrop(track, hwZPV, pfallne, outallne);
+        linpuppiNoCrop(region, track, hwZPV, pfallne, outallne);
     #elif defined(TEST_PUPPI_STREAM)
-        linpuppiNoCrop_streamed(track, hwZPV, pfallne, outallne);
-        linpuppi_chs_streamed(hwZPV, pfch, outallch); // we call this again, with the streamed version
+        linpuppiNoCrop_streamed(region, track, hwZPV, pfallne, outallne);
+        linpuppi_chs_streamed(region, hwZPV, pfch, outallch); // we call this again, with the streamed version
     #else
-        linpuppi(track, hwZPV, pfallne, outselne);
+        linpuppi(region, track, hwZPV, pfallne, outselne);
     #endif
 #endif
 
-        puEmulator.linpuppi_chs_ref(pv, pfout.pfcharged, outallch_ref);
-        puEmulator.linpuppi_ref(inputs.pfregion().track, pv, pfout.pfneutral, outallne_ref_nocut, outallne_ref, outselne_ref);
-        puEmulator.linpuppi_flt(inputs.pfregion().track, pv, pfout.pfneutral, outallne_flt_nocut, outallne_flt, outselne_flt);
+        puEmulator.linpuppi_chs_ref(inputs.pfregion().region, pv, pfout.pfcharged, outallch_ref);
+        puEmulator.linpuppi_ref(inputs.pfregion().region, inputs.pfregion().track, pv, pfout.pfneutral, outallne_ref_nocut, outallne_ref, outselne_ref);
+        puEmulator.linpuppi_flt(inputs.pfregion().region, inputs.pfregion().track, pv, pfout.pfneutral, outallne_flt_nocut, outallne_flt, outselne_flt);
 
         // validate numerical accuracy 
         checker.checkIntVsFloat(pfout.pfneutral, outallne_ref_nocut, outallne_flt_nocut, verbose);
@@ -172,7 +173,9 @@ int main() {
 
         if (!ok) {
             printf("FAILED test %d\n", test);
-            HumanReadablePatternSerializer dumper("-", true);
+            HumanReadablePatternSerializer dumper("-");//, true);
+            dumper.dump_puppi(NTRACK, "chs    ", outallch);
+            dumper.dump_puppi("chs ref", outallch_ref);
 #if defined(TEST_PUPPI_NOCROP) or defined(TEST_PUPPI_STREAM)
             dumper.dump_puppi(NALLNEUTRALS, "all    ", outallne);
             dumper.dump_puppi("all ref", outallne_ref);

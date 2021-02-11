@@ -9,46 +9,47 @@
 #include "linpuppi_bits.h"
 
 // charged
-void linpuppi_chs(l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
+void linpuppi_chs(const l1ct::PFRegion & region, l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
 
 // neutrals, in the tracker
-void linpuppiNoCrop(const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
-void linpuppi(const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outselne[NNEUTRALS]) ;
+void linpuppiNoCrop(const l1ct::PFRegion & region, const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
+void linpuppi(const l1ct::PFRegion & region, const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outselne[NNEUTRALS]) ;
 
 // streaming versions, taking one object at a time 
 struct linpuppi_refobj { ap_uint<17> pt2_shift; l1ct::eta_t hwEta; l1ct::phi_t hwPhi; };
 linpuppi_refobj linpuppi_prepare_track(const l1ct::TkObj & track, l1ct::z0_t pvZ0);
-l1ct::PuppiObj linpuppi_one(const l1ct::PFNeutralObj & in, const linpuppi_refobj sel_track[NTRACK]);
-l1ct::PuppiObj linpuppi_chs_one(const l1ct::PFChargedObj pfch, l1ct::z0_t pvZ0) ;
-void linpuppiNoCrop_streamed(const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
-void linpuppi_chs_streamed(l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
+l1ct::PuppiObj linpuppi_one(const l1ct::PFRegion & region, const l1ct::PFNeutralObj & in, const linpuppi_refobj sel_track[NTRACK]);
+l1ct::PuppiObj linpuppi_chs_one(const l1ct::PFRegion & region, const l1ct::PFChargedObj pfch, l1ct::z0_t pvZ0) ;
+void linpuppiNoCrop_streamed(const l1ct::PFRegion & region, const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
+void linpuppi_chs_streamed(const l1ct::PFRegion & region, l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
 
 // neutrals, forward
-void fwdlinpuppi(const l1ct::HadCaloObj caloin[NCALO], l1ct::PuppiObj pfselne[NNEUTRALS]);
-void fwdlinpuppiNoCrop(const l1ct::HadCaloObj caloin[NCALO], l1ct::PuppiObj pfallne[NCALO]);
+void fwdlinpuppi(const l1ct::PFRegion & region, const l1ct::HadCaloObj caloin[NCALO], l1ct::PuppiObj pfselne[NNEUTRALS]);
+void fwdlinpuppiNoCrop(const l1ct::PFRegion & region, const l1ct::HadCaloObj caloin[NCALO], l1ct::PuppiObj pfallne[NCALO]);
 
 #define LINPUPPI_DATA_SIZE_IN 72
 #define LINPUPPI_DATA_SIZE_OUT 64
 #define LINPUPPI_DATA_SIZE_FWD 64
-#define LINPUPPI_NCHANN_IN (1+NTRACK+NALLNEUTRALS)
+#define LINPUPPI_NCHANN_IN (2+NTRACK+NALLNEUTRALS)
 #define LINPUPPI_NCHANN_OUTNC (NALLNEUTRALS)
 #define LINPUPPI_NCHANN_OUT (NNEUTRALS)
-#define LINPUPPI_CHS_NCHANN_IN (1+NTRACK)
+#define LINPUPPI_CHS_NCHANN_IN (2+NTRACK)
 #define LINPUPPI_CHS_NCHANN_OUT (NTRACK)
-#define LINPUPPI_NCHANN_FWDNC (NCALO)
-#define LINPUPPI_NCHANN_FWD (NNEUTRALS)
+#define LINPUPPI_NCHANN_FWD_IN (1+NCALO)
+#define LINPUPPI_NCHANN_FWD_OUTNC (NCALO)
+#define LINPUPPI_NCHANN_FWD_OUT (NNEUTRALS)
 
-void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD]) ;
-void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWDNC]) ;
+void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWD_IN], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD_OUT]) ;
+void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWD_IN], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD_OUTNC]) ;
 
 void packed_linpuppi_chs(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_CHS_NCHANN_OUT]);
 void packed_linpuppi(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_NCHANN_OUT]);
 void packed_linpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_NCHANN_IN], ap_uint<LINPUPPI_DATA_SIZE_OUT> output[LINPUPPI_NCHANN_OUTNC]);
 
-void linpuppi_pack_in(const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
-void linpuppi_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], l1ct::TkObj track[NTRACK], l1ct::z0_t & pvZ0, l1ct::PFNeutralObj pfallne[NALLNEUTRALS]);
-void linpuppi_chs_pack_in(l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
-void linpuppi_chs_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], l1ct::z0_t & pvZ0, l1ct::PFChargedObj pfch[NTRACK]);
+void linpuppi_pack_in(const l1ct::PFRegion & region, const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
+void linpuppi_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], l1ct::PFRegion & region, l1ct::TkObj track[NTRACK], l1ct::z0_t & pvZ0, l1ct::PFNeutralObj pfallne[NALLNEUTRALS]);
+void linpuppi_chs_pack_in(const l1ct::PFRegion & region, l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]);
+void linpuppi_chs_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], l1ct::PFRegion & region, l1ct::z0_t & pvZ0, l1ct::PFChargedObj pfch[NTRACK]);
 
 typedef ap_uint<17+l1ct::eta_t::width+l1ct::phi_t::width> packed_linpuppi_refobj;
 inline linpuppi_refobj linpuppi_refobj_unpack(const packed_linpuppi_refobj & src) {
@@ -67,12 +68,12 @@ inline packed_linpuppi_refobj linpuppi_refobj_pack(const linpuppi_refobj & src) 
 }
 
 packed_linpuppi_refobj packed_linpuppi_prepare_track(const ap_uint<l1ct::TkObj::BITWIDTH> & track, const l1ct::z0_t & pvZ0);
-ap_uint<l1ct::PuppiObj::BITWIDTH> packed_linpuppi_one(const ap_uint<l1ct::PFNeutralObj::BITWIDTH> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]);
-ap_uint<l1ct::PuppiObj::BITWIDTH> packed_linpuppi_chs_one(const ap_uint<l1ct::PFChargedObj::BITWIDTH> & pfch, const l1ct::z0_t & pvZ0) ;
+ap_uint<l1ct::PuppiObj::BITWIDTH> packed_linpuppi_one(const ap_uint<l1ct::PFRegion::BITWIDTH> & region, const ap_uint<l1ct::PFNeutralObj::BITWIDTH> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]);
+ap_uint<l1ct::PuppiObj::BITWIDTH> packed_linpuppi_chs_one(const ap_uint<l1ct::PFRegion::BITWIDTH> & region, const ap_uint<l1ct::PFChargedObj::BITWIDTH> & pfch, const l1ct::z0_t & pvZ0) ;
 
 // these two call the packed versions internally, and are used for valiation (they are not synthethized directly)
-void packed_linpuppiNoCrop_streamed(const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
-void packed_linpuppi_chs_streamed(l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
+void packed_linpuppiNoCrop_streamed(const l1ct::PFRegion & region, const l1ct::TkObj track[NTRACK], l1ct::z0_t pvZ0, const l1ct::PFNeutralObj pfallne[NALLNEUTRALS], l1ct::PuppiObj outallne[NALLNEUTRALS]) ;
+void packed_linpuppi_chs_streamed(const l1ct::PFRegion & region, l1ct::z0_t pvZ0, const l1ct::PFChargedObj pfch[NTRACK], l1ct::PuppiObj outallch[NTRACK]) ;
 
 void linpuppi_set_debug(bool debug);
 
@@ -101,9 +102,7 @@ void linpuppi_set_debug(bool debug);
 #elif defined(REG_HGCal) 
 
 #define LINPUPPI_etaBins 2
-#define LINPUPPI_etaCut  0 // assuming the region spans [1.5,2.5] (or 1.25,2.75 with the overlaps), 
-                           // the cut is exactly at the region center (2.0), so it's at 0 in integer coordinates
-#define LINPUPPI_invertEta 0 // 0 if we're building the FW for the positive eta endcap.
+#define LINPUPPI_etaCut  2.0 // abseta
 
 #define LINPUPPI_DR2MAX  4727 // 0.3 cone
 #define LINPUPPI_DR2MIN    84 // 0.04 cone

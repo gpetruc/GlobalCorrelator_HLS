@@ -317,7 +317,7 @@ void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NC
     }
 }
 
-void fwdlinpuppiNoCrop(const HadCaloObj caloin[NCALO], PuppiObj pfallne[NCALO]) {
+void fwdlinpuppiNoCrop(const PFRegion & region, const HadCaloObj caloin[NCALO], PuppiObj pfallne[NCALO]) {
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=pfselne complete
 #ifdef HLS_pipeline_II
@@ -345,15 +345,15 @@ void fwdlinpuppiNoCrop(const HadCaloObj caloin[NCALO], PuppiObj pfallne[NCALO]) 
 
     const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
     for (int in = 0; in < NCALO; ++in) {
-        if (puppiPts[in] >= ptCut) {
-            pfallne[in].fill(caloin[in], puppiPts[in], puppiWgts[in]);
+        if (region.isFiducial(caloin[in]) && puppiPts[in] >= ptCut) {
+            pfallne[in].fill(region, caloin[in], puppiPts[in], puppiWgts[in]);
         } else {
             pfallne[in].clear();
         }
     }
 }
 
-void fwdlinpuppi(const HadCaloObj caloin[NCALO], PuppiObj pfselne[NNEUTRALS]) {
+void fwdlinpuppi(const PFRegion & region, const HadCaloObj caloin[NCALO], PuppiObj pfselne[NNEUTRALS]) {
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=pfselne complete
 #ifdef HLS_pipeline_II
@@ -388,11 +388,11 @@ void fwdlinpuppi(const HadCaloObj caloin[NCALO], PuppiObj pfselne[NNEUTRALS]) {
 
     const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
     for (int in = 0; in < NCALO; ++in) {
-        if (puppiPts[in] < ptCut) continue;
+        if (!region.isFiducial(caloin[in]) || puppiPts[in] < ptCut) continue;
         for (int iout = NNEUTRALS-1; iout >= 0; --iout) {
             if (work[iout].hwPt <= puppiPts[in]) {
                 if (iout == 0 || work[iout-1].hwPt > puppiPts[in]) {
-                    work[iout].fill(caloin[in], puppiPts[in], puppiWgts[in]);
+                    work[iout].fill(region, caloin[in], puppiPts[in], puppiWgts[in]);
                 } else {
                     work[iout] = work[iout-1];
                 }
@@ -412,19 +412,19 @@ inline bool linpuppi_fromPV(const T & obj, z0_t pvZ0) {
        return (z0diff <= LINPUPPI_dzCut);
 }
 
-PuppiObj linpuppi_chs_one(const PFChargedObj pfch, z0_t pvZ0) {
+PuppiObj linpuppi_chs_one(const PFRegion & region, const PFChargedObj pfch, z0_t pvZ0) {
     #pragma HLS pipeline II=1
     #pragma HLS LATENCY min=1
     PuppiObj ret;
-    if (linpuppi_fromPV(pfch, pvZ0) || pfch.hwId.isMuon()) {
-        ret.fill(pfch);
+    if (pfch.hwPt != 0 && region.isFiducial(pfch) && (linpuppi_fromPV(pfch, pvZ0) || pfch.hwId.isMuon())) {
+        ret.fill(region, pfch);
     } else {
         ret.clear();
     }
     return ret;
 }
 
-void linpuppi_chs(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
+void linpuppi_chs(const PFRegion & region, z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
     #pragma HLS ARRAY_PARTITION variable=pfch complete
     #pragma HLS ARRAY_PARTITION variable=outallch complete
     #pragma HLS LATENCY min=1
@@ -445,8 +445,8 @@ void linpuppi_chs(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[
 #endif
 
     for (unsigned int i = 0; i < NTRACK; ++i) {
-        if (linpuppi_fromPV(pfch[i], pvZ0) || pfch[i].hwId.isMuon()) {
-            outallch[i].fill(pfch[i]);
+        if (pfch[i].hwPt != 0 && region.isFiducial(pfch[i]) && (linpuppi_fromPV(pfch[i], pvZ0) || pfch[i].hwId.isMuon())) {
+            outallch[i].fill(region, pfch[i]);
         } else {
             outallch[i].clear();
         }
@@ -494,7 +494,7 @@ void linpuppiSum(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj caloin
 }
 
 
-void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, PuppiObj & out) {
+void linpuppiSum2All(const PFRegion & region, const PFNeutralObj & caloin, const ap_uint<32> & sum, PuppiObj & out) {
     const int x2_bits = LINPUPPI_x2_bits;    // decimal bits the discriminator values
     const int ptSlope_bits = LINPUPPI_ptSlope_bits;    // decimal bits of the ptSlope values 
     const int weight_bits = LINPUPPI_weight_bits;
@@ -527,7 +527,9 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     ap_int<12>  x2a, x2ptp;
 
 #if defined(LINPUPPI_etaBins) && LINPUPPI_etaBins == 2
-    bool ietaBin = (caloin.hwEta <= LINPUPPI_etaCut) ? LINPUPPI_invertEta : (1-LINPUPPI_invertEta);
+    glbeta_t glbeta = region.hwGlbEta(caloin.hwEta);
+    glbeta_t etaCut = Scales::makeGlbEta(LINPUPPI_etaCut);
+    bool ietaBin = (glbeta >= 0) ? (glbeta > etaCut) : (-glbeta > etaCut);
 #endif
 
 #ifndef LINPUPPI_etaBins
@@ -557,11 +559,11 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
     int x2 = x2a+x2ptp;
     pt_t puppiPt; puppiWgt_t puppiWgt; linpuppi_calc_wpt(caloin.hwPt, x2, puppiPt, puppiWgt);
 #ifndef LINPUPPI_etaBins
-    if (puppiPt >= ptCut) {
+    if (region.isFiducial(caloin) && puppiPt >= ptCut) {
 #elif LINPUPPI_etaBins == 2
-    if (puppiPt >= (ietaBin ? ptCut_1 : ptCut_0)) {
+    if (region.isFiducial(caloin) && puppiPt >= (ietaBin ? ptCut_1 : ptCut_0)) {
 #endif
-        out.fill(caloin, puppiPt, puppiWgt);
+        out.fill(region, caloin, puppiPt, puppiWgt);
     } else {
         out.clear();
     }
@@ -589,18 +591,18 @@ void linpuppiSum2All(const PFNeutralObj & caloin, const ap_uint<32> & sum, Puppi
 }
 
 
-void linpuppiSum2All(const PFNeutralObj caloin[NALLNEUTRALS], const ap_uint<32> sums[NALLNEUTRALS], PuppiObj out[NALLNEUTRALS]) {
+void linpuppiSum2All(const PFRegion & region, const PFNeutralObj caloin[NALLNEUTRALS], const ap_uint<32> sums[NALLNEUTRALS], PuppiObj out[NALLNEUTRALS]) {
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=sums complete
     #pragma HLS ARRAY_PARTITION variable=out complete
 
     for (int i = 0; i < NALLNEUTRALS; ++i) {
-        linpuppiSum2All(caloin[i], sums[i], out[i]);
+        linpuppiSum2All(region, caloin[i], sums[i], out[i]);
     }
 }
 
 
-void linpuppiNoCrop(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
+void linpuppiNoCrop(const PFRegion & region, const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
     #pragma HLS ARRAY_PARTITION variable=outallne complete
@@ -624,10 +626,10 @@ void linpuppiNoCrop(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfa
     #pragma HLS ARRAY_PARTITION variable=sums complete
     linpuppiSum(track, pvZ0, pfallne, sums);
 
-    linpuppiSum2All(pfallne, sums, outallne);
+    linpuppiSum2All(region, pfallne, sums, outallne);
 }
 
-void linpuppi(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outselne[NNEUTRALS]) {
+void linpuppi(const PFRegion & region, const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outselne[NNEUTRALS]) {
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
     #pragma HLS ARRAY_PARTITION variable=outselne complete
@@ -650,7 +652,7 @@ void linpuppi(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[N
     PuppiObj allne[NALLNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=allne complete
 
-    linpuppiNoCrop(track, pvZ0, pfallne, allne);
+    linpuppiNoCrop(region, track, pvZ0, pfallne, allne);
 
     PuppiObj work[NNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=work complete
@@ -694,7 +696,7 @@ linpuppi_refobj linpuppi_prepare_track(const TkObj & track, z0_t pvZ0) {
     return ret;
 }
 
-PuppiObj linpuppi_one(const PFNeutralObj & in, const linpuppi_refobj sel_track[NTRACK]) {
+PuppiObj linpuppi_one(const PFRegion & region, const PFNeutralObj & in, const linpuppi_refobj sel_track[NTRACK]) {
     #pragma HLS PIPELINE II=1
     #pragma HLS ARRAY_PARTITION variable=sel_track complete
 
@@ -721,31 +723,31 @@ PuppiObj linpuppi_one(const PFNeutralObj & in, const linpuppi_refobj sel_track[N
         sum += term[it];
     }
     PuppiObj ret;
-    linpuppiSum2All(in, sum, ret);
+    linpuppiSum2All(region, in, sum, ret);
     return ret;
 }
 
 
 
-void linpuppiNoCrop_streamed(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
+void linpuppiNoCrop_streamed(const PFRegion & region, const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
     linpuppi_refobj sel_tracks[NTRACK];
     for (unsigned int i = 0; i < NTRACK; ++i) {
         sel_tracks[i] = linpuppi_prepare_track(track[i], pvZ0);
     }
 
     for (int in = 0; in < NALLNEUTRALS; ++in) {
-        outallne[in] = linpuppi_one(pfallne[in], sel_tracks);
+        outallne[in] = linpuppi_one(region, pfallne[in], sel_tracks);
     }
 }
 
 
-void linpuppi_chs_streamed(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
+void linpuppi_chs_streamed(const PFRegion & region, z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
     for (int i = 0; i < NTRACK; ++i) {
-        outallch[i] = linpuppi_chs_one(pfch[i], pvZ0);
+        outallch[i] = linpuppi_chs_one(region, pfch[i], pvZ0);
     }
 }
 
-void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD]) {
+void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWD_IN], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD_OUT]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=output complete
 #ifdef HLS_pipeline_II
@@ -764,15 +766,16 @@ void packed_fwdlinpuppi(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCH
     #pragma HLS pipeline II=2
 #endif
 
-    HadCaloObj caloin[NCALO]; PuppiObj pfselne[NNEUTRALS];
+    PFRegion region; HadCaloObj caloin[NCALO]; PuppiObj pfselne[NNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=pfselne complete
-    l1pf_pattern_unpack<NCALO,0>(input, caloin);
-    fwdlinpuppi(caloin, pfselne);
+    region = PFRegion::unpack(input[0]);
+    l1pf_pattern_unpack<NCALO,1>(input, caloin);
+    fwdlinpuppi(region, caloin, pfselne);
     l1pf_pattern_pack<NNEUTRALS,0>(pfselne, output);
 }
 
-void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWDNC], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWDNC]) {
+void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUPPI_NCHANN_FWD_IN], ap_uint<LINPUPPI_DATA_SIZE_FWD> output[LINPUPPI_NCHANN_FWD_OUTNC]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=output complete
 #ifdef HLS_pipeline_II
@@ -791,11 +794,12 @@ void packed_fwdlinpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_FWD> input[LINPUP
     #pragma HLS pipeline II=2
 #endif
 
-    HadCaloObj caloin[NCALO]; PuppiObj pfallne[NCALO];
+    PFRegion region; HadCaloObj caloin[NCALO]; PuppiObj pfallne[NCALO];
     #pragma HLS ARRAY_PARTITION variable=caloin complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
-    l1pf_pattern_unpack<NCALO,0>(input, caloin);
-    fwdlinpuppiNoCrop(caloin, pfallne);
+    region = PFRegion::unpack(input[0]);
+    l1pf_pattern_unpack<NCALO,1>(input, caloin);
+    fwdlinpuppiNoCrop(region, caloin, pfallne);
     l1pf_pattern_pack<NCALO,0>(pfallne, output);
 }
 
@@ -818,11 +822,11 @@ void packed_linpuppi_chs(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS
     #pragma HLS pipeline II=2
 #endif
 
-    z0_t pvZ0; PFChargedObj pfch[NTRACK]; PuppiObj outallch[NTRACK];
+    PFRegion region; z0_t pvZ0; PFChargedObj pfch[NTRACK]; PuppiObj outallch[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=pfch complete
     #pragma HLS ARRAY_PARTITION variable=outallch complete
-    linpuppi_chs_unpack_in(input, pvZ0, pfch);
-    linpuppi_chs(pvZ0, pfch, outallch);
+    linpuppi_chs_unpack_in(input, region, pvZ0, pfch);
+    linpuppi_chs(region, pvZ0, pfch, outallch);
     l1pf_pattern_pack<NTRACK,0>(outallch, output);
 }
 
@@ -845,12 +849,12 @@ void packed_linpuppi(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_NCHANN_
     #pragma HLS pipeline II=2
 #endif
 
-    TkObj track[NTRACK]; z0_t pvZ0; PFNeutralObj pfallne[NALLNEUTRALS]; PuppiObj outselne[NNEUTRALS];
+    PFRegion region; TkObj track[NTRACK]; z0_t pvZ0; PFNeutralObj pfallne[NALLNEUTRALS]; PuppiObj outselne[NNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
     #pragma HLS ARRAY_PARTITION variable=outselne complete
-    linpuppi_unpack_in(input, track, pvZ0, pfallne);
-    linpuppi(track, pvZ0, pfallne, outselne);
+    linpuppi_unpack_in(input, region, track, pvZ0, pfallne);
+    linpuppi(region, track, pvZ0, pfallne, outselne);
     l1pf_pattern_pack<NNEUTRALS,0>(outselne, output);
 }
 
@@ -873,46 +877,51 @@ void packed_linpuppiNoCrop(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_N
     #pragma HLS pipeline II=2
 #endif
 
-    TkObj track[NTRACK]; z0_t pvZ0; PFNeutralObj pfallne[NALLNEUTRALS]; PuppiObj outallne[NALLNEUTRALS];
+    PFRegion region; TkObj track[NTRACK]; z0_t pvZ0; PFNeutralObj pfallne[NALLNEUTRALS]; PuppiObj outallne[NALLNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
     #pragma HLS ARRAY_PARTITION variable=outallne complete
-    linpuppi_unpack_in(input, track, pvZ0, pfallne);
-    linpuppiNoCrop(track, pvZ0, pfallne, outallne);
+    linpuppi_unpack_in(input, region, track, pvZ0, pfallne);
+    linpuppiNoCrop(region, track, pvZ0, pfallne, outallne);
     l1pf_pattern_pack<NALLNEUTRALS,0>(outallne, output);
 }
 
-void linpuppi_pack_in(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]) {
-    const int TK_OFFS = 0, PV_OFFS = TK_OFFS + NTRACK, PFNE_OFFS = PV_OFFS + 1;
+void linpuppi_pack_in(const PFRegion & region, const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]) {
+    const int TK_OFFS = 1, PV_OFFS = TK_OFFS + NTRACK, PFNE_OFFS = PV_OFFS + 1;
+    input[0] = region.pack();
     l1pf_pattern_pack<NTRACK, TK_OFFS>(track, input);
     input[PV_OFFS] = 0;
     input[PV_OFFS](z0_t::width-1,0) = pvZ0(z0_t::width-1,0);
     l1pf_pattern_pack<NALLNEUTRALS, PFNE_OFFS>(pfallne, input);
 }
 
-void linpuppi_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], TkObj track[NTRACK], z0_t & pvZ0, PFNeutralObj pfallne[NALLNEUTRALS]) {
+void linpuppi_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], PFRegion & region, TkObj track[NTRACK], z0_t & pvZ0, PFNeutralObj pfallne[NALLNEUTRALS]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=track complete
     #pragma HLS ARRAY_PARTITION variable=pfallne complete
-    #pragma HLS inline
-    const int TK_OFFS = 0, PV_OFFS = TK_OFFS + NTRACK, PFNE_OFFS = PV_OFFS + 1;
+    #pragma HLS inline recursive region
+    
+    const int TK_OFFS = 1, PV_OFFS = TK_OFFS + NTRACK, PFNE_OFFS = PV_OFFS + 1;
+    region = PFRegion::unpack(input[0]);
     l1pf_pattern_unpack<NTRACK, TK_OFFS>(input, track);
     pvZ0(z0_t::width-1,0) = input[PV_OFFS](z0_t::width-1,0);
     l1pf_pattern_unpack<NALLNEUTRALS, PFNE_OFFS>(input, pfallne);
 }
 
-void linpuppi_chs_pack_in(z0_t pvZ0, const PFChargedObj pfch[NTRACK], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]) {
-    input[0] = 0;
-    input[0](z0_t::width-1,0) = pvZ0(z0_t::width-1,0);
-    l1pf_pattern_pack<NTRACK, 1>(pfch, input);
+void linpuppi_chs_pack_in(const PFRegion & region, z0_t pvZ0, const PFChargedObj pfch[NTRACK], ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN]) {
+    input[0] = region.pack();
+    input[1] = 0;
+    input[1](z0_t::width-1,0) = pvZ0(z0_t::width-1,0);
+    l1pf_pattern_pack<NTRACK, 2>(pfch, input);
 }
 
-void linpuppi_chs_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], z0_t & pvZ0, PFChargedObj pfch[NTRACK]) {
+void linpuppi_chs_unpack_in(const ap_uint<LINPUPPI_DATA_SIZE_IN> input[LINPUPPI_CHS_NCHANN_IN], PFRegion & region, z0_t & pvZ0, PFChargedObj pfch[NTRACK]) {
     #pragma HLS ARRAY_PARTITION variable=input complete
     #pragma HLS ARRAY_PARTITION variable=pfch complete
     #pragma HLS inline
-    pvZ0(z0_t::width-1,0) = input[0](z0_t::width-1,0);
-    l1pf_pattern_unpack<NTRACK,1>(input, pfch);
+    region = PFRegion::unpack(input[0]);
+    pvZ0(z0_t::width-1,0) = input[1](z0_t::width-1,0);
+    l1pf_pattern_unpack<NTRACK,2>(input, pfch);
 }     
 
 packed_linpuppi_refobj packed_linpuppi_prepare_track(const ap_uint<TkObj::BITWIDTH> & track, const z0_t & pvZ0) {
@@ -922,36 +931,38 @@ packed_linpuppi_refobj packed_linpuppi_prepare_track(const ap_uint<TkObj::BITWID
     return linpuppi_refobj_pack(linpuppi_prepare_track(unpacked_track, pvZ0));
 }
 
-ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_one(const ap_uint<PFNeutralObj::BITWIDTH> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]) {
+ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_one(const ap_uint<l1ct::PFRegion::BITWIDTH> & region, const ap_uint<PFNeutralObj::BITWIDTH> & in, const packed_linpuppi_refobj sel_tracks[NTRACK]) {
     #pragma HLS PIPELINE II=1
     #pragma HLS ARRAY_PARTITION variable=sel_tracks complete
+    PFRegion region_unpacked = PFRegion::unpack(region);
     PFNeutralObj in_unpacked = PFNeutralObj::unpack(in);
     linpuppi_refobj sel_unpacked[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=sel_unpacked complete
     for (int i = 0; i < NTRACK; ++i) sel_unpacked[i] = linpuppi_refobj_unpack(sel_tracks[i]);
-    return linpuppi_one(in_unpacked, sel_unpacked).pack();
+    return linpuppi_one(region_unpacked, in_unpacked, sel_unpacked).pack();
 }
 
-ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_chs_one(const ap_uint<PFChargedObj::BITWIDTH> & pfch, const z0_t & pvZ0) {
+ap_uint<PuppiObj::BITWIDTH> packed_linpuppi_chs_one(const ap_uint<l1ct::PFRegion::BITWIDTH> & region, const ap_uint<PFChargedObj::BITWIDTH> & pfch, const z0_t & pvZ0) {
     #pragma HLS PIPELINE II=1
+    PFRegion region_unpacked = PFRegion::unpack(region);
     PFChargedObj unpacked_pfch = PFChargedObj::unpack(pfch);
-    return linpuppi_chs_one(unpacked_pfch, pvZ0).pack();
+    return linpuppi_chs_one(region_unpacked, unpacked_pfch, pvZ0).pack();
 }
 
-void packed_linpuppiNoCrop_streamed(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
+void packed_linpuppiNoCrop_streamed(const PFRegion & region, const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj pfallne[NALLNEUTRALS], PuppiObj outallne[NALLNEUTRALS]) {
     packed_linpuppi_refobj sel_tracks[NTRACK];
     for (int i = 0; i < NTRACK; ++i) {
         sel_tracks[i] = packed_linpuppi_prepare_track(track[i].pack(), pvZ0);
     }
 
     for (int i = 0; i < NALLNEUTRALS; ++i) {
-        outallne[i] = PuppiObj::unpack(packed_linpuppi_one(pfallne[i].pack(), sel_tracks));
+        outallne[i] = PuppiObj::unpack(packed_linpuppi_one(region.pack(), pfallne[i].pack(), sel_tracks));
     }
     
 }
 
-void packed_linpuppi_chs_streamed(z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
+void packed_linpuppi_chs_streamed(const PFRegion & region, z0_t pvZ0, const PFChargedObj pfch[NTRACK], PuppiObj outallch[NTRACK]) {
     for (int i = 0; i < NTRACK; ++i) {
-        outallch[i] = PuppiObj::unpack( packed_linpuppi_chs_one(pfch[i].pack(), pvZ0));
+        outallch[i] = PuppiObj::unpack( packed_linpuppi_chs_one(region.pack(), pfch[i].pack(), pvZ0));
     }
 }
