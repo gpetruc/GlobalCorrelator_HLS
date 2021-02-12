@@ -7,7 +7,32 @@
 #include <iostream>
 
 using namespace l1ct;
-  
+
+
+#ifdef CMSSW_GIT_HASH
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+
+l1ct::pftkegalgo_config::pftkegalgo_config(const edm::ParameterSet & pset) :
+  nTRACK(pset.getParameter<uint32_t>("nTRACK")), 
+  nEMCALO(pset.getParameter<uint32_t>("nEMCALO")), 
+  nEMCALOSEL_EGIN(pset.getParameter<uint32_t>("nEMCALOSEL_EGIN")), 
+  nEM_EGOUT(pset.getParameter<uint32_t>("nEM_EGOUT")),
+  filterHwQuality(pset.getParameter<bool>("filterHwQuality")),
+  doBremRecovery(pset.getParameter<bool>("doBremRecovery")),
+  caloHwQual(pset.getParameter<int>("caloHwQual")),
+  emClusterPtMin(pset.getParameter<double>("caloEtMin")),
+  dEtaMaxBrem(pset.getParameter<double>("dEtaMaxBrem")),
+  dPhiMaxBrem(pset.getParameter<double>("dPhiMaxBrem")),
+  absEtaBoundaries(pset.getParameter<std::vector<double>>("absEtaBoundaries")),
+  dEtaValues(pset.getParameter<std::vector<double>>("dEtaValues")),
+  dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
+  trkQualityPtMin(pset.getParameter<double>("trkQualityPtMin")) {
+}
+    
+#endif
+
+
+
 void PFTkEGAlgoEmulator::toFirmware(const PFInputRegion & in, PFRegion & region, EmCaloObj emcalo[/*nCALO*/], TkObj track[/*nTRACK*/]) const {
     region = in.region;
     l1ct::toFirmware(in.track, cfg.nTRACK, track);
@@ -82,6 +107,7 @@ void PFTkEGAlgoEmulator::link_emCalo2tk(const PFRegionEmu &r,
               cfg.absEtaBoundaries.begin(),
               std::lower_bound(cfg.absEtaBoundaries.begin(), cfg.absEtaBoundaries.end(), abs(r.floatGlbEta(calo.hwEta)))) -
           1;
+
       float dEtaMax = cfg.dEtaValues[eta_index];
       float dPhiMax = cfg.dPhiValues[eta_index];
       

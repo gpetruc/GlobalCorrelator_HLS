@@ -1,10 +1,17 @@
 #ifndef PFTKEGALGO_REF_H
 #define PFTKEGALGO_REF_H
 
+#ifdef CMSSW_GIT_HASH
+#include "../dataformats/layer1_emulator.h"
+#include "../dataformats/egamma.h"
+#include "../dataformats/pf.h"
+#else
 #include "../../../dataformats/layer1_emulator.h"
 #include "../../../dataformats/egamma.h"
 #include "../../../dataformats/pf.h"
+#endif
 
+namespace edm { class ParameterSet; }
 
 namespace l1ct {
 
@@ -17,16 +24,16 @@ namespace l1ct {
       bool filterHwQuality;
       bool doBremRecovery;
       int caloHwQual;
+      float emClusterPtMin; // GeV
       float dEtaMaxBrem;
       float dPhiMaxBrem;
       
-      std::vector<float> absEtaBoundaries;
-      std::vector<float> dEtaValues;
-      std::vector<float> dPhiValues;
+      std::vector<double> absEtaBoundaries;
+      std::vector<double> dEtaValues;
+      std::vector<double> dPhiValues;
       float trkQualityPtMin; // GeV
-      float emClusterPtMin; // GeV
       
-      
+      pftkegalgo_config(const edm::ParameterSet & iConfig);
       pftkegalgo_config(unsigned int nTrack, 
                         unsigned int nEmCalo, 
                         unsigned int nEmCaloSel_in, 
@@ -37,9 +44,9 @@ namespace l1ct {
                         float emClusterPtMin = 2.,
                         float dEtaMaxBrem = 0.02,
                         float dPhiMaxBrem = 0.1,
-                        std::vector<float> absEtaBoundaries={0.0, 1.5},
-                        std::vector<float> dEtaValues={0.015, 0.0174533},
-                        std::vector<float> dPhiValues={0.07, 0.07},
+                        std::vector<double> absEtaBoundaries={0.0, 1.5},
+                        std::vector<double> dEtaValues={0.015, 0.0174533},
+                        std::vector<double> dPhiValues={0.07, 0.07},
                         float trkQualityPtMin = 10.) :
           nTRACK(nTrack), 
           nEMCALO(nEmCalo), 
@@ -64,6 +71,7 @@ namespace l1ct {
     PFTkEGAlgoEmulator(const pftkegalgo_config& config) :
     cfg(config) {}
 
+    virtual ~PFTkEGAlgoEmulator() {}
 
     void toFirmware(const PFInputRegion & in, PFRegion & region, EmCaloObj calo[/*nCALO*/], TkObj track[/*nTRACK*/]) const ;
     void toFirmware(const OutputRegion & out, EGIsoObj out_egphs[], EGIsoEleObj out_egeles[]) const ;
