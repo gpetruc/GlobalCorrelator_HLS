@@ -16,6 +16,7 @@ pt_t ptErr(pt_t pt, eta_t eta, glbeta_t eta0) ;
 #ifndef CMSSW_GIT_HASH
 
 #define PFALGO_DR2MAX_TK_MU 2101
+#define PFALGO_DR2MAX_TK_CALO 525
 
 #if defined(REG_Barrel)
 #define   PTERR_BINS 3
