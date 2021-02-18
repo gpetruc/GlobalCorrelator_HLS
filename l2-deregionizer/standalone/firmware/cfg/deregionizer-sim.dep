@@ -1,0 +1,20 @@
+# emp-fwk testbench
+include -c emp-fwk:boards/testbench
+
+# deregionizer
+src --vhdl2008 payload.vhd
+src PkgConstants.vhd
+src --vhdl2008 link_map.vhd
+include -c l2-deregionizer deregionizer.dep
+src --vhdl2008 -c RuflCore: -l Utilities ReuseableElements/PkgUtilities.vhd
+src --vhdl2008 -c RuflCore: -l Utilities ReuseableElements/PkgDebug.vhd
+
+# emp-fwk testbench
+src -c emp-fwk:components/ttc emp_ttc_decl.vhd
+src -c emp-fwk:boards/testbench emp_device_decl.vhd
+src -c ipbus-firmware:components/ipbus_core ipbus_package.vhd
+include -c emp-fwk:components/testbench
+src tb_project_decl.vhd
+src tb_decl.vhd
+include -c emp-fwk:boards/testbench packages.dep
+
