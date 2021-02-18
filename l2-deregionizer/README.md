@@ -4,6 +4,10 @@ Given the multiplicity observed in high occupancy events, the number of particle
 
 The image shows the sparse data packet that arrives from Layer 1 for an example event of TTbar with 200 PU, and the flat array output by the deregionizer.
 
+<img src=".packet0.png" width=500>
+
+<img src=".flat0.png" width=500>
+
 The 'merging' involves finding neighbouring continuous blocks of valid particles, then rotating the array of one neighbour to slot exactly next to the other neighbour forming a longer continous block.
 The expected structure of the Layer 1 data packet is used to help find continous blocks, as shown in the image.
 A single PF region is assumed to send up to 18 particles, pT sorted, sent over 3 clock cycles on 6 links at 25 Gb/s.
