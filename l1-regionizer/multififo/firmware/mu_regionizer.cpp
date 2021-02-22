@@ -2,7 +2,7 @@
 #include "fifos.h"
 
 
-void mu_router_input_slice(const glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj fifo_in[NPFREGIONS][NMUFIBERS], bool fifo_write[NPFREGIONS][NMUFIBERS]) {
+void mu_router_input_slice(const l1ct::glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj fifo_in[NPFREGIONS][NMUFIBERS], bool fifo_write[NPFREGIONS][NMUFIBERS]) {
     #pragma HLS pipeline II=1 
     #pragma HLS array_partition variable=mu_in  complete dim=0
     #pragma HLS array_partition variable=fifo_in  complete dim=0
@@ -10,30 +10,28 @@ void mu_router_input_slice(const glbeta_t etaCenter, const PackedMuObj mu_in[NMU
     //#pragma HLS interface ap_none port=fifo_in
     //#pragma HLS interface ap_none port=fifo_write
 
-    const ap_int<glbphi_t::width+1> INT_MPI = -(PFREGION_PHI_SIZE * 9)/2;
-    const ap_int<glbphi_t::width+1> INT_2PI =  (PFREGION_PHI_SIZE * 9);
-    const ap_int<glbphi_t::width+1> PHI_HALFSIZE = (PFREGION_PHI_SIZE / 2 + PFREGION_PHI_BORDER);
-    const ap_int<glbeta_t::width+1> ETA_HALFSIZE = (PFREGION_ETA_SIZE / 2 + PFREGION_ETA_BORDER);
+    const ap_int<l1ct::glbphi_t::width+1> INT_MPI = -(PFREGION_PHI_SIZE * 9)/2;
+    const ap_int<l1ct::glbphi_t::width+1> INT_2PI =  (PFREGION_PHI_SIZE * 9);
+    const ap_int<l1ct::glbphi_t::width+1> PHI_HALFSIZE = (PFREGION_PHI_SIZE / 2 + PFREGION_PHI_BORDER);
+    const ap_int<l1ct::glbeta_t::width+1> ETA_HALFSIZE = (PFREGION_ETA_SIZE / 2 + PFREGION_ETA_BORDER);
     for (unsigned int f = 0; f < NMUFIBERS; ++f) {
         #pragma HLS unroll
-        GlbMuObj gmu; 
-        l1pf_pattern_unpack_one(mu_in[f], gmu);
+        l1ct::MuObj gmu = l1ct::MuObj::unpack(mu_in[f]);
         for (unsigned int i = 0; i < NPFREGIONS; ++i) {
             #pragma HLS unroll
-            ap_int<glbeta_t::width+1> local_eta = gmu.hwEta - etaCenter;
-            ap_int<glbphi_t::width+1> local_phi = gmu.hwPhi - ap_int<glbphi_t::width+1>(i * PFREGION_PHI_SIZE);
+            ap_int<l1ct::glbeta_t::width+1> local_eta = gmu.hwEta - etaCenter;
+            ap_int<l1ct::glbphi_t::width+1> local_phi = gmu.hwPhi - ap_int<l1ct::glbphi_t::width+1>(i * PFREGION_PHI_SIZE);
             if (local_phi < INT_MPI)  local_phi += INT_2PI;
 #ifndef __SYNTHESIS__
             //if (gmu.hwPt != 0) printf("hwd push mu ipt %4d  glb eta %+4d phi %+4d -> local  eta %+4d phi %+4d \n",
-            //         gmu.hwPt.to_int(), gmu.hwEta.to_int(),  gmu.hwPhi.to_int(), local_eta.to_int(), local_phi.to_int());
+            //         gmu.intPt(), gmu.intEta(),  gmu.intPhi(), local_eta.to_int(), local_phi.to_int());
 #endif
             bool write = gmu.hwPt != 0 && 
                          (local_eta >= -ETA_HALFSIZE && local_eta <= ETA_HALFSIZE) &&
                          (local_phi >= -PHI_HALFSIZE && local_phi <= PHI_HALFSIZE);
-            MuObj lmu;
-            lmu.hwPt = gmu.hwPt; lmu.hwPtErr = gmu.hwPtErr;
+            l1ct::MuObj lmu = gmu;
             lmu.hwEta = local_eta; lmu.hwPhi = local_phi;
-            fifo_in[i][f]    = l1pf_pattern_pack_one(lmu);
+            fifo_in[i][f]    = lmu.pack();
             fifo_write[i][f] = write;
         }
     }
@@ -151,7 +149,7 @@ void mu_router_output_slice(const PackedMuObj merged_out[NPFREGIONS], const bool
 }
 
 
-bool mu_router(bool newevent, const glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj mu_out[NMUOUT], bool & newevent_out) {
+bool mu_router(bool newevent, const l1ct::glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj mu_out[NMUOUT], bool & newevent_out) {
     #pragma HLS pipeline II=1 enable_flush
     #pragma HLS array_partition variable=mu_in  complete dim=0
     #pragma HLS array_partition variable=mu_out complete

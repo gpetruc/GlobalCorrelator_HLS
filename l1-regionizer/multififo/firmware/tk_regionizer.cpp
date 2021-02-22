@@ -1,7 +1,7 @@
 #include "regionizer.h"
 #include "fifos.h"
 
-void tk_route_link2fifo_unpacked(const TkObj & in, TkObj & center, bool & write_center, TkObj & after, bool & write_after, TkObj & before, bool & write_before) {
+void tk_route_link2fifo_unpacked(const l1ct::TkObj & in, l1ct::TkObj & center, bool & write_center, l1ct::TkObj & after, bool & write_after, l1ct::TkObj & before, bool & write_before) {
     #pragma HSL inline
     bool valid = (in.hwPt != 0);
     bool in_next = in.hwPhi >= +(PFREGION_PHI_SIZE/2-PFREGION_PHI_BORDER);
@@ -16,13 +16,12 @@ void tk_route_link2fifo(const PackedTkObj & pin,
         PackedTkObj & pafter,  bool & write_pafter, 
         PackedTkObj & pbefore, bool & write_pbefore) {
     #pragma HSL inline
-    TkObj in, center, before, after; 
+    l1ct::TkObj in = l1ct::TkObj::unpack(pin), center, before, after; 
     bool  write_center, write_before, write_after;
-    l1pf_pattern_unpack_one(pin, in); 
     tk_route_link2fifo_unpacked(in, center, write_center, after, write_after, before, write_before);
-    pcenter = l1pf_pattern_pack_one(center); write_pcenter = write_center;
-    pbefore = l1pf_pattern_pack_one(before); write_pbefore = write_before;
-    pafter  = l1pf_pattern_pack_one(after);  write_pafter  = write_after;
+    pcenter = center.pack(); write_pcenter = write_center;
+    pbefore = before.pack(); write_pbefore = write_before;
+    pafter  = after.pack();  write_pafter  = write_after;
 }
 
 void tk_route_all_sectors(const PackedTkObj tracks_in[NTKSECTORS][NTKFIBERS], PackedTkObj fifo_in[NTKSECTORS][NTKFIFOS], bool fifo_write[NTKSECTORS][NTKFIFOS]) {

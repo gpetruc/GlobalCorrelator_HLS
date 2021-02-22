@@ -1,46 +1,19 @@
 #ifndef multififo_regionizer_h
 #define multififo_regionizer_h
 
-#include "../../firmware/data.h"
-#include "../../firmware/l1pf_encoding.h"
+#include "../../../dataformats/layer1_objs.h"
+#include "../../../dataformats/layer1_multiplicities.h"
 
-struct GlbMuObj {
-	pt_t hwPt, hwPtErr;
-	glbeta_t hwEta; //global coordinates
-	glbphi_t hwPhi; // 
-};
-inline void clear(GlbMuObj & c) {
-    c.hwPt = 0; c.hwPtErr = 0; c.hwEta = 0; c.hwPhi = 0; 
-}
-inline ap_uint<64> l1pf_pattern_pack_one(const GlbMuObj & mu) {
-    #pragma HLS inline
-    ap_uint<64> data  = 0;
-    data(31+32,16+32) = mu.hwPtErr;
-    data(15+32, 0+32) = mu.hwPt;
-    data(11, 0) = mu.hwEta;
-    data(22,12) = mu.hwPhi;
-    return data;
-}
-inline void l1pf_pattern_unpack_one(const ap_uint<64> & data, GlbMuObj & mu) {
-    #pragma HLS inline
-    mu.hwPt    = data(15+32, 0+32);
-    mu.hwPtErr = data(31+32,16+32);
-    mu.hwEta   = data(11, 0);
-    mu.hwPhi   = data(22,12);
-}
-
-
-
-typedef ap_uint<64> PackedTkObj;
-typedef ap_uint<64> PackedCaloObj;
-typedef ap_uint<64> PackedMuObj;
-inline void clear(ap_uint<64> & o) { o = 0; }
+typedef ap_uint<72> PackedTkObj;
+typedef ap_uint<72> PackedCaloObj;
+typedef ap_uint<72> PackedMuObj;
+inline void clear(ap_uint<72> & o) { o = 0; }
 
 template<typename P>
 inline P phiShifted(const P & t, int phi_shift) {
     #pragma HLS inline
     P ret = t;
-    ret.hwPhi += phi_t(phi_shift);
+    ret.hwPhi += l1ct::phi_t(phi_shift);
     return ret;
 }
 
@@ -92,29 +65,26 @@ inline P phiShifted(const P & t, int phi_shift) {
 
 bool tk_router(bool newevent, const PackedTkObj tracks_in[NTKSECTORS][NTKFIBERS], PackedTkObj tracks_out[NTKOUT], bool & newevent_out);
 bool calo_router(bool newevent, const PackedCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], PackedCaloObj calo_out[NCALOOUT], bool & newevent_out);
-bool mu_router(bool newevent, const glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj mu_out[NMUOUT], bool & newevent_out);
+bool mu_router(bool newevent, const l1ct::glbeta_t etaCenter, const PackedMuObj mu_in[NMUFIBERS], PackedMuObj mu_out[NMUOUT], bool & newevent_out);
 
 #ifndef __SYNTHESIS__
 #include <cstdio>
 
-inline void printTrack(FILE *f, const TkObj & t) { 
-    fprintf(f,"%3d % 4d % 4d  ", t.hwPt.to_int(), t.hwEta.to_int(), t.hwPhi.to_int()); // note no leading +'s or 0's, they confuse VHDL text parser
+inline void printTrack(FILE *f, const l1ct::TkObj & t) { 
+    fprintf(f,"%3d % 4d % 4d  ", t.intPt(), t.intEta(), t.intPhi()); // note no leading +'s or 0's, they confuse VHDL text parser
 }
-inline void printCalo(FILE *f, const HadCaloObj & t) { 
-    fprintf(f,"%3d % 4d % 4d  ", t.hwPt.to_int(), t.hwEta.to_int(), t.hwPhi.to_int()); // note no leading +'s or 0's, they confuse VHDL text parser
+inline void printCalo(FILE *f, const l1ct::HadCaloObj & t) { 
+    fprintf(f,"%3d % 4d % 4d  ", t.intPt(), t.intEta(), t.intPhi()); // note no leading +'s or 0's, they confuse VHDL text parser
 }
-inline void printMu(FILE *f, const MuObj & t) { 
-    fprintf(f,"%3d % 4d % 4d  ", t.hwPt.to_int(), t.hwEta.to_int(), t.hwPhi.to_int()); // note no leading +'s or 0's, they confuse VHDL text parser
-}
-inline void printMu(FILE *f, const GlbMuObj & t) { 
-    fprintf(f,"%3d % 4d % 4d  ", t.hwPt.to_int(), t.hwEta.to_int(), t.hwPhi.to_int()); // note no leading +'s or 0's, they confuse VHDL text parser
+inline void printMu(FILE *f, const l1ct::MuObj & t) { 
+    fprintf(f,"%3d % 4d % 4d  ", t.intPt(), t.intEta(), t.intPhi()); // note no leading +'s or 0's, they confuse VHDL text parser
 }
 
-inline void printTrackShort(FILE *f, const TkObj & t) { 
-   fprintf(f,"%3d%+04d ", t.hwPt.to_int(), t.hwPhi.to_int());
+inline void printTrackShort(FILE *f, const l1ct::TkObj & t) { 
+   fprintf(f,"%3d%+04d ", t.intPt(), t.intPhi());
 }
-inline void printCaloShort(FILE *f, const HadCaloObj & t) { 
-    fprintf(f,"%3d%+04d ", t.hwPt.to_int(), t.hwPhi.to_int());
+inline void printCaloShort(FILE *f, const l1ct::HadCaloObj & t) { 
+    fprintf(f,"%3d%+04d ", t.intPt(), t.intPhi());
 }
 #endif
 

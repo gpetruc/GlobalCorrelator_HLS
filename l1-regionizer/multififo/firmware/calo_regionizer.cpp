@@ -1,7 +1,7 @@
 #include "regionizer.h"
 #include "fifos.h"
 
-void calo_route_all_sectors_unpacked(const HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], HadCaloObj fifo_in[NCALOSECTORS][NCALOFIFOS], bool fifo_write[NCALOSECTORS][NCALOFIFOS]) {
+void calo_route_all_sectors_unpacked(const l1ct::HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], l1ct::HadCaloObj fifo_in[NCALOSECTORS][NCALOFIFOS], bool fifo_write[NCALOSECTORS][NCALOFIFOS]) {
     #pragma HLS inline
     #pragma HLS array_partition variable=calo_in  complete dim=0
     #pragma HLS array_partition variable=fifo_in  complete dim=0
@@ -56,7 +56,7 @@ void calo_route_all_sectors(const PackedCaloObj pcalo_in[NCALOSECTORS][NCALOFIBE
     #pragma HLS array_partition variable=pfifo_in  complete dim=0
     #pragma HLS array_partition variable=pfifo_write  complete dim=0
     
-    HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], fifo_in[NCALOSECTORS][NCALOFIFOS]; 
+    l1ct::HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], fifo_in[NCALOSECTORS][NCALOFIFOS]; 
     bool fifo_write[NCALOSECTORS][NCALOFIFOS];
     #pragma HLS array_partition variable=calo_in  complete dim=0
     #pragma HLS array_partition variable=fifo_in  complete dim=0
@@ -65,7 +65,7 @@ void calo_route_all_sectors(const PackedCaloObj pcalo_in[NCALOSECTORS][NCALOFIBE
         #pragma HLS unroll
         for (int ifib = 0; ifib < NCALOFIBERS; ++ifib) {
             #pragma HLS unroll
-            l1pf_pattern_unpack_one(pcalo_in[isec][ifib], calo_in[isec][ifib]);
+            calo_in[isec][ifib] = l1ct::HadCaloObj::unpack(pcalo_in[isec][ifib]);
         }
     }
     calo_route_all_sectors_unpacked(calo_in, fifo_in, fifo_write);
@@ -73,7 +73,7 @@ void calo_route_all_sectors(const PackedCaloObj pcalo_in[NCALOSECTORS][NCALOFIBE
         #pragma HLS unroll
         for (int ifib = 0; ifib < NCALOFIFOS; ++ifib) {
             #pragma HLS unroll
-            pfifo_in[isec][ifib] = l1pf_pattern_pack_one(fifo_in[isec][ifib]);
+            pfifo_in[isec][ifib] = fifo_in[isec][ifib].pack();
             pfifo_write[isec][ifib] = fifo_write[isec][ifib];
         }
     }

@@ -1,5 +1,7 @@
 #include "firmware/regionizer.h"
 
+#include "regionizer_ref.h"
+
 #include <list>
 #include <vector>
 
@@ -13,18 +15,18 @@ P rePhiObj(const P & t, int phi) {
 
 
 struct RegionBufferTK { 
-    std::list<TkObj> fifos[NTKFIFOS]; 
-    TkObj staging_area[NTKFIFOS/2], queue[NTKFIFOS/2];
+    std::list<l1ct::TkObjEmu> fifos[NTKFIFOS]; 
+    l1ct::TkObjEmu staging_area[NTKFIFOS/2], queue[NTKFIFOS/2];
     void flush() { 
         for (int j = 0; j < NTKFIFOS; ++j) fifos[j].clear(); 
         for (int j = 0; j < NTKFIFOS/2; ++j) clear(staging_area[j]);
         for (int j = 0; j < NTKFIFOS/2; ++j) clear(queue[j]);
     }
-    void push(int f, const TkObj & tk, int phi_shift=0) {
+    void push(int f, const l1ct::TkObjEmu & tk, int phi_shift=0) {
         fifos[f].push_front(phiShifted(tk, phi_shift));
     }
-    TkObj pop_next() {
-        TkObj ret; clear(ret);
+    l1ct::TkObjEmu pop_next() {
+        l1ct::TkObjEmu ret; clear(ret);
         // shift data from each pair of fifos to the staging area
         for (int j = 0; j < NTKFIFOS/2; ++j) {
             if (staging_area[j].hwPt != 0) continue;
@@ -52,7 +54,7 @@ struct RegionBufferTK {
         }
         return ret;
     }
-    void pop_all(TkObj out[]) {
+    void pop_all(l1ct::TkObjEmu out[]) {
         for (int j = 0; j < NTKFIFOS; ++j) {
             if (!fifos[j].empty()) {
                 out[j] = fifos[j].back();
@@ -85,8 +87,8 @@ struct RegionBufferCalo {
     {
     }
     unsigned int ireg, nfifo, phi_center;
-    std::vector<std::list<HadCaloObj>> fifos; 
-    std::vector<HadCaloObj> staging_area, queue, staging_area2, queue2;
+    std::vector<std::list<l1ct::HadCaloObjEmu>> fifos; 
+    std::vector<l1ct::HadCaloObjEmu> staging_area, queue, staging_area2, queue2;
 
     void flush() { 
         for (auto & f : fifos) f.clear(); 
@@ -95,7 +97,7 @@ struct RegionBufferCalo {
         for (auto & t : staging_area2) clear(t);
         for (auto & t : queue2) clear(t);
     }
-    void maybe_push(unsigned int sector, unsigned int fiber, const HadCaloObj & tk) {
+    void maybe_push(unsigned int sector, unsigned int fiber, const l1ct::HadCaloObjEmu & tk) {
         int phi_shift = int(sector) * SECTOR_SIZE - phi_center;
         int local_phi = tk.hwPhi.to_int() + phi_shift;
         if (local_phi >= INT_PI) local_phi -= 2*INT_PI;
@@ -110,8 +112,8 @@ struct RegionBufferCalo {
         //else if (fiber == 0) printf("test calo sec %u -> reg %u: phi calo %+4d  global %+4d  local %+4d -> not accepted\n",
         //                                sector, ireg, tk.hwPhi.to_int(), tk.hwPhi.to_int() + int(sector) * SECTOR_SIZE, local_phi);
     }
-    HadCaloObj pop_next() {
-        HadCaloObj ret; clear(ret);
+    l1ct::HadCaloObjEmu pop_next() {
+        l1ct::HadCaloObjEmu ret; clear(ret);
         // shift data from each pair of fifos to the staging area
         for (int j = 0; j < nfifo/2; ++j) {
             if (staging_area[j].hwPt != 0) continue;
@@ -158,7 +160,7 @@ struct RegionBufferCalo {
         }
         return ret;
     }
-    void pop_all(HadCaloObj out[]) {
+    void pop_all(l1ct::HadCaloObjEmu out[]) {
         for (int j = 0; j < nfifo; ++j) {
             if (!fifos[j].empty()) {
                 out[j] = fifos[j].back();
@@ -175,12 +177,12 @@ struct RegionBufferMu {
     static const int REGION_PHI_HALFSIZE = PFREGION_PHI_SIZE/2+PFREGION_PHI_BORDER;
     static const int REGION_ETA_HALFSIZE = PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER;
     static const int INT_PI  = (PFREGION_PHI_SIZE * 9)/2;
-    std::list<MuObj> fifos[NMUFIBERS]; 
+    std::list<l1ct::MuObjEmu> fifos[NMUFIBERS]; 
     int etaCenter, phiCenter;
     void flush() { 
         for (int j = 0; j < NMUFIBERS; ++j) fifos[j].clear(); 
     }
-    void maybe_push(unsigned int ifiber, const GlbMuObj & gmu) {
+    void maybe_push(unsigned int ifiber, const l1ct::MuObjEmu & gmu) {
         int local_phi = gmu.hwPhi.to_int() - phiCenter;
         int local_eta = gmu.hwEta.to_int() - etaCenter;
         if (local_phi >= INT_PI) local_phi -= 2*INT_PI;
@@ -190,16 +192,14 @@ struct RegionBufferMu {
         fflush(stdout);
         if (std::abs(local_phi) <= REGION_PHI_HALFSIZE &&
             std::abs(local_eta) <= REGION_ETA_HALFSIZE) {
-            MuObj lmu; 
-            lmu.hwPt    = gmu.hwPt;
-            lmu.hwPtErr = gmu.hwPtErr;
+            l1ct::MuObjEmu lmu = gmu; 
             lmu.hwEta   = local_eta;
             lmu.hwPhi   = local_phi;
             fifos[ifiber].push_front(lmu); 
         }
     }
-    MuObj pop_next() {
-        MuObj ret; clear(ret);
+    l1ct::MuObjEmu pop_next() {
+        l1ct::MuObjEmu ret; clear(ret);
         for (int j = 0; j < NMUFIBERS; ++j) {
             if (!fifos[j].empty()) {
                 ret = fifos[j].back();
@@ -209,7 +209,7 @@ struct RegionBufferMu {
         }
         return ret;
     }
-    void pop_all(MuObj out[]) {
+    void pop_all(l1ct::MuObjEmu out[]) {
         for (int j = 0; j < NMUFIBERS; ++j) {
             if (!fifos[j].empty()) {
                 out[j] = fifos[j].back();
@@ -288,17 +288,17 @@ struct RegionMux {
 
 struct RegionizerTK {
     RegionBufferTK buffers[NPFREGIONS];
-    RegionBuilder<TkObj,NTKSORTED> builder[NTKSECTORS];
-    RegionMux<TkObj,NTKSORTED,NTKOUT> bigmux;
+    RegionBuilder<l1ct::TkObjEmu,NTKSORTED> builder[NTKSECTORS];
+    RegionMux<l1ct::TkObjEmu,NTKSORTED,NTKOUT> bigmux;
     unsigned int nevt;
     RegionizerTK() { nevt = 0; }
     void flush() { 
         for (int i = 0; i < NPFREGIONS; ++i) buffers[i].flush();
     }
-    void read_in(const TkObj in[NTKSECTORS][NTKFIBERS]) {
+    void read_in(const l1ct::TkObjEmu in[NTKSECTORS][NTKFIBERS]) {
         for (int i = 0; i < NTKSECTORS; ++i) {
             for (int j = 0; j < NTKFIBERS; ++j) {
-                const TkObj & tk = in[i][j];
+                const l1ct::TkObjEmu & tk = in[i][j];
                 if (tk.hwPt == 0) continue;
                 buffers[i].push(j, tk);
                 int inext = (i+1), iprev = i+NTKSECTORS-1;
@@ -309,7 +309,7 @@ struct RegionizerTK {
             }
         }
     }
-    void write_out(TkObj out[]) {
+    void write_out(l1ct::TkObjEmu out[]) {
         for (int i = 0; i < NTKSECTORS; ++i) {
 #if defined(ROUTER_NOMERGE)
             buffers[i].pop_all(&out[i*NTKFIFOS]);
@@ -318,11 +318,11 @@ struct RegionizerTK {
 #endif
         }
     }
-    bool run(bool newevt, const TkObj in[NTKSECTORS][NTKFIBERS], TkObj out[NTKSORTED]) {
+    bool run(bool newevt, const l1ct::TkObjEmu in[NTKSECTORS][NTKFIBERS], l1ct::TkObjEmu out[NTKSORTED]) {
         if (newevt) { flush(); nevt++; }
         read_in(in);
 #if defined(ROUTER_STREAM) or defined(ROUTER_NOSTREAM)
-        TkObj routed[NPFREGIONS];
+        l1ct::TkObjEmu routed[NPFREGIONS];
         write_out(routed);
         for (int i = 0; i < NPFREGIONS; ++i) {
             builder[i].push(newevt, routed[i], &bigmux.buffer[i][0]);
@@ -338,8 +338,8 @@ struct RegionizerTK {
 
 struct RegionizerCalo {
     RegionBufferCalo buffers[NPFREGIONS];
-    RegionBuilder<HadCaloObj,NCALOSORTED> builder[NPFREGIONS];
-    RegionMux<HadCaloObj,NCALOSORTED,NCALOOUT> bigmux;
+    RegionBuilder<l1ct::HadCaloObjEmu,NCALOSORTED> builder[NPFREGIONS];
+    RegionMux<l1ct::HadCaloObjEmu,NCALOSORTED,NCALOOUT> bigmux;
     unsigned int nevt;
     RegionizerCalo() { 
         for (int r = 0; r < NPFREGIONS; ++r) buffers[r] = RegionBufferCalo(r);
@@ -348,7 +348,7 @@ struct RegionizerCalo {
     void flush() { 
         for (int i = 0; i < NPFREGIONS; ++i) buffers[i].flush();
     }
-    void read_in(const HadCaloObj in[NCALOSECTORS][NCALOFIBERS]) {
+    void read_in(const l1ct::HadCaloObjEmu in[NCALOSECTORS][NCALOFIBERS]) {
         for (int i = 0; i < NCALOSECTORS; ++i) {
             for (int j = 0; j < NCALOFIBERS; ++j) {
                 if (in[i][j].hwPt == 0) continue;
@@ -358,7 +358,7 @@ struct RegionizerCalo {
             }
         }
     }
-    void write_out(HadCaloObj out[]) {
+    void write_out(l1ct::HadCaloObjEmu out[]) {
         for (unsigned int i = 0, offs = 0; i < NPFREGIONS; ++i) {
 #if defined(ROUTER_NOMERGE)
             buffers[i].pop_all(&out[offs]);
@@ -368,11 +368,11 @@ struct RegionizerCalo {
 #endif
         }
     }
-    bool run(bool newevt, const HadCaloObj in[NCALOSECTORS][NCALOFIBERS], HadCaloObj out[NCALOOUT]) {
+    bool run(bool newevt, const l1ct::HadCaloObjEmu in[NCALOSECTORS][NCALOFIBERS], l1ct::HadCaloObjEmu out[NCALOOUT]) {
         if (newevt) { flush(); nevt++; }
         read_in(in);
 #if defined(ROUTER_STREAM) or defined(ROUTER_NOSTREAM)
-        HadCaloObj routed[NPFREGIONS];
+        l1ct::HadCaloObjEmu routed[NPFREGIONS];
         write_out(routed);
         for (int i = 0; i < NPFREGIONS; ++i) {
             builder[i].push(newevt, routed[i], &bigmux.buffer[i][0]);
@@ -387,10 +387,10 @@ struct RegionizerCalo {
 
 struct RegionizerMu {
     RegionBufferMu buffers[NPFREGIONS];
-    RegionBuilder<MuObj,NMUSORTED> builder[NPFREGIONS];
-    RegionMux<MuObj,NMUSORTED,NMUOUT> bigmux;
+    RegionBuilder<l1ct::MuObjEmu,NMUSORTED> builder[NPFREGIONS];
+    RegionMux<l1ct::MuObjEmu,NMUSORTED,NMUOUT> bigmux;
     unsigned int nevt;
-    RegionizerMu(const glbeta_t etaCenter) { 
+    RegionizerMu(const l1ct::glbeta_t etaCenter) { 
         for (int i = 0; i < NPFREGIONS; ++i) {
             buffers[i].phiCenter = i * PFREGION_PHI_SIZE;
             buffers[i].etaCenter = etaCenter;
@@ -400,7 +400,7 @@ struct RegionizerMu {
     void flush() { 
         for (int i = 0; i < NPFREGIONS; ++i) buffers[i].flush();
     }
-    void read_in(const GlbMuObj in[NMUFIBERS]) {
+    void read_in(const l1ct::MuObjEmu in[NMUFIBERS]) {
         for (int j = 0; j < NMUFIBERS; ++j) {
             if (in[j].hwPt == 0) continue;
             for (int r = 0; r < NPFREGIONS; ++r) {
@@ -408,7 +408,7 @@ struct RegionizerMu {
             }
         }
     }
-    void write_out(MuObj out[]) {
+    void write_out(l1ct::MuObjEmu out[]) {
         for (unsigned int i = 0, offs = 0; i < NPFREGIONS; ++i, offs += NMUFIBERS) {
 #if defined(ROUTER_NOMERGE)
             buffers[i].pop_all(&out[offs]);
@@ -417,11 +417,11 @@ struct RegionizerMu {
 #endif
         }
     }
-    bool run(bool newevt, const GlbMuObj in[NMUFIBERS], MuObj out[NMUOUT]) {
+    bool run(bool newevt, const l1ct::MuObjEmu in[NMUFIBERS], l1ct::MuObjEmu out[NMUOUT]) {
         if (newevt) { flush(); nevt++; }
         read_in(in);
 #if defined(ROUTER_STREAM) or defined(ROUTER_NOSTREAM)
-        MuObj routed[NPFREGIONS];
+        l1ct::MuObjEmu routed[NPFREGIONS];
         write_out(routed);
         for (int i = 0; i < NPFREGIONS; ++i) {
             builder[i].push(newevt, routed[i], &bigmux.buffer[i][0]);
@@ -435,18 +435,60 @@ struct RegionizerMu {
 };
 
 
-bool tk_router_ref(bool newevent, const TkObj tracks_in[NTKSECTORS][NTKFIBERS], TkObj tracks_out[NTKOUT]) {
+bool tk_router_ref(bool newevent, const l1ct::TkObjEmu tracks_in[NTKSECTORS][NTKFIBERS], l1ct::TkObjEmu tracks_out[NTKOUT]) {
     static RegionizerTK impl;
     return impl.run(newevent, tracks_in, tracks_out);
 }
 
 
-bool calo_router_ref(bool newevent, const HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], HadCaloObj calo_out[NCALOOUT]) {
+bool calo_router_ref(bool newevent, const l1ct::HadCaloObjEmu calo_in[NCALOSECTORS][NCALOFIBERS], l1ct::HadCaloObjEmu calo_out[NCALOOUT]) {
     static RegionizerCalo impl;
     return impl.run(newevent, calo_in, calo_out);
 }
 
-bool mu_router_ref(bool newevent, const glbeta_t etaCenter, const GlbMuObj mu_in[NMUFIBERS], MuObj mu_out[NMUOUT]) {
+bool mu_router_ref(bool newevent, const l1ct::glbeta_t etaCenter, const l1ct::MuObjEmu mu_in[NMUFIBERS], l1ct::MuObjEmu mu_out[NMUOUT]) {
     static RegionizerMu impl(etaCenter);
     return impl.run(newevent, mu_in, mu_out);
 }
+
+bool tk_router_ref(bool newevent, const std::vector<l1ct::TkObjEmu> & links_in, std::vector<l1ct::TkObjEmu> & out) {
+    assert(links_in.size() == NTKSECTORS*NTKFIBERS); 
+    out.resize(NTKOUT);
+    l1ct::TkObjEmu tracks_in[NTKSECTORS][NTKFIBERS], tracks_out[NTKOUT];
+    for (unsigned int is = 0, i = 0; is < NTKSECTORS; ++is) {
+        for (unsigned int il = 0; il < NTKFIBERS; ++il, ++i) {
+            tracks_in[is][il] = links_in[i];
+        }
+    }
+    bool ret = tk_router_ref(newevent, tracks_in, tracks_out);
+    for (unsigned int io = 0; io < NTKOUT; ++io) out[io] = tracks_out[io];
+    return ret;
+}
+bool calo_router_ref(bool newevent, const std::vector<l1ct::HadCaloObjEmu> & links_in, std::vector<l1ct::HadCaloObjEmu> & out) {
+    assert(links_in.size() == NCALOSECTORS*NCALOFIBERS); 
+    out.resize(NCALOOUT);
+    l1ct::HadCaloObjEmu calo_in[NCALOSECTORS][NCALOFIBERS], calo_out[NCALOOUT];
+    for (unsigned int is = 0, i = 0; is < NCALOSECTORS; ++is) {
+        for (unsigned int il = 0; il < NCALOFIBERS; ++il, ++i) {
+            calo_in[is][il] = links_in[i];
+        }
+    }
+    bool ret = calo_router_ref(newevent, calo_in, calo_out);
+    for (unsigned int io = 0; io < NCALOOUT; ++io) out[io] = calo_out[io];
+    return ret;
+}
+
+bool mu_router_ref(bool newevent, const l1ct::glbeta_t etaCenter, const std::vector<l1ct::MuObjEmu> & links_in, std::vector<l1ct::MuObjEmu> & out) {
+    assert(links_in.size() == NMUFIBERS); 
+    out.resize(NMUOUT);
+    l1ct::MuObjEmu mu_in[NMUFIBERS], mu_out[NMUOUT];
+    for (unsigned int il = 0; il < NMUFIBERS; ++il) mu_in[il] = links_in[il];
+    bool ret = mu_router_ref(newevent, etaCenter, mu_in, mu_out);
+    for (unsigned int io = 0; io < NMUOUT; ++io) out[io] = mu_out[io];
+    return ret;
+}
+
+
+
+
+
