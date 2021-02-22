@@ -6,7 +6,7 @@
 
 l1ct::RegionizerEmulator::~RegionizerEmulator() {}
 
-void l1ct::RegionizerEmulator::run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) {
+void l1ct::RegionizerEmulator::run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) const {
     for (const auto & sec : in.track) {
         for (const auto & tk : sec) {
             float glbEta  = sec.region.floatGlbEtaOf(tk), glbPhi = sec.region.floatGlbPhiOf(tk);

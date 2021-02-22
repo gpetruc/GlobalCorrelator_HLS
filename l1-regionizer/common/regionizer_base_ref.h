@@ -18,8 +18,7 @@ namespace l1ct {
 
             void setDebug(bool debug = true) { debug_ = debug; }
 
-            virtual void run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) ;
-            virtual void initSectorsAndRegions(const RegionizerDecodedInputs & in, const std::vector<PFInputRegion> & out) {}
+            virtual void run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) const ;
 
         protected:
             bool debug_;
