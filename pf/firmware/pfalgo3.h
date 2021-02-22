@@ -24,7 +24,6 @@ void pfalgo3_unpack_out(const ap_uint<PFALGO3_DATA_SIZE> output[PFALGO3_NCHANN_O
 void pfalgo3_set_debug(bool debug);
 
 #ifndef CMSSW_GIT_HASH
-#define PFALGO_DR2MAX_TK_CALO 1182
 #define PFALGO_DR2MAX_EM_CALO 525
 #define PFALGO_DR2MAX_TK_EM   84
 #define PFALGO_TK_MAXINVPT_LOOSE    40

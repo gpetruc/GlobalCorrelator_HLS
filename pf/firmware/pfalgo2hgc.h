@@ -22,7 +22,6 @@ void pfalgo2hgc_unpack_out(const ap_uint<PFALGO2HGC_DATA_SIZE> output[PFALGO2HGC
 
 
 #ifndef CMSSW_GIT_HASH
-#define PFALGO_DR2MAX_TK_CALO 525
 #define PFALGO_TK_MAXINVPT_LOOSE    40
 #define PFALGO_TK_MAXINVPT_TIGHT    80
 #endif

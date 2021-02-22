@@ -9,10 +9,16 @@
 #define NSELCALO 20
 #define NALLNEUTRALS NSELCALO
 // dummy
-#define NEMCALO 1
+// FIXME: select upstream and tune this number
+#define NEMCALO 20
 #define NPHOTON NEMCALO
 // not used but must be there because used in header files
 #define NNEUTRALS 1
+// Configuration of EG algo follows
+#define NEMCALO_EGIN 10
+#define DOBREMRECOVERY
+#define NEM_EGOUT 5
+
 //--------------------------------
 #elif defined(REG_HGCalNoTK)
 #define NCALO 12
@@ -82,6 +88,9 @@
 #define NSELCALO 10
 #define NALLNEUTRALS (NPHOTON + NSELCALO)
 #define NNEUTRALS 25
+// Configuration of EG algo follows
+#define NEMCALO_EGIN 10
+#define NEM_EGOUT 10
 #endif
 
 #endif // region
