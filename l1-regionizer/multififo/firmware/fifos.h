@@ -1,7 +1,7 @@
 #ifndef multififo_regionizer_fifos_h
 #define multififo_regionizer_fifos_h
 
-template<unsigned int NBITS=64, unsigned int LEN=64, unsigned int NPTRBITS=6>
+template<unsigned int NBITS=72, unsigned int LEN=64, unsigned int NPTRBITS=6>
 class rolling_ram_fifo {
     public: 
         typedef ap_uint<NBITS>   word_t;
@@ -76,7 +76,7 @@ void rolling_ram_fifo<NBITS,LEN,NPTRBITS>::update(bool roll,
     roll_delayed = roll;
 }
 
-template<unsigned int NBITS=64>
+template<unsigned int NBITS=72>
 class fifo_merge2_simple {
     public:    
         typedef ap_uint<NBITS> word_t;
@@ -141,7 +141,7 @@ void fifo_merge2_simple<NBITS>::update(bool roll,
     full2 = full2_;
 }
 
-template<unsigned int NBITS=64>
+template<unsigned int NBITS=72>
 class fifo_merge2_full {
     public:    
         typedef ap_uint<NBITS> word_t;
@@ -226,7 +226,7 @@ void fifo_merge2_full<NBITS>::update(bool roll,
     full2 = full_[1];
 }
 
-template<unsigned int NBITS=64>
+template<unsigned int NBITS=72>
 class fifo_merge3 {
     public:    
         typedef ap_uint<NBITS> word_t;
