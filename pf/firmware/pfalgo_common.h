@@ -16,14 +16,15 @@ pt_t ptErr(pt_t pt, eta_t eta, glbeta_t eta0) ;
 #ifndef CMSSW_GIT_HASH
 
 #define PFALGO_DR2MAX_TK_MU 2101
-#define PFALGO_DR2MAX_TK_CALO 525
 
 #if defined(REG_Barrel)
+#define   PFALGO_DR2MAX_TK_CALO 1182
 #define   PTERR_BINS 3
 #define   PTERR_EDGES { 0.700,  1.200,  1.600 }
 #define   PTERR_OFFS  { 2.909,  2.864,  0.294 }
 #define   PTERR_SCALE { 0.118,  0.130,  0.442 }  
 #elif defined(REG_HGCal)
+#define   PFALGO_DR2MAX_TK_CALO 525
 #define   PTERR_BINS 5
 #define   PTERR_EDGES { 1.700,  1.900,  2.200,  2.500,  2.800 }
 #define   PTERR_OFFS  { 1.793,  1.827,  2.363,  2.538,  2.812 }
