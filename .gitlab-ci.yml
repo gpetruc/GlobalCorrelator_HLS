@@ -1,2 +1,8 @@
 include:
   - local: 'pf/gitlab-ci.yml'
+
+stages:
+  - pre-build
+  - build
+  - test
+  - deploy
