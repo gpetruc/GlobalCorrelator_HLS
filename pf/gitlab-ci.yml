@@ -1,0 +1,21 @@
+.csim-common: &csim-common
+  stage: test
+  tags: vivado20192
+  artifacts:
+      when: always
+      expire_in: 7 days
+  before_script:
+    - source /opt/Xilinx/Vivado/2019.2/settings64.sh
+
+csim-pfalgo3:
+  <<: *csim-common
+  variables:
+    pfBoard: none
+    pfReg: Barrel
+  script:
+    - cd pf
+    - vivado_hls -f run_hls_pfalgo3.tcl
+  artifacts:
+    paths:
+      - proj_pf${pfReg}_${pfBoard}/solution/csim/build/*.txt
+

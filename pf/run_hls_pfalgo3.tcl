@@ -1,6 +1,5 @@
 # get the configuration
-set pfBoard "none"
-#set pfBoard "VCU118"
+if { [ info exists env{pfBoard} ] } { set pfBoard $env{pfBoard} } { set pfBoard "none" }
 set pfReg "Barrel"
 set hlsIPVersion 25.4
 
@@ -20,7 +19,7 @@ add_files -tb ref/pfalgo_common_ref.cpp  -cflags "${cflags}"
 add_files -tb ../dataformats/layer1_emulator.cpp -cflags "${cflags}"
 add_files -tb ../utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb ../utils/test_utils.cpp -cflags "${cflags}"
-add_files -tb ../data/TTbar_PU200_Barrel.dump
+add_files -tb ../data/TTbar_PU200_${pfReg}.dump
 
 # reset the solution
 open_solution -reset "solution"
@@ -30,9 +29,15 @@ create_clock -period 3.0 -name default
 config_interface -trim_dangling_port
 # do stuff
 csim_design
-#csynth_design
-#cosim_design -trace_level all
-#export_design -format ip_catalog -vendor "cern-cms" -version ${hlsIPVersion} -description "${hlsTopFunc}"
+if { [info exists env(DO_SYNTH)] && $env(DO_SYNTH) == "1"  } {
+    csynth_design
+    if { [info exists env(DO_COSIM)] && $env(DO_COSIM) == "1"  } {
+        cosim_design -trace_level all
+    }
+    if { [info exists env(DO_EXPORT)] && $env(DO_EXPORT) == "1"  } {
+        export_design -format ip_catalog -vendor "cern-cms" -version ${hlsIPVersion}
+    }
+}
 
 # exit Vivado HLS
 exit
