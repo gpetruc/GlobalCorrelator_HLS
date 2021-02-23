@@ -1,6 +1,6 @@
 .csim-common: &csim-common
   stage: test
-  tags: vivado20192
+  tags: [ vivado20192 ]
   artifacts:
       when: always
       expire_in: 7 days
