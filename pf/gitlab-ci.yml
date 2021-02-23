@@ -47,7 +47,7 @@ csim-pfalgo3:
 
 
 csim-pfalgo2hgc:
-  <<: *csim-common
+  <<: *pf-csim-common
   variables:
     pfReg: HGCal
   script:
@@ -62,7 +62,7 @@ csynth-pfalgo3:
 
 
 csynth-pfalgo2hgc:
-  <<: *csynth-common
+  <<: *pf-csynth-common
   variables:
     pfReg: HGCal
   script:
