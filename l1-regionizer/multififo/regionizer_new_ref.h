@@ -26,10 +26,10 @@ namespace l1ct {
             void run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) override ;
 
             // clock-cycle emulation
-            bool step(bool newEvent, const std::vector<l1ct::TkObjEmu> & links, std::vector<l1ct::TkObjEmu> & out ) ;
-            bool step(bool newEvent, const std::vector<l1ct::EmCaloObjEmu> & links, std::vector<l1ct::EmCaloObjEmu> & out ) ;
-            bool step(bool newEvent, const std::vector<l1ct::HadCaloObjEmu> & links, std::vector<l1ct::HadCaloObjEmu> & out ) ;
-            bool step(bool newEvent, const std::vector<l1ct::MuObjEmu> & links, std::vector<l1ct::MuObjEmu> & out ) ;
+            bool step(bool newEvent, const std::vector<l1ct::TkObjEmu> & links, std::vector<l1ct::TkObjEmu> & out , bool mux=true) ;
+            bool step(bool newEvent, const std::vector<l1ct::EmCaloObjEmu> & links, std::vector<l1ct::EmCaloObjEmu> & out , bool mux=true) ;
+            bool step(bool newEvent, const std::vector<l1ct::HadCaloObjEmu> & links, std::vector<l1ct::HadCaloObjEmu> & out , bool mux=true) ;
+            bool step(bool newEvent, const std::vector<l1ct::MuObjEmu> & links, std::vector<l1ct::MuObjEmu> & out , bool mux=true) ;
 
             // link emulation from decoded inputs (for simulation)
             void fillLinks(unsigned int iclock, const RegionizerDecodedInputs & in, std::vector<l1ct::TkObjEmu> & links);

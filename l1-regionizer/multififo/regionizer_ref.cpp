@@ -6,9 +6,10 @@
 #include <vector>
 
 template<typename P>
-P rePhiObj(const P & t, int phi) {
+P moveObj(const P & t, int neweta, int newphi) {
     P ret = t;
-    ret.hwPhi = phi;
+    ret.hwEta = neweta;
+    ret.hwPhi = newphi;
     return ret;
 }
 
@@ -98,16 +99,19 @@ struct RegionBufferCalo {
         for (auto & t : queue2) clear(t);
     }
     void maybe_push(unsigned int sector, unsigned int fiber, const l1ct::HadCaloObjEmu & tk) {
+        int eta_shift = l1ct::Scales::makeGlbEta((3.0+1.5)/2) - l1ct::Scales::makeGlbEta(2.0); 
+        // diff between the hgc sector center and the region center. done in integer to have same roundoffs as firmware
         int phi_shift = int(sector) * SECTOR_SIZE - phi_center;
         int local_phi = tk.hwPhi.to_int() + phi_shift;
+        int local_eta = tk.hwEta.to_int() + eta_shift; 
         if (local_phi >= INT_PI) local_phi -= 2*INT_PI;
         if (local_phi < -INT_PI) local_phi += 2*INT_PI;
-        if (std::abs(local_phi) <= REGION_SIZE/2+PFREGION_PHI_BORDER) {
+        if (std::abs(local_phi) <= REGION_SIZE/2+PFREGION_PHI_BORDER && std::abs(local_eta) <= PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER) {
             int ififo = fiber + ((sector == ireg/3) ? 0 : 4);
             //if (fiber == 0) printf("test calo sec %u -> reg %u: phi calo %+4d  global %+4d  local %+4d -> ififo %d\n",
             //                            sector, ireg, tk.hwPhi.to_int(), tk.hwPhi.to_int() + int(sector) * SECTOR_SIZE, local_phi, ififo);
             assert(ififo < nfifo);
-            fifos[ififo].push_front(rePhiObj(tk, local_phi)); // don't use phiShifted that that has no wrap-around
+            fifos[ififo].push_front(moveObj(tk, local_eta, local_phi)); // don't use phiShifted that that has no wrap-around
         }
         //else if (fiber == 0) printf("test calo sec %u -> reg %u: phi calo %+4d  global %+4d  local %+4d -> not accepted\n",
         //                                sector, ireg, tk.hwPhi.to_int(), tk.hwPhi.to_int() + int(sector) * SECTOR_SIZE, local_phi);
@@ -189,7 +193,6 @@ struct RegionBufferMu {
         if (local_phi < -INT_PI) local_phi += 2*INT_PI;
         //printf("try push mu ipt %4d  glb eta %+4d phi %+4d -> local  eta %+4d phi %+4d \n",
         //             gmu.hwPt.to_int(), gmu.hwEta.to_int(),  gmu.hwPhi.to_int(), local_eta, local_phi);
-        fflush(stdout);
         if (std::abs(local_phi) <= REGION_PHI_HALFSIZE &&
             std::abs(local_eta) <= REGION_ETA_HALFSIZE) {
             l1ct::MuObjEmu lmu = gmu; 
@@ -298,9 +301,14 @@ struct RegionizerTK {
     void read_in(const l1ct::TkObjEmu in[NTKSECTORS][NTKFIBERS]) {
         for (int i = 0; i < NTKSECTORS; ++i) {
             for (int j = 0; j < NTKFIBERS; ++j) {
-                const l1ct::TkObjEmu & tk = in[i][j];
+                l1ct::TkObjEmu tk = in[i][j];
                 if (tk.hwPt == 0) continue;
-                buffers[i].push(j, tk);
+                int etaShift = l1ct::Scales::makeEta(2.5/2-2.0); // diff between the tk sector center and the region center
+                int etaSize  = l1ct::Scales::makeEta(0.5+0.25); // size of region including border
+                tk.hwEta += etaShift;
+                if (std::abs(tk.intEta()) > etaSize) continue;
+                bool link_this = std::abs(tk.hwPhi.to_int()) <= PFREGION_PHI_SIZE/2+PFREGION_PHI_BORDER; // almost always true
+                if (link_this) buffers[i].push(j, tk);
                 int inext = (i+1), iprev = i+NTKSECTORS-1;
                 bool link_next = tk.hwPhi >= +(PFREGION_PHI_SIZE/2-PFREGION_PHI_BORDER);
                 bool link_prev = tk.hwPhi <= -(PFREGION_PHI_SIZE/2-PFREGION_PHI_BORDER);

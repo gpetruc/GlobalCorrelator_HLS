@@ -1,11 +1,19 @@
 #include "regionizer.h"
 #include "fifos.h"
 
+template<typename T>
+inline bool valid_eta(const T & t) {
+    #pragma HLS inline
+    return (t.hwEta <= +(PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER)) && (t.hwEta >= -(PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER));
+}
+
 void calo_route_all_sectors_unpacked(const l1ct::HadCaloObj calo_in[NCALOSECTORS][NCALOFIBERS], l1ct::HadCaloObj fifo_in[NCALOSECTORS][NCALOFIFOS], bool fifo_write[NCALOSECTORS][NCALOFIFOS]) {
     #pragma HLS inline
     #pragma HLS array_partition variable=calo_in  complete dim=0
     #pragma HLS array_partition variable=fifo_in  complete dim=0
     #pragma HLS array_partition variable=fifo_write  complete dim=0
+
+    const l1ct::eta_t eta_shift = l1ct::Scales::makeGlbEta((3.0+1.5)/2) - l1ct::Scales::makeGlbEta(2.0); 
 
     for (int isec = 0; isec < NCALOSECTORS; ++isec) {
         #pragma HLS unroll
@@ -13,8 +21,8 @@ void calo_route_all_sectors_unpacked(const l1ct::HadCaloObj calo_in[NCALOSECTORS
         // first
         for (int ifib = 0, iout = 0*NCALOFIBERS; ifib < NCALOFIBERS; ++ifib, ++iout) {
             #pragma HLS unroll
-            fifo_in[isec][iout]    = calo_in[isec][ifib];
-            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && 
+            fifo_in[isec][iout]    = etaShifted(calo_in[isec][ifib], eta_shift);
+            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && valid_eta(fifo_in[isec][iout]) && 
                                      calo_in[isec][ifib].hwPhi <= +(PFREGION_PHI_SIZE/2 + PFREGION_PHI_BORDER) && 
                                      calo_in[isec][ifib].hwPhi >= -(PFREGION_PHI_SIZE/2 + PFREGION_PHI_BORDER);
             //if (isec == 0 && ifib == 0) printf("Sector %d, Fiber %d: got pt %d, write %d\n", isec, ifib, calo_in[isec][ifib].hwPt.to_int(), int(fifo_write[isec][iout]));
@@ -22,29 +30,29 @@ void calo_route_all_sectors_unpacked(const l1ct::HadCaloObj calo_in[NCALOSECTORS
         // second, from same
         for (int ifib = 0, iout = 1*NCALOFIBERS; ifib < NCALOFIBERS; ++ifib, ++iout) {
             #pragma HLS unroll
-            fifo_in[isec][iout]    = phiShifted(calo_in[isec][ifib], -PFREGION_PHI_SIZE);
-            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && 
+            fifo_in[isec][iout]    = etaPhiShifted(calo_in[isec][ifib], eta_shift, -PFREGION_PHI_SIZE);
+            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && valid_eta(fifo_in[isec][iout]) &&
                                      calo_in[isec][ifib].hwPhi >= +(PFREGION_PHI_SIZE/2 - PFREGION_PHI_BORDER);
         }
         // second, from next
         for (int ifib = 0, iout = 2*NCALOFIBERS; ifib < NCALOFIBERS; ++ifib, ++iout) {
             #pragma HLS unroll
-            fifo_in[isec][iout]    = phiShifted(calo_in[inxt][ifib], 2*PFREGION_PHI_SIZE);
-            fifo_write[isec][iout] = calo_in[inxt][ifib].hwPt  != 0 && 
+            fifo_in[isec][iout]    = etaPhiShifted(calo_in[inxt][ifib], eta_shift, 2*PFREGION_PHI_SIZE);
+            fifo_write[isec][iout] = calo_in[inxt][ifib].hwPt  != 0 && valid_eta(fifo_in[isec][iout]) &&
                                      calo_in[inxt][ifib].hwPhi <= -(3*PFREGION_PHI_SIZE/2 - PFREGION_PHI_BORDER);
         }
         // third, from same
         for (int ifib = 0, iout = 3*NCALOFIBERS; ifib < NCALOFIBERS; ++ifib, ++iout) {
             #pragma HLS unroll
-            fifo_in[isec][iout]    = phiShifted(calo_in[isec][ifib], -2*PFREGION_PHI_SIZE);
-            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && 
+            fifo_in[isec][iout]    = etaPhiShifted(calo_in[isec][ifib], eta_shift, -2*PFREGION_PHI_SIZE);
+            fifo_write[isec][iout] = calo_in[isec][ifib].hwPt  != 0 && valid_eta(fifo_in[isec][iout]) &&
                                      calo_in[isec][ifib].hwPhi >= +(3*PFREGION_PHI_SIZE/2 - PFREGION_PHI_BORDER);
         }
         // third, from next
         for (int ifib = 0, iout = 4*NCALOFIBERS; ifib < NCALOFIBERS; ++ifib, ++iout) {
             #pragma HLS unroll
-            fifo_in[isec][iout]    = phiShifted(calo_in[inxt][ifib], PFREGION_PHI_SIZE);
-            fifo_write[isec][iout] = calo_in[inxt][ifib].hwPt  != 0 && 
+            fifo_in[isec][iout]    = etaPhiShifted(calo_in[inxt][ifib], eta_shift, PFREGION_PHI_SIZE);
+            fifo_write[isec][iout] = calo_in[inxt][ifib].hwPt  != 0 && valid_eta(fifo_in[isec][iout]) &&
                                      calo_in[inxt][ifib].hwPhi <= -(PFREGION_PHI_SIZE/2 - PFREGION_PHI_BORDER);
         }
     }

@@ -30,41 +30,39 @@ int main(int argc, char **argv) {
     FILE *fold_calo = fopen("output-old-calo.txt", "w");
     FILE *fold_mu = fopen("output-old-mu.txt", "w");
 
-#if 0
-    PatternSerializer serPatternsIn("input-emp.txt"), serPatternsOut("output-emp.txt"), serPatternsRef("output-ref-emp.txt");
-    assert(PACKING_NCHANN >= NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS);
-    assert(PACKING_NCHANN >= NTKOUT + NCALOOUT + NMUOUT);
-    ap_uint<64> all_channels_in[PACKING_NCHANN], all_channels_ref[PACKING_NCHANN], all_channels_out[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) {
-        all_channels_in[i] = 0; all_channels_ref[i] = 0; all_channels_out[i] = 0; 
+    const unsigned int nchann_in = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS, nchann_out = NTKOUT + NCALOOUT + NMUOUT;
+    PatternSerializer serPatternsIn("input-emp.txt",2*nchann_in), serPatternsOut("output-emp.txt",2*nchann_out), serPatternsRef("output-ref-emp.txt",2*nchann_out);
+    ap_uint<PackedTkObj::width> all_channels_in[nchann_in], all_channels_ref[nchann_out], all_channels_out[nchann_out];
+    for (unsigned int i = 0; i < nchann_in; ++i) all_channels_in[i] = 0;
+    for (unsigned int i = 0; i < nchann_out; ++i) {
+        all_channels_ref[i] = 0; all_channels_out[i] = 0; 
     }
-    serPatternsIn(all_channels_in, false); // prepend one null frame at the beginning
-#endif
+    serPatternsIn.packAndWrite(nchann_in, all_channels_in, false); // prepend one null frame at the beginning
 
     int frame = 0, pingpong = 1; 
     int tk_latency = -1, calo_latency = -1, mu_latency = -1;
 
     bool ok = true;
 
-    l1ct::MultififoRegionizerEmulator emulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/false, 6);
+    const bool mux = ROUTER_ISMUX, stream = ROUTER_ISSTREAM;
+    l1ct::MultififoRegionizerEmulator emulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, 6);
 
-    for (int itest = 0; itest < 10; ++itest) {
+    for (int itest = 0; itest < 100; ++itest) {
         TkObj tk_output[NTKOUT][TLEN], tk_output_ref[NTKOUT][2*TLEN];
         HadCaloObj calo_output[NCALOOUT][TLEN], calo_output_ref[NCALOOUT][2*TLEN];
         MuObj mu_output[NMUOUT][TLEN], mu_output_ref[NMUOUT][2*TLEN];
 
         if (!inputs.nextEvent()) break;
         const auto & decodedObjs = inputs.event().decoded;
+
         // now we make a single endcap setup
-        //
-        //
         RegionizerDecodedInputs in; std::vector<PFInputRegion> pfin;
         for (auto & sec : inputs.event().decoded.track) if (sec.region.floatEtaCenter() >= 0) in.track.push_back(sec);
         for (auto & sec : inputs.event().decoded.hadcalo) if (sec.region.floatEtaCenter() >= 0) in.hadcalo.push_back(sec);
         for (auto & sec : inputs.event().decoded.emcalo) if (sec.region.floatEtaCenter() >= 0) in.emcalo.push_back(sec);
         in.muon = inputs.event().decoded.muon;
         for (auto & reg : inputs.event().pfinputs) if (reg.region.floatEtaCenter() >= 0) pfin.push_back(reg);
-        const glbeta_t etaCenter = 2*PFREGION_ETA_SIZE; // eta = +2.0
+        const glbeta_t etaCenter = l1ct::Scales::makeGlbEta(2.0);
 
         if (itest == 0) emulator.initSectorsAndRegions(in, pfin);
 
@@ -81,19 +79,39 @@ int main(int argc, char **argv) {
             l1ct::TkObj tk_links_in[NTKSECTORS][NTKFIBERS];
             l1ct::HadCaloObj    calo_links_in[NCALOSECTORS][NCALOFIBERS];
             l1ct::MuObj    mu_links_in[NMUFIBERS];
+            PackedTkObj tk_links64_in[NTKSECTORS][NTKFIBERS];
+            PackedCaloObj    calo_links64_in[NCALOSECTORS][NCALOFIBERS];
+            PackedMuObj    mu_links64_in[NMUFIBERS];
 
             emulator.toFirmware(tk_links_in_emu, tk_links_in);
             emulator.toFirmware(calo_links_in_emu, calo_links_in);
             emulator.toFirmware(mu_links_in_emu, mu_links_in);
 
+            l1pf_pattern_pack<NTKSECTORS*NTKFIBERS>(&tk_links_in[0][0], &tk_links64_in[0][0]);
+            l1pf_pattern_pack<NCALOSECTORS*NCALOFIBERS>(&calo_links_in[0][0], &calo_links64_in[0][0]);
+            l1pf_pattern_pack<NMUFIBERS>(mu_links_in, mu_links64_in);
+
+            unsigned int ilink = 0;
+            for (int s = 0; s < NTKSECTORS; ++s) 
+                for (int f = 0; f < NTKFIBERS; ++f) 
+                    all_channels_in[ilink++] = tk_links64_in[s][f];
+            for (int s = 0; s < NCALOSECTORS; ++s) 
+                for (int f = 0; f < NCALOFIBERS; ++f) 
+                    all_channels_in[ilink++] = calo_links64_in[s][f];
+            for (int f = 0; f < NMUFIBERS; ++f) 
+                all_channels_in[ilink++] = mu_links64_in[f];
+
             TkObj tk_links_out[NTKOUT];
             HadCaloObj calo_links_out[NCALOOUT];
             MuObj mu_links_out[NMUOUT];
+            PackedTkObj tk_links64_out[NTKOUT];
+            PackedCaloObj calo_links64_out[NCALOOUT];
+            PackedMuObj mu_links64_out[NMUOUT];
 
             bool calo_newevt_out, tk_newevt_out, mu_newevt_out, newevt_ref = (i == 0);
-            bool tk_ref_good   = emulator.step(newevt_ref, tk_links_in_emu, tk_out_emu);
-            bool calo_ref_good = emulator.step(newevt_ref, calo_links_in_emu, calo_out_emu);
-            bool mu_ref_good = emulator.step(newevt_ref, mu_links_in_emu, mu_out_emu);
+            bool tk_ref_good   = emulator.step(newevt_ref, tk_links_in_emu, tk_out_emu, mux);
+            bool calo_ref_good = emulator.step(newevt_ref, calo_links_in_emu, calo_out_emu, mux);
+            bool mu_ref_good = emulator.step(newevt_ref, mu_links_in_emu, mu_out_emu, mux);
             bool tk_old_good   = tk_router_ref(newevt_ref, tk_links_in_emu, tk_out_oldemu);
             bool calo_old_good = calo_router_ref(newevt_ref, calo_links_in_emu, calo_out_oldemu);
             bool mu_old_good = mu_router_ref(newevt_ref, etaCenter, mu_links_in_emu, mu_out_oldemu);
@@ -106,7 +124,18 @@ int main(int argc, char **argv) {
             // the routers are not implemented in this pattern, and may segfault due to size of the arrays
             bool tk_good = false, calo_good = false, mu_good = false;
 #endif
+            l1pf_pattern_unpack<NTKOUT>(tk_links64_out, tk_links_out);
+            l1pf_pattern_unpack<NCALOOUT>(calo_links64_out, calo_links_out);
+            l1pf_pattern_unpack<NMUOUT>(mu_links64_out, mu_links_out);
 
+            ilink = 0;
+            for (int r = 0; r < NTKOUT; ++r) all_channels_ref[ilink++] = tk_out_emu[r].pack();
+            for (int r = 0; r < NCALOOUT; ++r) all_channels_ref[ilink++] = calo_out_emu[r].pack();
+            for (int r = 0; r < NMUOUT; ++r) all_channels_ref[ilink++] = mu_out_emu[r].pack();
+            ilink = 0;
+            for (int r = 0; r < NTKOUT; ++r) all_channels_out[ilink++] = tk_links64_out[r];
+            for (int r = 0; r < NCALOOUT; ++r) all_channels_out[ilink++] = calo_links64_out[r];
+            for (int r = 0; r < NMUOUT; ++r) all_channels_out[ilink++] = mu_links64_out[r];
 
             fprintf(fin_tk,   "%05d %1d   ", frame, int(i==0));
             fprintf(fin_calo, "%05d %1d   ", frame, int(i==0));
@@ -154,6 +183,18 @@ int main(int argc, char **argv) {
             fprintf(fold_tk, "\n");
             fprintf(fold_calo, "\n");
             fprintf(fold_mu, "\n");
+
+            serPatternsIn.packAndWrite(nchann_in, all_channels_in);
+            serPatternsOut.packAndWrite(nchann_out, all_channels_out);
+            serPatternsRef.packAndWrite(nchann_out, all_channels_ref);
+             
+
+#ifdef NO_REF_VALIDATE
+            continue;
+#endif
+            for (int r = 0; r < NTKOUT; ++r) ok = ok && track_equals(tk_out_emu[r], tk_out_oldemu[r], "track emu vs old ", r);
+            for (int r = 0; r < NCALOOUT; ++r)  ok = ok && had_equals(calo_out_emu[r], calo_out_oldemu[r], "calo emu vs old ", r);
+            for (int r = 0; r < NMUOUT; ++r)  ok = ok && mu_equals(mu_out_emu[r], mu_out_oldemu[r], "mu emu vs old ", r);
 
 #ifdef NO_VALIDATE
             continue;

@@ -125,7 +125,7 @@ int main() {
         linpuppi_pack_in(region, track, hwZPV, pfallne, packed_input); 
         serPatternsChsIn.packAndWrite(LINPUPPI_CHS_NCHANN_IN, packed_input_chs);
         serPatternsIn.packAndWrite(LINPUPPI_NCHANN_IN, packed_input);
-        packed_linpuppi_chs(region, packed_input_chs, packed_output_chs);
+        packed_linpuppi_chs(packed_input_chs, packed_output_chs);
     #if defined(TEST_PUPPI_NOCROP)
         packed_linpuppiNoCrop(packed_input, packed_output);
         serPatternsOut.packAndWrite(NALLNEUTRALS, packed_output); 

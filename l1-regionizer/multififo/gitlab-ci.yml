@@ -1,0 +1,68 @@
+.l1reg-multififo-common: &l1reg-multififo-common
+  tags: [ vivado20192 ]
+  before_script:
+    - source /opt/Xilinx/Vivado/2019.2/settings64.sh
+    - cd l1-regionizer/multififo
+  after_script:
+    - mv l1-regionizer/multififo/vivado_hls.log l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
+  artifacts:
+    when: always
+    expire_in: 7 days
+  only:
+    changes:
+      - "*"
+      - dataformats/**/*
+      - data/**/*
+      - l1-regionizer/common/**/*
+      - l1-regionizer/multififo/**/*
+      - utils/**/*
+
+.l1reg-multififo-csim-common: &l1reg-multififo-csim-common
+  <<: *l1reg-multififo-common
+  stage: pre-build
+  artifacts:
+    paths:
+      - pf/vivado_hls.${CI_JOB_NAME}.txt
+  artifacts:
+    paths:
+      - l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
+      - l1-regionizer/multififo/project_csim_${pfReg}_${regionizerMode}/solution/csim/build/*.txt
+  script:
+    - vivado_hls -f run_hls_csim.tcl
+
+.l1reg-multififo-csim-variables: &l1reg-multififo-csim-variables
+    pfBoard: none
+
+#.l1reg-multififo-csynth-common: &l1reg-multififo-csynth-common
+#  <<: *l1reg-multififo-common
+#  stage: build
+#  when: manual
+#  variables:
+#  after_script:
+#      - pf/proj_pf${pfReg}_${pfBoard}/solution/syn/report/*
+#      - pf/proj_pf${pfReg}_${pfBoard}/solution/impl/vhdl/*
+#
+#.l1reg-multififo-csynth-variables: &l1reg-multififo-csynth-variables
+#    pfBoard: VCU118
+#    DO_SYNTH: 1
+
+l1r-mf-nomux-csim:
+  <<: *l1reg-multififo-csim-common
+  variables:
+    <<: *l1reg-multififo-csim-variables
+    pfReg: HGCal
+    regionizerMode: nomux
+
+l1r-mf-mux-csim:
+  <<: *l1reg-multififo-csim-common
+  variables:
+    <<: *l1reg-multififo-csim-variables
+    pfReg: HGCal
+    regionizerMode: mux
+
+l1r-mf-stream-csim:
+  <<: *l1reg-multififo-csim-common
+  variables:
+    <<: *l1reg-multififo-csim-variables
+    pfReg: HGCal
+    regionizerMode: stream

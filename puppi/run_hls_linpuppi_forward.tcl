@@ -1,5 +1,5 @@
-if { [ info exists env{puppiReg} ] } { set puppiReg $env{puppiReg} } { set puppiReg "HGCalNoTK" }
-if { [ info exists env{puppiBoard} ] } { set puppiBoard $env{puppiBoard} } { set puppiBoard "none" }
+if { [ info exists env(puppiReg) ] } { set puppiReg $env(puppiReg) } { set puppiReg "HGCalNoTK" }
+if { [ info exists env(puppiBoard) ] } { set puppiBoard $env(puppiBoard) } { set puppiBoard "none" }
 set cflags "-std=c++0x -DREG_${puppiReg} -DBOARD_${puppiBoard}" 
 
 open_project -reset proj_linpuppi_${puppiReg}_${puppiBoard}
