@@ -16,13 +16,31 @@ inline P phiShifted(const P & t, int phi_shift) {
     ret.hwPhi += l1ct::phi_t(phi_shift);
     return ret;
 }
+template<typename P>
+inline P etaShifted(const P & t, l1ct::eta_t eta_shift) {
+    #pragma HLS inline
+    P ret = t;
+    ret.hwEta += eta_shift;
+    return ret;
+}
+template<typename P>
+inline P etaPhiShifted(const P & t, l1ct::eta_t eta_shift, int phi_shift) {
+    #pragma HLS inline
+    P ret = t;
+    ret.hwEta += eta_shift;
+    ret.hwPhi += l1ct::phi_t(phi_shift);
+    return ret;
+}
+
+
+
 
 #define REGIONIZERNCLOCKS 54
 #define NPFREGIONS 9
 #define PFREGION_PHI_SIZE 160  // size of a phi sector (in L1PF units, LSB = 0.25 degrees)
-#define PFREGION_PHI_BORDER 58 // size of the phi border of a PF region (0.25 rad = 58, 0.30 rad = 69)
+#define PFREGION_PHI_BORDER 57 // size of the phi border of a PF region (0.25 rad = 57, 0.30 rad = 69)
 #define PFREGION_ETA_SIZE 230  // size of an eta sector: 1.0 rad => 229, round up to 230 be even  
-#define PFREGION_ETA_BORDER 58 // size of the eta border of a PF region (0.25 rad = 58, 0.30 rad = 69)
+#define PFREGION_ETA_BORDER 57 // size of the eta border of a PF region (0.25 rad = 57, 0.30 rad = 69)
 #define PFLOWII  6
 
 #define NPUPPIFINALSORTED 18

@@ -3,12 +3,17 @@
 
 void tk_route_link2fifo_unpacked(const l1ct::TkObj & in, l1ct::TkObj & center, bool & write_center, l1ct::TkObj & after, bool & write_after, l1ct::TkObj & before, bool & write_before) {
     #pragma HSL inline
-    bool valid = (in.hwPt != 0);
+    const l1ct::eta_t etaShift = l1ct::Scales::makeEta(2.5/2-2.0); // diff between the tk sector center and the region center
+    const auto newEta = in.hwEta + etaShift; 
+    bool valid = (in.hwPt != 0) && (newEta <= +(PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER)) && (newEta >= -(PFREGION_ETA_SIZE/2+PFREGION_ETA_BORDER));
+    bool in_cent = (in.hwPhi <= +(PFREGION_PHI_SIZE/2+PFREGION_PHI_BORDER)) && (in.hwPhi >= -(PFREGION_PHI_SIZE/2+PFREGION_PHI_BORDER));
     bool in_next = in.hwPhi >= +(PFREGION_PHI_SIZE/2-PFREGION_PHI_BORDER);
     bool in_prev = in.hwPhi <= -(PFREGION_PHI_SIZE/2-PFREGION_PHI_BORDER);
-    write_center = valid;              center = in; 
-    write_after  = valid && (in_next);  after = phiShifted(in, -PFREGION_PHI_SIZE); 
-    write_before = valid && (in_prev); before = phiShifted(in, +PFREGION_PHI_SIZE);
+    l1ct::TkObj inlocal = in; 
+    inlocal.hwEta = newEta;
+    write_center = valid && (in_cent); center = inlocal; 
+    write_after  = valid && (in_next);  after = phiShifted(inlocal, -PFREGION_PHI_SIZE); 
+    write_before = valid && (in_prev); before = phiShifted(inlocal, +PFREGION_PHI_SIZE);
 }
 
 void tk_route_link2fifo(const PackedTkObj & pin, 

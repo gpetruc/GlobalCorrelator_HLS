@@ -19,9 +19,9 @@ l1ct::MultififoRegionizerEmulator::MultififoRegionizerEmulator(unsigned int nend
         for (unsigned int is = 0; is < NTK_SECTORS; ++is) { // 9 tf sectors
             for (unsigned int il = 0; il < NTK_LINKS; ++il) { // max tracks per sector per clock
                 unsigned int isp = (is+1)%NTK_SECTORS, ism = (is+NTK_SECTORS-1)%NTK_SECTORS;
-                tkRoutes_.emplace_back(is  + NTK_SECTORS*ie, il, is + NTK_SECTORS*ie, il);
-                tkRoutes_.emplace_back(isp + NTK_SECTORS*ie, il, is + NTK_SECTORS*ie, il+2);
-                tkRoutes_.emplace_back(ism + NTK_SECTORS*ie, il, is + NTK_SECTORS*ie, il+4);
+                tkRoutes_.emplace_back(is + NTK_SECTORS*ie, il, is  + NTK_SECTORS*ie, il);
+                tkRoutes_.emplace_back(is + NTK_SECTORS*ie, il, isp + NTK_SECTORS*ie, il+2);
+                tkRoutes_.emplace_back(is + NTK_SECTORS*ie, il, ism + NTK_SECTORS*ie, il+4);
             }
         }
     }
@@ -79,17 +79,17 @@ void l1ct::MultififoRegionizerEmulator::initSectorsAndRegions(const RegionizerDe
 }
 
 // clock-cycle emulation
-bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::TkObjEmu> & links, std::vector<l1ct::TkObjEmu> & out ) {
-    return tkRegionizer_.step(newEvent, links, out);
+bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::TkObjEmu> & links, std::vector<l1ct::TkObjEmu> & out, bool mux ) {
+    return tkRegionizer_.step(newEvent, links, out, mux);
 }
-bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::EmCaloObjEmu> & links, std::vector<l1ct::EmCaloObjEmu> & out ) {
-    return emCaloRegionizer_.step(newEvent, links, out);
+bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::EmCaloObjEmu> & links, std::vector<l1ct::EmCaloObjEmu> & out, bool mux ) {
+    return emCaloRegionizer_.step(newEvent, links, out, mux);
 }
-bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::HadCaloObjEmu> & links, std::vector<l1ct::HadCaloObjEmu> & out ) {
-    return hadCaloRegionizer_.step(newEvent, links, out);
+bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::HadCaloObjEmu> & links, std::vector<l1ct::HadCaloObjEmu> & out, bool mux ) {
+    return hadCaloRegionizer_.step(newEvent, links, out, mux);
 }
-bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::MuObjEmu> & links, std::vector<l1ct::MuObjEmu> & out ) {
-    return muRegionizer_.step(newEvent, links, out);
+bool l1ct::MultififoRegionizerEmulator::step(bool newEvent, const std::vector<l1ct::MuObjEmu> & links, std::vector<l1ct::MuObjEmu> & out, bool mux ) {
+    return muRegionizer_.step(newEvent, links, out, mux);
 }
 
 

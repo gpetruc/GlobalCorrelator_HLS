@@ -107,6 +107,8 @@
 #elif defined(BOARD_APD1)
 #define PACKING_DATA_SIZE 64
 #define PACKING_NCHANN 96
+#else
+#define PACKING_DATA_SIZE 64
 #endif
 
 

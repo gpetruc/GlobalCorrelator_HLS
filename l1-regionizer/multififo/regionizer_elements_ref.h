@@ -20,6 +20,7 @@ namespace l1ct {
             }
         template<typename TL, typename T>
             inline void pop_back(TL & from, T & to) {
+                assert(!from.empty());
                 to = from.back(); from.pop_back();
             }
 
@@ -65,14 +66,14 @@ namespace l1ct {
         template<typename T>
             class RegionMux {
                 public:
-                    RegionMux() {}
+                    RegionMux() : nregions_(0) {}
                     RegionMux(unsigned int nregions, unsigned int nsort, unsigned int nout, bool streaming, unsigned int outii=0) :
                         nregions_(nregions), nsort_(nsort), nout_(nout), outii_(outii), 
                         streaming_(streaming), 
                         buffer_(nregions*nsort),
                         iter_(0), ireg_(nregions)
                 {
-                    assert(streaming ? (nout == nsort) : (outii * nout >= nsort));
+                    assert(streaming ? (outii * nout >= nsort) : (nout == nsort));
                     for (auto & t : buffer_) t.clear();
                 }
                     void push(unsigned int region, std::vector<T> & in);
@@ -104,7 +105,7 @@ namespace l1ct {
                     void reset() { flush(); nevt_ = 0; }
 
                     // single clock emulation
-                    bool step(bool newEvent, const std::vector<T> & links, std::vector<T> & out) ;
+                    bool step(bool newEvent, const std::vector<T> & links, std::vector<T> & out, bool mux=true) ;
 
                 private:
                     unsigned int nsectors_, nregions_, nsorted_, nout_, outii_;

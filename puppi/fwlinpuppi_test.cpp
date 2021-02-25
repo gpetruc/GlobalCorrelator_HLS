@@ -38,10 +38,11 @@ int main() {
     std::vector<PuppiObjEmu> outallne_flt_nocut, outallne_flt;
 
 #ifndef BOARD_none
-    PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt", LINPUPPI_NCHANN_FWDNC);
-    PatternSerializer serPatternsOut("fwlinpuppi_output_patterns.txt", LINPUPPI_NCHANN_FWDNC);
-    ap_uint<LINPUPPI_DATA_SIZE_FWD> packed_input[LINPUPPI_NCHANN_FWDNC], packed_output[LINPUPPI_NCHANN_FWDNC];
-    for (unsigned int i = 0; i < LINPUPPI_NCHANN_FWDNC; ++i) { packed_input[i] = 0; packed_output[i] = 0; }
+    PatternSerializer serPatternsIn("fwlinpuppi_input_patterns.txt", LINPUPPI_NCHANN_FWD_IN);
+    PatternSerializer serPatternsOut("fwlinpuppi_output_patterns.txt", LINPUPPI_NCHANN_FWD_OUTNC);
+    ap_uint<LINPUPPI_DATA_SIZE_FWD> packed_input[LINPUPPI_NCHANN_FWD_IN], packed_output[LINPUPPI_NCHANN_FWD_OUTNC];
+    for (unsigned int i = 0; i < LINPUPPI_NCHANN_FWD_IN; ++i) packed_input[i] = 0; 
+    for (unsigned int i = 0; i < LINPUPPI_NCHANN_FWD_OUTNC; ++i) packed_output[i] = 0;
 #endif
     HumanReadablePatternSerializer debugDump("linpuppi_output.txt",true);
 

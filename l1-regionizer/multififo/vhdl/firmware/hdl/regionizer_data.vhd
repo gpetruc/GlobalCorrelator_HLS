@@ -35,18 +35,18 @@ package regionizer_data is
 
     constant PHI_SHIFT_INT : natural := 160; -- 2*pi/9, size of a phi nonant, track finder sector or fiducial part of one PF region
     constant PHI_SHIFT : signed(9 downto 0) := to_signed(160, 10); -- 2*pi/9, size of a phi nonant, track finder sector or fiducial part of one PF region
-    constant PHI_BORDER : signed(9 downto 0) := to_signed(58, 10); -- 0.25 (0.30 would be 69) 
-    constant PHI_MARGIN_POS : signed(9 downto 0) := to_signed(+(160/2-58), 10);  -- half-width of fiducial MINUS border (half-size of gap are between sector N and sector N+2)
-    constant PHI_MARGIN_NEG : signed(9 downto 0) := to_signed(-(160/2-58), 10);  -- same but with negative sign
-    constant PHI_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(160/2+58), 10); -- half size of a full region (fiducial PLUS border)
-    constant PHI_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(160/2+58), 10);  
-    constant ETA_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(230/2+58), 10); -- half size of a full region (fiducial PLUS border)
-    constant ETA_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(230/2+58), 10);  
+    constant PHI_BORDER : signed(9 downto 0) := to_signed(57, 10); -- 0.25 (0.30 would be 69) 
+    constant PHI_MARGIN_POS : signed(9 downto 0) := to_signed(+(160/2-57), 10);  -- half-width of fiducial MINUS border (half-size of gap are between sector N and sector N+2)
+    constant PHI_MARGIN_NEG : signed(9 downto 0) := to_signed(-(160/2-57), 10);  -- same but with negative sign
+    constant PHI_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(160/2+57), 10); -- half size of a full region (fiducial PLUS border)
+    constant PHI_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(160/2+57), 10);  
+    constant ETA_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(230/2+57), 10); -- half size of a full region (fiducial PLUS border)
+    constant ETA_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(230/2+57), 10);  
 
     constant PHI_CALOSHIFT    : signed(9 downto 0) := to_signed( 480,        10);  -- 2*pi/3, size of an HGCal sector
     constant PHI_CALOSHIFT1   : signed(9 downto 0) := to_signed( 320,        10);  -- 2*pi/3 - 2*pi/9, distance between center of hgcal sector 1 and pf region 1 = 2 * size of a phi nonant
-    constant PHI_CALOEDGE_POS : signed(9 downto 0) := to_signed(+(480/2-58), 10);  -- +(half-size of calo sector)-border
-    constant PHI_CALOEDGE_NEG : signed(9 downto 0) := to_signed(-(480/2-58), 10);  -- -(half-size of calo sector)+border
+    constant PHI_CALOEDGE_POS : signed(9 downto 0) := to_signed(+(480/2-57), 10);  -- +(half-size of calo sector)-border
+    constant PHI_CALOEDGE_NEG : signed(9 downto 0) := to_signed(-(480/2-57), 10);  -- -(half-size of calo sector)+border
 
     constant PHI_MPI : signed(11 downto 0) := to_signed(-PHI_SHIFT_INT*9/2, 12);  -- same but with negative sign
     constant PHI_2PI : signed(11 downto 0) := to_signed( PHI_SHIFT_INT*9,   12);  -- same but with negative sign

@@ -1,5 +1,5 @@
 # get the configuration
-if { [ info exists env{pfBoard} ] } { set pfBoard $env{pfBoard} } { set pfBoard "none" }
+if { [ info exists env(pfBoard) ] } { set pfBoard $env(pfBoard) } { set pfBoard "none" }
 set pfReg "HGCal"
 set hlsIPVersion 25.4
 
