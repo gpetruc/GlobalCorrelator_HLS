@@ -12,13 +12,13 @@ entity fifo_merge2 is
     --);
     port(
         ap_clk   : in std_logic;
-        d1_in    : in particle;
-        d2_in    : in particle;
+        d1_in    : in anyparticle;
+        d2_in    : in anyparticle;
         d1_valid : in std_logic;
         d2_valid : in std_logic;
         roll     : in  std_logic;
         --out_full : in  std_logic;
-        d_out      : out particle;
+        d_out      : out anyparticle;
         valid_out  : out std_logic;
         full1      : out std_logic;
         full2      : out std_logic;
@@ -30,7 +30,7 @@ entity fifo_merge2 is
 end fifo_merge2;
 
 architecture Behavioral of fifo_merge2 is
-    signal queue : particle;
+    signal queue : anyparticle;
     signal queue_valid : std_logic := '0';
     signal full2_i     : std_logic := '0';
 begin
@@ -77,8 +77,8 @@ begin
 
         full2 <= full2_i;
 
-        dbg_w64(15 downto 0) <= std_logic_vector(queue.pt);
-        dbg_w64(16) <= queue_valid;
-        dbg_w64(63 downto 17) <= (others => '0');
+        dbg_w64(13 downto 0) <= std_logic_vector(queue.pt);
+        dbg_w64(14) <= queue_valid;
+        dbg_w64(63 downto 15) <= (others => '0');
 
 end Behavioral;

@@ -21,8 +21,8 @@ architecture Behavioral of testbench is
     signal start, ready, idle, done : std_logic;
     signal newevent, newevent_out : std_logic;
 
-    signal p_in:  w64s(NMUFIBERS-1 downto 0) := (others => (others => '0'));
-    signal p_out: w64s(NREGIONS-1 downto 0) := (others => (others => '0'));
+    signal p_in:  w72s(NMUFIBERS-1 downto 0) := (others => (others => '0'));
+    signal p_out: w72s(NREGIONS-1 downto 0) := (others => (others => '0'));
     signal v_out: std_logic_vector(NREGIONS-1 downto 0) := (others => '0');
 
     file Fi : text open read_mode is "input-mu.txt";
@@ -33,7 +33,7 @@ begin
     clk  <= not clk after 1.25 ns;
     
     uut : entity work.mu_regionizer
-        generic map(ETA_CENTER => 460)
+        generic map(ETA_CENTER => 458)
         port map(ap_clk => clk, 
                  ap_rst => rst, 
                  ap_start => start,
@@ -70,7 +70,6 @@ begin
         variable frame : integer := 0;
         variable Li, Lo : line;
         variable itest, iobj : integer;
-        variable part : particle;
         variable gpart : glbparticle;
     begin
         rst <= '1';
@@ -85,11 +84,11 @@ begin
                 read(Li, itest);
                 read(Li, iobj); if (iobj > 0) then newevent <= '1'; else newevent <= '0'; end if;
                 for i in 0 to NMUFIBERS-1  loop
-                    read(Li, iobj); gpart.pt   := (to_signed(iobj, 16));
+                    read(Li, iobj); gpart.pt   := (to_signed(iobj, 14));
                     read(Li, iobj); gpart.eta  := (to_signed(iobj, 12));
                     read(Li, iobj); gpart.phi  := (to_signed(iobj, 11));
                                     gpart.rest := (others => '0');
-                    p_in(i) <= glbparticle_to_w64(gpart);
+                    p_in(i) <= glbparticle_to_w72(gpart);
                 end loop;
                 start <= '1';
              else
@@ -107,13 +106,13 @@ begin
             write(Lo, string'(" ")); 
             for i in 0 to NREGIONS-1 loop
                 if v_out(i) = '1' then
-                    part := w64_to_particle(p_out(i));
+                    gpart := w72_to_glbparticle(p_out(i));
                 else
-                    part := null_particle;
+                    gpart := null_glbparticle;
                 end if;
-                write(Lo, to_integer(part.pt),   field => 5); 
-                write(Lo, to_integer(part.eta),  field => 5); 
-                write(Lo, to_integer(part.phi),  field => 5); 
+                write(Lo, to_integer(gpart.pt),   field => 5); 
+                write(Lo, to_integer(gpart.eta),  field => 5); 
+                write(Lo, to_integer(gpart.phi),  field => 5); 
             end loop;
             writeline(Fo, Lo);
             frame := frame + 1;

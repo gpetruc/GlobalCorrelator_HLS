@@ -12,14 +12,14 @@ entity fifo_merge3 is
     --);
     port(
         ap_clk   : in std_logic;
-        d1_in    : in particle;
-        d2_in    : in particle;
-        d3_in    : in particle;
+        d1_in    : in anyparticle;
+        d2_in    : in anyparticle;
+        d3_in    : in anyparticle;
         d1_valid : in std_logic;
         d2_valid : in std_logic;
         d3_valid : in std_logic;
         roll     : in  std_logic;
-        d_out      : out particle;
+        d_out      : out anyparticle;
         valid_out  : out std_logic;
         full1      : out std_logic;
         full2      : out std_logic;
@@ -32,7 +32,7 @@ entity fifo_merge3 is
 end fifo_merge3;
 
 architecture Behavioral of fifo_merge3 is
-    signal q2, q3 : particle;
+    signal q2, q3 : anyparticle;
     signal q2_valid, q3_valid : std_logic := '0';
     signal full2_i, full3_i : std_logic := '0';
 begin
@@ -96,10 +96,10 @@ begin
         full2 <= full2_i;
         full3 <= full3_i;
 
-        dbg_w64(15 downto 0) <= std_logic_vector(q2.pt);
-        dbg_w64(16) <= q2_valid;
-        dbg_w64(32 downto 17) <= std_logic_vector(q3.pt);
-        dbg_w64(33) <= q3_valid;
-        dbg_w64(63 downto 34) <= (others => '0');
+        dbg_w64(13 downto 0) <= std_logic_vector(q2.pt);
+        dbg_w64(14) <= q2_valid;
+        dbg_w64(28 downto 15) <= std_logic_vector(q3.pt);
+        dbg_w64(29) <= q3_valid;
+        dbg_w64(63 downto 30) <= (others => '0');
 
 end Behavioral;

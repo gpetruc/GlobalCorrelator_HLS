@@ -32,7 +32,6 @@
   <<: *puppi-common
   stage: build
   when: manual
-  variables:
   artifacts:
     paths:
       - puppi/vivado_hls.${CI_JOB_NAME}.txt
@@ -44,6 +43,7 @@
       - dataformats/**/*
       - puppi/*
       - puppi/firmware/*
+  dependencies: 
 
 .puppi-csynth-variables: &puppi-csynth-variables
     puppiBoard: VCU118

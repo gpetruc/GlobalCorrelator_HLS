@@ -174,7 +174,7 @@ bool l1ct::multififo_regionizer::RegionMux<T>::stream(bool newevt, std::vector<T
                 }
             }
             for (int i = 1; i < nsort_; ++i) {
-                buffer_[ireg_*nsort_ + i-1] = buffer_[ireg_*nsort_ + i];
+                shift(buffer_[ireg_*nsort_ + i], buffer_[ireg_*nsort_ + i-1]);
             }
         }
         if (++iter_ == outii_) {

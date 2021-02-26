@@ -12,7 +12,7 @@ entity mu_router is
             enabled : IN STD_LOGIC;
             newevent : IN STD_LOGIC;
             links_in      : IN glbparticles(NMUFIBERS-1 downto 0);
-            fifo_in       : OUT particles(NPFREGIONS*NMUFIBERS-1 downto 0);
+            fifo_in       : OUT glbparticles(NPFREGIONS*NMUFIBERS-1 downto 0);
             fifo_in_write : OUT std_logic_vector(NPFREGIONS*NMUFIBERS-1 downto 0);
             fifo_in_roll  : OUT std_logic_vector(NPFREGIONS*NMUFIBERS-1 downto 0)
     );
@@ -39,11 +39,9 @@ begin
                     local_eta := links_in(ifib).eta + ETA_SHIFT;
                     -- prepare converted output
                     fifo_in(ireg*NMUFIBERS+ifib).pt   <= links_in(ifib).pt;
-                    fifo_in(ireg*NMUFIBERS+ifib).eta  <= local_eta(9 downto 0);
-                    fifo_in(ireg*NMUFIBERS+ifib).phi  <= local_phi(9 downto 0);
-                    ---- CAREFUL with the rest: the good part is the high bits
-                    fifo_in(ireg*NMUFIBERS+ifib).rest(27 downto 3) <= links_in(ifib).rest; 
-                    fifo_in(ireg*NMUFIBERS+ifib).rest( 2 downto 0) <= (others => '0');
+                    fifo_in(ireg*NMUFIBERS+ifib).eta  <= local_eta(11 downto 0);
+                    fifo_in(ireg*NMUFIBERS+ifib).phi  <= local_phi(10 downto 0);
+                    fifo_in(ireg*NMUFIBERS+ifib).rest <= links_in(ifib).rest;
                     fifo_in_roll(ireg*NMUFIBERS+ifib) <= newevent;
                     if enabled = '1' and 
                            links_in(ifib).pt /= 0 and

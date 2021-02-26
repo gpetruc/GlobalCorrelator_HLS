@@ -13,6 +13,7 @@ workflow:
 
 stages:
   - pre-build
+  - pre-build2
   - build
   - test
   - deploy

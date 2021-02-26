@@ -14,10 +14,10 @@ entity delay_sort_mux_stream is
     );
     port(
         ap_clk : IN STD_LOGIC;
-        d_in     : IN w64s(NREGIONS-1 downto 0);
+        d_in     : IN w72s(NREGIONS-1 downto 0);
         valid_in : IN STD_LOGIC_VECTOR(NREGIONS-1 downto 0);
         roll     : IN STD_LOGIC;
-        d_out    : OUT w64s(NSTREAM-1 downto 0);
+        d_out    : OUT w72s(NSTREAM-1 downto 0);
         roll_out : OUT STD_LOGIC
     );
 end delay_sort_mux_stream;
@@ -25,15 +25,15 @@ end delay_sort_mux_stream;
 architecture Behavioral of delay_sort_mux_stream is
     constant EFFDELAY : natural := DELAY-(SORT_NSTAGES-1);
 
-    signal delayed:        w64s(EFFDELAY*NREGIONS-1 downto 0);
+    signal delayed:        w72s(EFFDELAY*NREGIONS-1 downto 0);
     signal delayed_valid:  std_logic_vector(EFFDELAY*NREGIONS-1 downto 0) := (others => '0');
     signal delayed_roll:   std_logic_vector(EFFDELAY-1 downto 0);
 
-    signal sorted:        particles(NSORTED*NREGIONS-1 downto 0);
+    signal sorted:        anyparticles(NSORTED*NREGIONS-1 downto 0);
     signal sorted_valid:  std_logic_vector(NSORTED*NREGIONS-1 downto 0) := (others => '0');
     signal sorted_roll:   std_logic_vector(NREGIONS-1 downto 0) := (others => '0');
 
-    signal mux :        particles(NSTREAM-1 downto 0);
+    signal mux :        anyparticles(NSTREAM-1 downto 0);
     signal mux_valid :  std_logic_vector(NSTREAM-1 downto 0) := (others => '0');
     signal mux_roll :   std_logic := '0';
 
@@ -60,7 +60,7 @@ begin
             sorter : entity work.stream_sort
                         generic map(NITEMS => NSORTED)
                         port map(ap_clk => ap_clk,
-                            d_in => w64_to_particle(delayed(isort)),
+                            d_in => w72_to_anyparticle(delayed(isort)),
                             valid_in => delayed_valid(isort),
                             roll => delayed_roll(0),
                             d_out => sorted((isort+1)*NSORTED-1 downto isort*NSORTED),
@@ -72,7 +72,7 @@ begin
             sorter : entity work.cascade_stream_sort
                         generic map(NITEMS => NSORTED, NSTAGES => SORT_NSTAGES)
                         port map(ap_clk => ap_clk,
-                            d_in => w64_to_particle(delayed(isort)),
+                            d_in => w72_to_anyparticle(delayed(isort)),
                             valid_in => delayed_valid(isort),
                             roll => delayed_roll(0),
                             d_out => sorted((isort+1)*NSORTED-1 downto isort*NSORTED),
@@ -100,7 +100,7 @@ begin
             if rising_edge(ap_clk) then
                 for i in 0 to NSTREAM-1 loop
                     if mux_valid(i) = '1' then
-                        d_out(i) <= particle_to_w64(mux(i));
+                        d_out(i) <= anyparticle_to_w72(mux(i));
                     else
                         d_out(i) <= (others => '0');
                     end if;

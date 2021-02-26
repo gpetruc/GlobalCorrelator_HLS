@@ -3,7 +3,7 @@ use ieee.std_logic_1164.all;
 use ieee.numeric_std.all;
 use work.regionizer_data.all;
 
-entity tk_regionizer_mux is
+entity tk_regionizer_mux_stream is
     port(
             ap_clk : IN STD_LOGIC;
             ap_rst : IN STD_LOGIC;
@@ -30,24 +30,16 @@ entity tk_regionizer_mux is
             tracks_in_7_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
             tracks_in_8_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
             tracks_in_8_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
-            tracks_out       : OUT w72s(NTKSORTED-1 downto 0);
+            tracks_out       : OUT w72s(NTKSTREAM-1 downto 0);
             newevent_out     : OUT STD_LOGIC
     );
-end tk_regionizer_mux;
+end tk_regionizer_mux_stream;
 
-architecture Behavioral of tk_regionizer_mux is
+architecture Behavioral of tk_regionizer_mux_stream is
 
     signal regionized:        w72s(NPFREGIONS-1 downto 0);
     signal regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal regionized_roll:   std_logic := '0';
-
-    signal sorted_out :        anyparticles(NPFREGIONS*NTKSORTED-1 downto 0);
-    signal sorted_out_valid :  std_logic_vector(NPFREGIONS*NTKSORTED-1 downto 0) := (others => '0');
-    signal sorted_out_roll :   std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
-
-    signal muxed_out :        anyparticles(NTKSORTED-1 downto 0);
-    signal muxed_out_valid :  std_logic_vector(NTKSORTED-1 downto 0) := (others => '0');
-    signal muxed_out_roll :   std_logic := '0';
 
 begin
 
@@ -93,45 +85,17 @@ begin
                              tracks_out_valid_8 => regionized_valid(8),
                              newevent_out => regionized_roll);
 
+    tk_delay_sort_mux_stream : entity work.delay_sort_mux_stream
+                generic map(NREGIONS => NPFREGIONS, 
+                            NSORTED  => NTKSORTED,
+                            NSTREAM  => NTKSTREAM,
+                            OUTII    => PFII240,
+                            DELAY    => TKDELAY)
+                port map(ap_clk => ap_clk,
+                         d_in => regionized,
+                         valid_in => regionized_valid,
+                         roll => regionized_roll,
+                         d_out => tracks_out,
+                         roll_out => newevent_out);
 
-    gen_sorters: for isort in NPFREGIONS-1 downto 0 generate
-        reg_sorter : entity work.stream_sort
-                            generic map(NITEMS => NTKSORTED)
-                            port map(ap_clk => ap_clk,
-                                d_in => w72_to_anyparticle(regionized(isort)),
-                                valid_in => regionized_valid(isort),
-                                roll => regionized_roll,
-                                d_out => sorted_out((isort+1)*NTKSORTED-1 downto isort*NTKSORTED),
-                                valid_out => sorted_out_valid((isort+1)*NTKSORTED-1 downto isort*NTKSORTED),
-                                roll_out => sorted_out_roll(isort)
-                            );
-        end generate gen_sorters;
-
-    mux: entity work.region_mux
-                            generic map(NREGIONS => NPFREGIONS, 
-                                        NITEMS   => NTKSORTED,
-                                        OUTII    => PFII)
-                            port map(ap_clk => ap_clk,
-                                roll => sorted_out_roll(0),
-                                d_in => sorted_out,
-                                valid_in => sorted_out_valid,
-                                d_out => muxed_out,
-                                valid_out => muxed_out_valid,
-                                roll_out  => muxed_out_roll);
-
-    format: process(ap_clk)
-        begin
-            if rising_edge(ap_clk) then
-                for i in 0 to NTKSORTED-1 loop
-                    if muxed_out_valid(i) = '1' then
-                        tracks_out(i) <= anyparticle_to_w72(muxed_out(i));
-                    else
-                        tracks_out(i) <= (others => '0');
-                    end if;
-                end loop;
-                newevent_out <= muxed_out_roll;
-            end if;
-        end process format;
-
-
- end Behavioral;
+end Behavioral;

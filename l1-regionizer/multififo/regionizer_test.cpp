@@ -42,10 +42,10 @@ int main(int argc, char **argv) {
     int frame = 0, pingpong = 1; 
     int tk_latency = -1, calo_latency = -1, mu_latency = -1;
 
-    bool ok = true;
+    bool ok = true, first = true;
 
     const bool mux = ROUTER_ISMUX, stream = ROUTER_ISSTREAM;
-    l1ct::MultififoRegionizerEmulator emulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, 6);
+    l1ct::MultififoRegionizerEmulator emulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, /*ii=*/(stream?4:6));
 
     for (int itest = 0; itest < 100; ++itest) {
         TkObj tk_output[NTKOUT][TLEN], tk_output_ref[NTKOUT][2*TLEN];
@@ -64,8 +64,7 @@ int main(int argc, char **argv) {
         for (auto & reg : inputs.event().pfinputs) if (reg.region.floatEtaCenter() >= 0) pfin.push_back(reg);
         const glbeta_t etaCenter = l1ct::Scales::makeGlbEta(2.0);
 
-        if (itest == 0) emulator.initSectorsAndRegions(in, pfin);
-
+        if (first) { emulator.initSectorsAndRegions(in, pfin); first = false; }
 
         for (int i = 0; i < TLEN; ++i, ++frame) {
             std::vector<l1ct::TkObjEmu> tk_links_in_emu, tk_out_oldemu, tk_out_emu;

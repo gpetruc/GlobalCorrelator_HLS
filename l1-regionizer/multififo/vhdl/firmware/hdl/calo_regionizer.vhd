@@ -12,27 +12,27 @@ entity calo_regionizer is
             ap_idle : OUT STD_LOGIC;
             ap_ready : OUT STD_LOGIC;
             newevent : IN STD_LOGIC;
-            calo_in_0_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_0_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_1_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_2_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_3_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_4_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_5_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_6_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_7_V : OUT STD_LOGIC_VECTOR (63 downto 0);
-            calo_out_8_V : OUT STD_LOGIC_VECTOR (63 downto 0);
+            calo_in_0_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_0_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_1_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_2_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_3_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_4_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_5_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_6_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_7_V : OUT STD_LOGIC_VECTOR (71 downto 0);
+            calo_out_8_V : OUT STD_LOGIC_VECTOR (71 downto 0);
             calo_out_valid_0 : OUT STD_LOGIC;
             calo_out_valid_1 : OUT STD_LOGIC;
             calo_out_valid_2 : OUT STD_LOGIC;
@@ -58,22 +58,22 @@ architecture Behavioral of calo_regionizer is
     signal fifo_in_write :  std_logic_vector(NALLFIFOS-1 downto 0) := (others => '0');
     signal fifo_in_roll  :  std_logic_vector(NALLFIFOS-1 downto 0) := (others => '0');
 
-    signal fifo_out :         particles(NALLFIFOS-1 downto 0);
+    signal fifo_out :         anyparticles(NALLFIFOS-1 downto 0);
     signal fifo_out_valid :   std_logic_vector(NALLFIFOS-1 downto 0) := (others => '0');
     signal fifo_out_full:     std_logic_vector(NALLFIFOS-1 downto 0) := (others => '0');
     signal fifo_out_roll:     std_logic_vector(NALLFIFOS-1 downto 0) := (others => '0');
 
-    signal merged2_out :        particles(NMERGE2-1 downto 0);
+    signal merged2_out :        anyparticles(NMERGE2-1 downto 0);
     signal merged2_out_valid :  std_logic_vector(NMERGE2-1 downto 0) := (others => '0');
     signal merged2_out_roll:    std_logic_vector(NMERGE2-1 downto 0) := (others => '0');
     signal merged2_out_full:    std_logic_vector(NMERGE2-1 downto 0) := (others => '0');
 
-    signal merged4_out :        particles(NMERGE4-1 downto 0);
+    signal merged4_out :        anyparticles(NMERGE4-1 downto 0);
     signal merged4_out_valid :  std_logic_vector(NMERGE4-1 downto 0) := (others => '0');
     signal merged4_out_roll:    std_logic_vector(NMERGE4-1 downto 0) := (others => '0');
     signal merged4_out_full:    std_logic_vector(NMERGE4-1 downto 0) := (others => '0');
 
-    signal merged_out :        particles(NREGIONS-1 downto 0);
+    signal merged_out :        anyparticles(NREGIONS-1 downto 0);
     signal merged_out_valid :  std_logic_vector(NREGIONS-1 downto 0) := (others => '0');
     signal merged_out_roll:    std_logic_vector(NREGIONS-1 downto 0) := (others => '0');
 
@@ -92,7 +92,7 @@ begin
         reg_buffer : entity work.rolling_fifo
                         --generic map(FIFO_INDEX => ireg+1)
                         port map(ap_clk => ap_clk, 
-                                 d_in    => fifo_in(ireg),
+                                 d_in    => particle_to_any(fifo_in(ireg)),
                                  write_in  => fifo_in_write(ireg),
                                  roll   => fifo_in_roll(ireg),
                                  d_out    => fifo_out(ireg),
@@ -174,28 +174,28 @@ begin
         end generate gen_mergers_s;
 
 
-    links_in( 0) <= w64_to_particle(calo_in_0_0_V);
-    links_in( 1) <= w64_to_particle(calo_in_0_1_V);
-    links_in( 2) <= w64_to_particle(calo_in_0_2_V);
-    links_in( 3) <= w64_to_particle(calo_in_0_3_V);
-    links_in( 4) <= w64_to_particle(calo_in_1_0_V);
-    links_in( 5) <= w64_to_particle(calo_in_1_1_V);
-    links_in( 6) <= w64_to_particle(calo_in_1_2_V);
-    links_in( 7) <= w64_to_particle(calo_in_1_3_V);
-    links_in( 8) <= w64_to_particle(calo_in_2_0_V);
-    links_in( 9) <= w64_to_particle(calo_in_2_1_V);
-    links_in(10) <= w64_to_particle(calo_in_2_2_V);
-    links_in(11) <= w64_to_particle(calo_in_2_3_V);
+    links_in( 0) <= w72_to_particle(calo_in_0_0_V);
+    links_in( 1) <= w72_to_particle(calo_in_0_1_V);
+    links_in( 2) <= w72_to_particle(calo_in_0_2_V);
+    links_in( 3) <= w72_to_particle(calo_in_0_3_V);
+    links_in( 4) <= w72_to_particle(calo_in_1_0_V);
+    links_in( 5) <= w72_to_particle(calo_in_1_1_V);
+    links_in( 6) <= w72_to_particle(calo_in_1_2_V);
+    links_in( 7) <= w72_to_particle(calo_in_1_3_V);
+    links_in( 8) <= w72_to_particle(calo_in_2_0_V);
+    links_in( 9) <= w72_to_particle(calo_in_2_1_V);
+    links_in(10) <= w72_to_particle(calo_in_2_2_V);
+    links_in(11) <= w72_to_particle(calo_in_2_3_V);
 
-    calo_out_0_V <= particle_to_w64(merged_out(0));
-    calo_out_1_V <= particle_to_w64(merged_out(1));
-    calo_out_2_V <= particle_to_w64(merged_out(2));
-    calo_out_3_V <= particle_to_w64(merged_out(3));
-    calo_out_4_V <= particle_to_w64(merged_out(4));
-    calo_out_5_V <= particle_to_w64(merged_out(5));
-    calo_out_6_V <= particle_to_w64(merged_out(6));
-    calo_out_7_V <= particle_to_w64(merged_out(7));
-    calo_out_8_V <= particle_to_w64(merged_out(8));
+    calo_out_0_V <= anyparticle_to_w72(merged_out(0));
+    calo_out_1_V <= anyparticle_to_w72(merged_out(1));
+    calo_out_2_V <= anyparticle_to_w72(merged_out(2));
+    calo_out_3_V <= anyparticle_to_w72(merged_out(3));
+    calo_out_4_V <= anyparticle_to_w72(merged_out(4));
+    calo_out_5_V <= anyparticle_to_w72(merged_out(5));
+    calo_out_6_V <= anyparticle_to_w72(merged_out(6));
+    calo_out_7_V <= anyparticle_to_w72(merged_out(7));
+    calo_out_8_V <= anyparticle_to_w72(merged_out(8));
     calo_out_valid_0 <= merged_out_valid(0);
     calo_out_valid_1 <= merged_out_valid(1);
     calo_out_valid_2 <= merged_out_valid(2);
