@@ -184,7 +184,7 @@ int main(int argc, char **argv) {
             fprintf(fold_calo, "\n");
             fprintf(fold_mu, "\n");
 
-            serPatternsIn.packAndWrite(nchann_in, all_channels_in);
+            serPatternsIn.packAndWrite(nchann_in, all_channels_in, i < TLEN-1);
             serPatternsOut.packAndWrite(nchann_out, all_channels_out);
             serPatternsRef.packAndWrite(nchann_out, all_channels_ref);
              

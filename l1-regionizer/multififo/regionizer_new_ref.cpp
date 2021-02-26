@@ -100,7 +100,7 @@ void l1ct::MultififoRegionizerEmulator::fillLinks(unsigned int iclock, const l1c
         const l1ct::DetectorSector<l1ct::TkObjEmu> & sec = in.track[is];
         for (unsigned int il = 0; il < NTK_LINKS; ++il, ++idx) { 
             int ioffs = iclock * NTK_LINKS + il; 
-            if (ioffs < sec.size()) {
+            if (ioffs < sec.size() && iclock < nclocks_-1) {
                 links[idx] = sec[ioffs];
             } else {
                 links[idx].clear();
@@ -115,7 +115,7 @@ void l1ct::MultififoRegionizerEmulator::fillCaloLinks_(unsigned int iclock, cons
     for (unsigned int is = 0, idx = 0; is < NCALO_SECTORS*nendcaps_; ++is) { 
         for (unsigned int il = 0; il < NCALO_LINKS; ++il, ++idx) { 
             int ioffs = iclock * NCALO_LINKS + il; 
-            if (ioffs < in[is].size()) {
+            if (ioffs < in[is].size() && iclock < nclocks_-1) {
                 links[idx] = in[is][ioffs];
             } else {
                 links[idx].clear();
@@ -141,7 +141,7 @@ void l1ct::MultififoRegionizerEmulator::fillLinks(unsigned int iclock, const l1c
     assert(NMU_LINKS == 2);  
     for (unsigned int il = 0, idx = 0; il < NMU_LINKS; ++il, ++idx) { 
         int ioffs = (iclock * 3)/2 + il; 
-        if (ioffs < in.muon.size() && (il == 0 || iclock % 2 == 1)) {
+        if (ioffs < in.muon.size() && (il == 0 || iclock % 2 == 1) && iclock < nclocks_-1) {
             links[idx] = in.muon[ioffs];
         } else {
             links[idx].clear();
