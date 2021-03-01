@@ -205,16 +205,16 @@ namespace l1ct {
 
   struct MuObj {
     pt_t hwPt;
-    eta_t hwEta;      // relative to the region center, at calo
-    phi_t hwPhi;      // relative to the region center, at calo
+    glbeta_t hwEta;      // relative to the region center, at calo
+    glbphi_t hwPhi;      // relative to the region center, at calo
     tkdeta_t hwDEta;  //  vtx - calo
     tkdphi_t hwDPhi;  // |vtx - calo| (sign is derived by the charge)
     bool hwCharge;    // 1 = positive, 0 = negative
     z0_t hwZ0;
     dxy_t hwDxy;
     ap_uint<3> hwQuality;
-    phi_t hwVtxPhi() const { return hwCharge ? hwPhi + hwDPhi : hwPhi - hwDPhi; }
-    eta_t hwVtxEta() const { return hwEta + hwDEta; }
+    glbphi_t hwVtxPhi() const { return hwCharge ? hwPhi + hwDPhi : hwPhi - hwDPhi; }
+    glbeta_t hwVtxEta() const { return hwEta + hwDEta; }
 
     inline bool operator==(const MuObj &other) const {
       return hwPt == other.hwPt && hwEta == other.hwEta && hwPhi == other.hwPhi && hwDEta == other.hwDEta &&
@@ -251,7 +251,7 @@ namespace l1ct {
     float floatZ0() const { return Scales::floatZ0(hwZ0); }
     float floatDxy() const { return Scales::floatDxy(hwDxy); }
 
-    static const int BITWIDTH = pt_t::width + eta_t::width + phi_t::width + tkdeta_t::width + tkdphi_t::width + 1 +
+    static const int BITWIDTH = pt_t::width + glbeta_t::width + glbphi_t::width + tkdeta_t::width + tkdphi_t::width + 1 +
                                 z0_t::width + dxy_t::width + ap_uint<3>::width;
     inline ap_uint<BITWIDTH> pack() const {
       ap_uint<BITWIDTH> ret;

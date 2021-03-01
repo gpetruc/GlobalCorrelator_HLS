@@ -32,13 +32,18 @@ begin
                 -- first region, that has only one calo sector contributing, if |phi| <= PHI_HALFWIDTH
                 for ifib in 0 to NCALOFIBERS-1 loop
                     ilink := isec*NCALOFIBERS+ifib; ififo := isec*NCALOFIFOS+ifib;
-                    fifo_in(ififo) <= links_in(ilink);
+                    fifo_in(ififo).pt   <= links_in(ilink).pt;
+                    fifo_in(ififo).eta  <= links_in(ilink).eta + ETASHIFT_CALO;
+                    fifo_in(ififo).phi  <= links_in(ilink).phi;
+                    fifo_in(ififo).rest <= links_in(ilink).rest;
                     fifo_in_roll(ififo) <= newevent;
                     if enabled = '0' or links_in(ilink).pt = 0 then
                         fifo_in_write(isec*NCALOFIFOS+ifib) <= '0';
                     else
                         if links_in(ilink).phi <= PHI_HALFWIDTH_POS and
-                           links_in(ilink).phi >= PHI_HALFWIDTH_NEG then
+                           links_in(ilink).phi >= PHI_HALFWIDTH_NEG and
+                           links_in(ilink).eta <= ETACALO_HALFWIDTH_POS and
+                           links_in(ilink).eta >= ETACALO_HALFWIDTH_NEG then
                             fifo_in_write(ififo) <= '1';
                         else
                             fifo_in_write(ififo) <= '0';
@@ -50,14 +55,16 @@ begin
                 for ifib in 0 to NCALOFIBERS-1 loop
                     ilink := isec*NCALOFIBERS+ifib; ififo := isec*NCALOFIFOS+NCALOFIBERS+ifib;
                     fifo_in(ififo).pt   <= links_in(ilink).pt;
-                    fifo_in(ififo).eta  <= links_in(ilink).eta;
+                    fifo_in(ififo).eta  <= links_in(ilink).eta + ETASHIFT_CALO;
                     fifo_in(ififo).phi  <= links_in(ilink).phi - PHI_SHIFT;
                     fifo_in(ififo).rest <= links_in(ilink).rest;
                     fifo_in_roll(ififo) <= newevent;
                     if enabled = '0' or links_in(ilink).pt = 0 then
                         fifo_in_write(ififo) <= '0';
                     else
-                        if links_in(ilink).phi >= PHI_MARGIN_POS then
+                        if links_in(ilink).phi >= PHI_MARGIN_POS and
+                           links_in(ilink).eta <= ETACALO_HALFWIDTH_POS and
+                           links_in(ilink).eta >= ETACALO_HALFWIDTH_NEG then
                             fifo_in_write(ififo) <= '1';
                         else
                             fifo_in_write(ififo) <= '0';
@@ -68,14 +75,16 @@ begin
                 for ifib in 0 to NCALOFIBERS-1 loop
                     ilink := inext*NCALOFIBERS+ifib; ififo := isec*NCALOFIFOS+2*NCALOFIBERS+ifib;
                     fifo_in(ififo).pt   <= links_in(ilink).pt;
-                    fifo_in(ififo).eta  <= links_in(ilink).eta;
+                    fifo_in(ififo).eta  <= links_in(ilink).eta + ETASHIFT_CALO;
                     fifo_in(ififo).phi  <= links_in(ilink).phi + PHI_CALOSHIFT1;
                     fifo_in(ififo).rest <= links_in(ilink).rest;
                     fifo_in_roll(ififo) <= newevent;
                     if enabled = '0' or links_in(ilink).pt = 0 then
                         fifo_in_write(ififo) <= '0';
                     else
-                        if links_in(ilink).phi <= PHI_CALOEDGE_NEG then
+                        if links_in(ilink).phi <= PHI_CALOEDGE_NEG and
+                           links_in(ilink).eta <= ETACALO_HALFWIDTH_POS and
+                           links_in(ilink).eta >= ETACALO_HALFWIDTH_NEG then
                             fifo_in_write(ififo) <= '1';
                         else
                             fifo_in_write(ififo) <= '0';
@@ -87,14 +96,16 @@ begin
                 for ifib in 0 to NCALOFIBERS-1 loop
                     ilink := isec*NCALOFIBERS+ifib; ififo := isec*NCALOFIFOS+3*NCALOFIBERS+ifib;
                     fifo_in(ififo).pt   <= links_in(ilink).pt;
-                    fifo_in(ififo).eta  <= links_in(ilink).eta;
+                    fifo_in(ififo).eta  <= links_in(ilink).eta + ETASHIFT_CALO;
                     fifo_in(ififo).phi  <= links_in(ilink).phi - PHI_CALOSHIFT1;
                     fifo_in(ififo).rest <= links_in(ilink).rest;
                     fifo_in_roll(ififo) <= newevent;
                     if enabled = '0' or links_in(ilink).pt = 0 then
                         fifo_in_write(ififo) <= '0';
                     else
-                        if links_in(ilink).phi >= PHI_CALOEDGE_POS then
+                        if links_in(ilink).phi >= PHI_CALOEDGE_POS and
+                           links_in(ilink).eta <= ETACALO_HALFWIDTH_POS and
+                           links_in(ilink).eta >= ETACALO_HALFWIDTH_NEG then
                             fifo_in_write(ififo) <= '1';
                         else
                             fifo_in_write(ififo) <= '0';
@@ -105,14 +116,16 @@ begin
                 for ifib in 0 to NCALOFIBERS-1 loop
                     ilink := inext*NCALOFIBERS+ifib; ififo := isec*NCALOFIFOS+4*NCALOFIBERS+ifib;
                     fifo_in(ififo).pt   <= links_in(ilink).pt;
-                    fifo_in(ififo).eta  <= links_in(ilink).eta;
+                    fifo_in(ififo).eta  <= links_in(ilink).eta + ETASHIFT_CALO;
                     fifo_in(ififo).phi  <= links_in(ilink).phi + PHI_SHIFT;
                     fifo_in(ififo).rest <= links_in(ilink).rest;
                     fifo_in_roll(ififo) <= newevent;
                     if enabled = '0' or links_in(ilink).pt = 0 then
                         fifo_in_write(ififo) <= '0';
                     else
-                        if links_in(ilink).phi <= PHI_MARGIN_NEG then
+                        if links_in(ilink).phi <= PHI_MARGIN_NEG and
+                           links_in(ilink).eta <= ETACALO_HALFWIDTH_POS and
+                           links_in(ilink).eta >= ETACALO_HALFWIDTH_NEG then
                             fifo_in_write(ififo) <= '1';
                         else
                             fifo_in_write(ififo) <= '0';

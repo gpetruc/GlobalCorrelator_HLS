@@ -23,12 +23,12 @@ architecture Behavioral of testbench is
     signal start, ready, idle, done : std_logic;
     signal newevent, newevent_out : std_logic;
 
-    signal tk_in:  w64s(NTKSECTORS*NTKFIBERS-1 downto 0) := (others => (others => '0'));
-    signal tk_out: w64s(NTKSORTED-1 downto 0) := (others => (others => '0'));
-    signal calo_in:  w64s(NCALOSECTORS*NCALOFIBERS-1 downto 0) := (others => (others => '0'));
-    signal calo_out: w64s(NCALOSORTED-1 downto 0) := (others => (others => '0'));
-    signal mu_in:  w64s(NMUFIBERS-1 downto 0) := (others => (others => '0'));
-    signal mu_out: w64s(NMUSORTED-1 downto 0) := (others => (others => '0'));
+    signal tk_in:  w72s(NTKSECTORS*NTKFIBERS-1 downto 0) := (others => (others => '0'));
+    signal tk_out: w72s(NTKSORTED-1 downto 0) := (others => (others => '0'));
+    signal calo_in:  w72s(NCALOSECTORS*NCALOFIBERS-1 downto 0) := (others => (others => '0'));
+    signal calo_out: w72s(NCALOSORTED-1 downto 0) := (others => (others => '0'));
+    signal mu_in:  w72s(NMUFIBERS-1 downto 0) := (others => (others => '0'));
+    signal mu_out: w72s(NMUSORTED-1 downto 0) := (others => (others => '0'));
 
     file Fi : text open read_mode  is "input-emp.txt";
     file Fo : text open write_mode is "output-emp-vhdl_tb.txt";
@@ -37,7 +37,7 @@ begin
     clk  <= not clk after 1.25 ns;
     
     uut : entity work.full_regionizer_mux
-        generic map(MU_ETA_CENTER => 460)
+        generic map(MU_ETA_CENTER => 458)
         port map(ap_clk => clk, 
                  ap_rst => rst, 
                  ap_start => start,
@@ -91,8 +91,10 @@ begin
 
     runit : process 
         variable remainingEvents : integer := 5;
-        variable patterns_in  : w64s(NPATTERNS_IN  - 1 downto 0);
-        variable patterns_out : w64s(NPATTERNS_OUT - 1 downto 0);
+        variable encoded_in  : w72s(NPATTERNS_IN  - 1 downto 0);
+        variable encoded_out : w72s(NPATTERNS_OUT - 1 downto 0);
+        variable patterns_in  : w64s(2*NPATTERNS_IN  - 1 downto 0);
+        variable patterns_out : w64s(2*NPATTERNS_OUT - 1 downto 0);
         variable patterns_in_valid : std_logic;
         variable patterns_in_valid_old : std_logic := '0';
         variable patterns_out_valid : std_logic := '1';
@@ -125,27 +127,36 @@ begin
                 newevent <= '0';
             end if;
             patterns_in_valid_old := patterns_in_valid;
+            for i in 0 to NPATTERNS_IN-1 loop
+                encoded_in(i)(63 downto  0) := patterns_in(2*i+0)(63 downto 0);
+                encoded_in(i)(71 downto 64) := patterns_in(2*i+1)( 7 downto 0);
+            end loop;
             for i in 0 to NTKSECTORS*NTKFIBERS-1 loop
-                tk_in(i) <= patterns_in(i);
+                tk_in(i) <= encoded_in(i);
             end loop;
             for i in 0 to NCALOSECTORS*NCALOFIBERS-1 loop
-                calo_in(i) <= patterns_in(i+NTKSECTORS*NTKFIBERS);
+                calo_in(i) <= encoded_in(i+NTKSECTORS*NTKFIBERS);
             end loop;
             for i in 0 to NMUFIBERS-1 loop
-                mu_in(i) <= patterns_in(i+NTKSECTORS*NTKFIBERS+NCALOSECTORS*NCALOFIBERS);
+                mu_in(i) <= encoded_in(i+NTKSECTORS*NTKFIBERS+NCALOSECTORS*NCALOFIBERS);
             end loop;
            -- ready to dispatch ---
             wait until rising_edge(clk);
             -- write out the output --
             write(Lo, frame, field=>5);  
             for i in 0 to NTKSORTED-1 loop
-                patterns_out(i) := tk_out(i);
+                encoded_out(i) := tk_out(i);
             end loop;
             for i in 0 to NCALOSORTED-1 loop
-                patterns_out(i+NTKSORTED) := calo_out(i);
+                encoded_out(i+NTKSORTED) := calo_out(i);
             end loop;
             for i in 0 to NMUSORTED-1 loop
-                patterns_out(i+NTKSORTED+NCALOSORTED) := mu_out(i);
+                encoded_out(i+NTKSORTED+NCALOSORTED) := mu_out(i);
+            end loop;
+            for i in 0 to NPATTERNS_OUT-1 loop
+                patterns_out(2*i+0)(63 downto 0) := encoded_out(i)(63 downto  0);
+                patterns_out(2*i+1)( 7 downto 0) := encoded_out(i)(71 downto 64);
+                patterns_out(2*i+1)(63 downto 8) := (others => '0');
             end loop;
             write_pattern_frame(Fo, frame, patterns_out, patterns_out_valid);
             --if frame >= 50 then finish(0); end if;

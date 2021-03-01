@@ -19,8 +19,8 @@ architecture Behavioral of testbench is
     signal start, ready, idle, done : std_logic;
     signal newevent, newevent_out : std_logic;
 
-    signal p_in:  w64s(NTKSECTORS*NTKFIBERS-1 downto 0) := (others => (others => '0'));
-    signal p_out: w64s(NTKSORTED-1 downto 0) := (others => (others => '0'));
+    signal p_in:  w72s(NTKSECTORS*NTKFIBERS-1 downto 0) := (others => (others => '0'));
+    signal p_out: w72s(NTKSORTED-1 downto 0) := (others => (others => '0'));
 
     file Fi : text open read_mode is "input-tk.txt";
     file Fo : text open write_mode is "output-tk-vhdl_tb.txt";
@@ -78,11 +78,11 @@ begin
                 read(Li, itest);
                 read(Li, iobj); if (iobj > 0) then newevent <= '1'; else newevent <= '0'; end if;
                 for i in 0 to NTKSECTORS*NTKFIBERS-1  loop
-                    read(Li, iobj); part.pt   := (to_signed(iobj, 16));
+                    read(Li, iobj); part.pt   := (to_signed(iobj, 14));
                     read(Li, iobj); part.eta  := (to_signed(iobj, 10));
                     read(Li, iobj); part.phi  := (to_signed(iobj, 10));
                                     part.rest := (others => '0');
-                    p_in(i) <= particle_to_w64(part);
+                    p_in(i) <= particle_to_w72(part);
                 end loop;
                 start <= '1';
              else
@@ -99,7 +99,7 @@ begin
             write(Lo, newevent_out); 
             write(Lo, string'(" ")); 
             for i in 0 to NTKSORTED-1 loop
-                part := w64_to_particle(p_out(i));
+                part := w72_to_particle(p_out(i));
                 write(Lo, to_integer(part.pt),   field => 5); 
                 write(Lo, to_integer(part.eta),  field => 5); 
                 write(Lo, to_integer(part.phi),  field => 5); 

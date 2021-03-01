@@ -4,34 +4,46 @@ use ieee.numeric_std.all;
 
 package regionizer_data is 
     type particle is record
-        pt : signed(15 downto 0);
+        pt : signed(13 downto 0);
         eta : signed(9 downto 0);
         phi : signed(9 downto 0);
-        rest : std_logic_vector(27 downto 0);
+        rest : std_logic_vector(37 downto 0);
     end record;
     type glbparticle is record
-        pt : signed(15 downto 0);
+        pt : signed(13 downto 0);
         eta : signed(11 downto 0);
         phi : signed(10 downto 0);
-        rest : std_logic_vector(24 downto 0);
+        rest : std_logic_vector(34 downto 0);
     end record;
-
-
+    type anyparticle is record
+        pt : signed(13 downto 0);
+        rest : std_logic_vector(57 downto 0);
+    end record;
 
     subtype word64 is std_logic_vector(63 downto 0);
     subtype word65 is std_logic_vector(64 downto 0);
+    subtype word72 is std_logic_vector(71 downto 0);
 
-    function particle_to_w64(p : particle) return word64;
-    function w64_to_particle(d : word64) return particle;
+    function particle_to_w72(p : particle) return word72;
+    function w72_to_particle(d : word72) return particle;
     function null_particle return particle;
-    function glbparticle_to_w64(p : glbparticle) return word64;
-    function w64_to_glbparticle(d : word64) return glbparticle;
+    function glbparticle_to_w72(p : glbparticle) return word72;
+    function w72_to_glbparticle(d : word72) return glbparticle;
     function null_glbparticle return glbparticle;
+    function anyparticle_to_w72(p : anyparticle) return word72;
+    function w72_to_anyparticle(d : word72) return anyparticle;
+    function particle_to_any(p : particle) return anyparticle;
+    function glbparticle_to_any(p : glbparticle) return anyparticle;
+    function any_to_particle(p: anyparticle) return particle;
+    function any_to_glbparticle(p: anyparticle) return glbparticle;
+    function null_anyparticle return anyparticle;
 
     type particles is array(natural range <>) of particle;
     type w64s      is array(natural range <>) of word64;
     type w65s      is array(natural range <>) of word65;
+    type w72s      is array(natural range <>) of word72;
     type glbparticles is array(natural range <>) of glbparticle;
+    type anyparticles is array(natural range <>) of anyparticle;
 
     constant PHI_SHIFT_INT : natural := 160; -- 2*pi/9, size of a phi nonant, track finder sector or fiducial part of one PF region
     constant PHI_SHIFT : signed(9 downto 0) := to_signed(160, 10); -- 2*pi/9, size of a phi nonant, track finder sector or fiducial part of one PF region
@@ -50,6 +62,13 @@ package regionizer_data is
 
     constant PHI_MPI : signed(11 downto 0) := to_signed(-PHI_SHIFT_INT*9/2, 12);  -- same but with negative sign
     constant PHI_2PI : signed(11 downto 0) := to_signed( PHI_SHIFT_INT*9,   12);  -- same but with negative sign
+
+    constant ETASHIFT_TK   : signed(9 downto 0) := to_signed(-172, 10);
+    constant ETASHIFT_CALO : signed(9 downto 0) := to_signed( +58, 10);
+    constant ETATK_HALFWIDTH_POS : signed(10 downto 0) := to_signed(+(230/2+57)+172, 11); -- extend by one bit to avoid wrap-around
+    constant ETATK_HALFWIDTH_NEG : signed(10 downto 0) := to_signed(-(230/2+57)+172, 11);
+    constant ETACALO_HALFWIDTH_POS : signed(10 downto 0) := to_signed(+(230/2+57)-58, 11); -- extend by one bit to avoid wrap-around
+    constant ETACALO_HALFWIDTH_NEG : signed(10 downto 0) := to_signed(-(230/2+57)-58, 11);
 
     constant PFII : natural := 6;
     constant PFII240 : natural := 4;
@@ -91,69 +110,109 @@ package regionizer_data is
 end package;
 
 package body regionizer_data is
-    function particle_to_w64(p : particle) return word64 is
-        variable ret : word64;
+    function particle_to_w72(p : particle) return word72 is
+        variable ret : word72;
     begin
-        ret( 9 downto  0) := std_logic_vector(p.eta);
-        ret(19 downto 10) := std_logic_vector(p.phi);
-        ret(47 downto 32) := std_logic_vector(p.pt);
-        ret(31 downto 20) := (p.rest(11 downto  0));
-        ret(63 downto 48) := (p.rest(27 downto 12));
+        ret(13 downto  0) := std_logic_vector(p.pt);
+        ret(23 downto 14) := std_logic_vector(p.eta);
+        ret(33 downto 24) := std_logic_vector(p.phi);
+        ret(71 downto 34) := p.rest;
         return ret;
-    end particle_to_w64;
+    end particle_to_w72;
 
-    function w64_to_particle(d : word64) return particle is
+    function w72_to_particle(d : word72) return particle is
         variable ret : particle;
     begin
-        ret.eta := signed(d( 9 downto  0));
-        ret.phi := signed(d(19 downto 10));
-        ret.pt  := signed(d(47 downto 32));
-        ret.rest(11 downto  0) := (d(31 downto 20));
-        ret.rest(27 downto 12) := (d(63 downto 48));
+        ret.pt  := signed(d(13 downto  0));
+        ret.eta := signed(d(23 downto 14));
+        ret.phi := signed(d(33 downto 24));
+        ret.rest := d(71 downto 34);
         return ret;
-    end w64_to_particle;
+    end w72_to_particle;
 
     function null_particle return particle is
         variable ret : particle;
     begin
+        ret.pt  := to_signed(0,  ret.pt'length);
         ret.eta := to_signed(0, ret.eta'length);
         ret.phi := to_signed(0, ret.phi'length);
-        ret.pt  := to_signed(0,  ret.pt'length);
         ret.rest := (others => '0');
         return ret;
     end null_particle;
 
-    function glbparticle_to_w64(p : glbparticle) return word64 is
-        variable ret : word64;
+    function glbparticle_to_w72(p : glbparticle) return word72 is
+        variable ret : word72;
     begin
-        ret(11 downto  0) := std_logic_vector(p.eta);
-        ret(22 downto 12) := std_logic_vector(p.phi);
-        ret(47 downto 32) := std_logic_vector(p.pt);
-        ret(31 downto 23) := (p.rest( 8 downto 0));
-        ret(63 downto 48) := (p.rest(24 downto 9));
+        ret(13 downto  0) := std_logic_vector(p.pt);
+        ret(25 downto 14) := std_logic_vector(p.eta);
+        ret(36 downto 26) := std_logic_vector(p.phi);
+        ret(71 downto 37) := p.rest;
         return ret;
-    end glbparticle_to_w64;
+    end glbparticle_to_w72;
 
-    function w64_to_glbparticle(d : word64) return glbparticle is
+    function w72_to_glbparticle(d : word72) return glbparticle is
         variable ret : glbparticle;
     begin
-        ret.eta := signed(d(11 downto  0));
-        ret.phi := signed(d(22 downto 12));
-        ret.pt  := signed(d(47 downto 32));
-        ret.rest( 8 downto 0) := (d(31 downto 23));
-        ret.rest(24 downto 9) := (d(63 downto 48));
+        ret.pt  := signed(d(13 downto  0));
+        ret.eta := signed(d(25 downto 14));
+        ret.phi := signed(d(36 downto 26));
+        ret.rest := d(71 downto 37);
         return ret;
-    end w64_to_glbparticle;
+    end w72_to_glbparticle;
 
     function null_glbparticle return glbparticle is
         variable ret : glbparticle;
     begin
+        ret.pt  := to_signed(0,  ret.pt'length);
         ret.eta := to_signed(0, ret.eta'length);
         ret.phi := to_signed(0, ret.phi'length);
-        ret.pt  := to_signed(0,  ret.pt'length);
         ret.rest := (others => '0');
         return ret;
     end null_glbparticle;
+
+    function anyparticle_to_w72(p : anyparticle) return word72 is
+        variable ret : word72;
+    begin
+        ret(13 downto  0) := std_logic_vector(p.pt);
+        ret(71 downto 14) := p.rest;
+        return ret;
+    end anyparticle_to_w72;
+
+    function w72_to_anyparticle(d : word72) return anyparticle is
+        variable ret : anyparticle;
+    begin
+        ret.pt  := signed(d(13 downto  0));
+        ret.rest := d(71 downto 14);
+        return ret;
+    end w72_to_anyparticle;
+
+    function null_anyparticle return anyparticle is
+        variable ret : anyparticle;
+    begin
+        ret.pt  := to_signed(0,  ret.pt'length);
+        ret.rest := (others => '0');
+        return ret;
+    end null_anyparticle;
+
+    function particle_to_any(p : particle) return anyparticle is
+    begin
+        return w72_to_anyparticle(particle_to_w72(p));
+    end particle_to_any;
+
+    function glbparticle_to_any(p : glbparticle) return anyparticle is
+    begin
+        return w72_to_anyparticle(glbparticle_to_w72(p));
+    end glbparticle_to_any;
+
+    function any_to_particle(p: anyparticle) return particle is
+    begin
+        return w72_to_particle(anyparticle_to_w72(p));
+    end any_to_particle;
+
+    function any_to_glbparticle(p: anyparticle) return glbparticle is
+    begin
+        return w72_to_glbparticle(anyparticle_to_w72(p));
+    end any_to_glbparticle;
 
 end regionizer_data;
 

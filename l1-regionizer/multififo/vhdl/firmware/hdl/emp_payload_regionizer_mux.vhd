@@ -53,7 +53,7 @@ begin
 
 
     regionizer : entity work.full_regionizer_mux
-        generic map(MU_ETA_CENTER => 460)
+        generic map(MU_ETA_CENTER => 458)
         port map(ap_clk => clk, 
                  ap_rst => rst_loc(0), 
                  ap_start => start,

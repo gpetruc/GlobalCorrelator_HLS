@@ -12,40 +12,40 @@ entity tk_regionizer_mux is
             ap_idle : OUT STD_LOGIC;
             ap_ready : OUT STD_LOGIC;
             newevent : IN STD_LOGIC;
-            tracks_in_0_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_0_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_1_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_1_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_2_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_2_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_3_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_3_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_4_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_4_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_5_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_5_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_6_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_6_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_7_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_7_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_8_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_8_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_out       : OUT w64s(NTKSORTED-1 downto 0);
+            tracks_in_0_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_0_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_1_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_1_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_2_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_2_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_3_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_3_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_4_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_4_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_5_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_5_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_6_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_6_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_7_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_7_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_8_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_8_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_out       : OUT w72s(NTKSORTED-1 downto 0);
             newevent_out     : OUT STD_LOGIC
     );
 end tk_regionizer_mux;
 
 architecture Behavioral of tk_regionizer_mux is
 
-    signal regionized:        w64s(NPFREGIONS-1 downto 0);
+    signal regionized:        w72s(NPFREGIONS-1 downto 0);
     signal regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal regionized_roll:   std_logic := '0';
 
-    signal sorted_out :        particles(NPFREGIONS*NTKSORTED-1 downto 0);
+    signal sorted_out :        anyparticles(NPFREGIONS*NTKSORTED-1 downto 0);
     signal sorted_out_valid :  std_logic_vector(NPFREGIONS*NTKSORTED-1 downto 0) := (others => '0');
     signal sorted_out_roll :   std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
 
-    signal muxed_out :        particles(NTKSORTED-1 downto 0);
+    signal muxed_out :        anyparticles(NTKSORTED-1 downto 0);
     signal muxed_out_valid :  std_logic_vector(NTKSORTED-1 downto 0) := (others => '0');
     signal muxed_out_roll :   std_logic := '0';
 
@@ -98,7 +98,7 @@ begin
         reg_sorter : entity work.stream_sort
                             generic map(NITEMS => NTKSORTED)
                             port map(ap_clk => ap_clk,
-                                d_in => w64_to_particle(regionized(isort)),
+                                d_in => w72_to_anyparticle(regionized(isort)),
                                 valid_in => regionized_valid(isort),
                                 roll => regionized_roll,
                                 d_out => sorted_out((isort+1)*NTKSORTED-1 downto isort*NTKSORTED),
@@ -124,7 +124,7 @@ begin
             if rising_edge(ap_clk) then
                 for i in 0 to NTKSORTED-1 loop
                     if muxed_out_valid(i) = '1' then
-                        tracks_out(i) <= particle_to_w64(muxed_out(i));
+                        tracks_out(i) <= anyparticle_to_w72(muxed_out(i));
                     else
                         tracks_out(i) <= (others => '0');
                     end if;

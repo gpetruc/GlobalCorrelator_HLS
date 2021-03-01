@@ -21,8 +21,8 @@ architecture Behavioral of testbench is
     signal start, ready, idle, done : std_logic;
     signal newevent, newevent_out : std_logic;
 
-    signal p_in:  w64s(NCALOSECTORS*NCALOFIBERS-1 downto 0) := (others => (others => '0'));
-    signal p_out: w64s(NREGIONS-1 downto 0) := (others => (others => '0'));
+    signal p_in:  w72s(NCALOSECTORS*NCALOFIBERS-1 downto 0) := (others => (others => '0'));
+    signal p_out: w72s(NREGIONS-1 downto 0) := (others => (others => '0'));
     signal v_out: std_logic_vector(NREGIONS-1 downto 0) := (others => '0');
 
     file Fi : text open read_mode is "input-calo.txt";
@@ -93,11 +93,11 @@ begin
                 read(Li, itest);
                 read(Li, iobj); if (iobj > 0) then newevent <= '1'; else newevent <= '0'; end if;
                 for i in 0 to NCALOSECTORS*NCALOFIBERS-1  loop
-                    read(Li, iobj); part.pt   := (to_signed(iobj, 16));
+                    read(Li, iobj); part.pt   := (to_signed(iobj, 14));
                     read(Li, iobj); part.eta  := (to_signed(iobj, 10));
                     read(Li, iobj); part.phi  := (to_signed(iobj, 10));
                                     part.rest := (others => '0');
-                    p_in(i) <= particle_to_w64(part);
+                    p_in(i) <= particle_to_w72(part);
                 end loop;
                 start <= '1';
              else
@@ -115,7 +115,7 @@ begin
             write(Lo, string'(" ")); 
             for i in 0 to NREGIONS-1 loop
                 if v_out(i) = '1' then
-                    part := w64_to_particle(p_out(i));
+                    part := w72_to_particle(p_out(i));
                 else
                     part := null_particle;
                 end if;

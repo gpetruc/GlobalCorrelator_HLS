@@ -275,6 +275,7 @@ struct RegionMux {
             for (int i = 1; i < NSORT; ++i) {
                 buffer[ireg][i-1] = buffer[ireg][i];
             }
+            buffer[ireg][NSORT-1].clear();
 #endif
             if (++iter == PFLOWII) {
                 ireg++; iter = 0;

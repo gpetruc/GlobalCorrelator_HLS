@@ -12,10 +12,10 @@ entity cascade_stream_sort is
     port(
         ap_clk  : in std_logic;
         roll    : in std_logic;
-        d_in    : in particle;
+        d_in    : in anyparticle;
         valid_in : in std_logic;
         shift_in : in std_logic := '0'; -- needed when cascading, leave to 0 otherwise
-        d_out      : out particles(NITEMS-1 downto 0);
+        d_out      : out anyparticles(NITEMS-1 downto 0);
         valid_out  : out std_logic_vector(NITEMS-1 downto 0);
         roll_out   : out std_logic
     );
@@ -27,10 +27,10 @@ architecture Behavioral of cascade_stream_sort is
     constant STAGE_ITEMS : natural := (NITEMS+NSTAGES-1)/NSTAGES;
     constant REST_ITEMS  : natural := NITEMS - STAGE_ITEMS;
     constant DELAY       : natural := NSTAGES-1;
-    signal d_del     : particles(STAGE_ITEMS*DELAY-1 downto 0);
+    signal d_del     : anyparticles(STAGE_ITEMS*DELAY-1 downto 0);
     signal valid_del : std_logic_vector(STAGE_ITEMS*DELAY-1 downto 0);
     signal roll_del  : std_logic := '0';
-    signal d_carry : particle;
+    signal d_carry : anyparticle;
     signal valid_carry, shift_carry : std_logic := '0';
 begin
 

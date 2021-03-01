@@ -31,14 +31,13 @@
   <<: *pf-common
   stage: build
   when: manual
-  variables:
-  after_script:
   artifacts:
     paths:
       - pf/vivado_hls.${CI_JOB_NAME}.txt
       - pf/proj_pf${pfReg}_${pfBoard}/solution/csim/build/*.txt
       - pf/proj_pf${pfReg}_${pfBoard}/solution/syn/report/*
       - pf/proj_pf${pfReg}_${pfBoard}/solution/impl/vhdl/*
+  dependencies: 
 
 .pf-csynth-variables: &pf-csynth-variables
     pfBoard: VCU118

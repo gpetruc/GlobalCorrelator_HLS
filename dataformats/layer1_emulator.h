@@ -238,7 +238,7 @@ namespace l1ct {
   };
 
   struct Event {
-    static const int VERSION = 4;
+    static const int VERSION = 5;
     uint32_t run, lumi;
     uint64_t event;
     RegionizerDecodedInputs decoded;

@@ -16,97 +16,97 @@ entity full_regionizer_mux is
             ap_ready : OUT STD_LOGIC;
             tracks_start    : IN STD_LOGIC;
             tracks_newevent : IN STD_LOGIC;
-            tracks_in_0_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_0_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_1_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_1_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_2_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_2_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_3_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_3_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_4_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_4_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_5_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_5_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_6_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_6_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_7_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_7_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_8_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            tracks_in_8_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
+            tracks_in_0_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_0_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_1_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_1_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_2_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_2_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_3_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_3_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_4_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_4_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_5_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_5_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_6_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_6_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_7_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_7_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_8_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            tracks_in_8_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
             calo_start    : IN STD_LOGIC;
             calo_newevent : IN STD_LOGIC;
-            calo_in_0_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_0_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_1_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_2_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            calo_in_2_3_V : IN STD_LOGIC_VECTOR (63 downto 0);
+            calo_in_0_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_0_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_1_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_2_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            calo_in_2_3_V : IN STD_LOGIC_VECTOR (71 downto 0);
             mu_start    : IN STD_LOGIC;
             mu_newevent : IN STD_LOGIC;
-            mu_in_0_V : IN STD_LOGIC_VECTOR (63 downto 0);
-            mu_in_1_V : IN STD_LOGIC_VECTOR (63 downto 0);
+            mu_in_0_V : IN STD_LOGIC_VECTOR (71 downto 0);
+            mu_in_1_V : IN STD_LOGIC_VECTOR (71 downto 0);
             --
-            tracks_out : OUT w64s(NTKSORTED-1 downto 0);
-            calo_out   : OUT w64s(NCALOSORTED-1 downto 0);
-            mu_out     : OUT w64s(NMUSORTED-1   downto 0);
+            tracks_out : OUT w72s(NTKSORTED-1 downto 0);
+            calo_out   : OUT w72s(NCALOSORTED-1 downto 0);
+            mu_out     : OUT w72s(NMUSORTED-1   downto 0);
             newevent_out : OUT STD_LOGIC
     );
 end full_regionizer_mux;
 
 architecture Behavioral of full_regionizer_mux is
 
-    signal tracks_regionized:        w64s(NPFREGIONS-1 downto 0);
+    signal tracks_regionized:        w72s(NPFREGIONS-1 downto 0);
     signal tracks_regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal tracks_regionized_roll:   std_logic := '0';
 
-    signal tracks_delayed:        w64s(TKDELAY*NPFREGIONS-1 downto 0);
+    signal tracks_delayed:        w72s(TKDELAY*NPFREGIONS-1 downto 0);
     signal tracks_delayed_valid:  std_logic_vector(TKDELAY*NPFREGIONS-1 downto 0) := (others => '0');
     signal tracks_delayed_roll:   std_logic_vector(TKDELAY-1 downto 0);
 
-    signal calo_regionized:        w64s(NPFREGIONS-1 downto 0);
+    signal calo_regionized:        w72s(NPFREGIONS-1 downto 0);
     signal calo_regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal calo_regionized_roll:   std_logic := '0';
 
-    signal calo_delayed:        w64s(CALODELAY*NPFREGIONS-1 downto 0);
+    signal calo_delayed:        w72s(CALODELAY*NPFREGIONS-1 downto 0);
     signal calo_delayed_valid:  std_logic_vector(CALODELAY*NPFREGIONS-1 downto 0) := (others => '0');
     signal calo_delayed_roll:   std_logic_vector(CALODELAY-1 downto 0);
 
-    signal mu_regionized:        w64s(NPFREGIONS-1 downto 0);
+    signal mu_regionized:        w72s(NPFREGIONS-1 downto 0);
     signal mu_regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal mu_regionized_roll:   std_logic := '0';
 
-    signal mu_delayed:        w64s(MUDELAY*NPFREGIONS-1 downto 0);
+    signal mu_delayed:        w72s(MUDELAY*NPFREGIONS-1 downto 0);
     signal mu_delayed_valid:  std_logic_vector(MUDELAY*NPFREGIONS-1 downto 0) := (others => '0');
     signal mu_delayed_roll:   std_logic_vector(MUDELAY-1 downto 0);
 
-    signal tracks_sorted:        particles(NTKSORTED*NPFREGIONS-1 downto 0);
+    signal tracks_sorted:        anyparticles(NTKSORTED*NPFREGIONS-1 downto 0);
     signal tracks_sorted_valid:  std_logic_vector(NTKSORTED*NPFREGIONS-1 downto 0) := (others => '0');
     signal tracks_sorted_roll:   std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
 
-    signal calo_sorted:        particles(NCALOSORTED*NPFREGIONS-1 downto 0);
+    signal calo_sorted:        anyparticles(NCALOSORTED*NPFREGIONS-1 downto 0);
     signal calo_sorted_valid:  std_logic_vector(NCALOSORTED*NPFREGIONS-1 downto 0) := (others => '0');
     signal calo_sorted_roll:   std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
 
-    signal mu_sorted:        particles(NMUSORTED*NPFREGIONS-1 downto 0);
+    signal mu_sorted:        anyparticles(NMUSORTED*NPFREGIONS-1 downto 0);
     signal mu_sorted_valid:  std_logic_vector(NMUSORTED*NPFREGIONS-1 downto 0) := (others => '0');
     signal mu_sorted_roll:   std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
 
-    signal tracks_mux :        particles(NTKSORTED-1 downto 0);
+    signal tracks_mux :        anyparticles(NTKSORTED-1 downto 0);
     signal tracks_mux_valid :  std_logic_vector(NTKSORTED-1 downto 0) := (others => '0');
     signal tracks_mux_roll :   std_logic := '0';
 
-    signal calo_mux :        particles(NCALOSORTED-1 downto 0);
+    signal calo_mux :        anyparticles(NCALOSORTED-1 downto 0);
     signal calo_mux_valid :  std_logic_vector(NCALOSORTED-1 downto 0) := (others => '0');
     signal calo_mux_roll :   std_logic := '0';
 
-    signal mu_mux :        particles(NMUSORTED-1 downto 0);
+    signal mu_mux :        anyparticles(NMUSORTED-1 downto 0);
     signal mu_mux_valid :  std_logic_vector(NMUSORTED-1 downto 0) := (others => '0');
     signal mu_mux_roll :   std_logic := '0';
 
@@ -270,7 +270,7 @@ begin
         tk_sorter : entity work.stream_sort
                             generic map(NITEMS => NTKSORTED)
                             port map(ap_clk => ap_clk,
-                                d_in => w64_to_particle(tracks_delayed(isort)),
+                                d_in => w72_to_anyparticle(tracks_delayed(isort)),
                                 valid_in => tracks_delayed_valid(isort),
                                 roll => tracks_delayed_roll(0),
                                 d_out => tracks_sorted((isort+1)*NTKSORTED-1 downto isort*NTKSORTED),
@@ -280,7 +280,7 @@ begin
         calo_sorter : entity work.stream_sort
                             generic map(NITEMS => NCALOSORTED)
                             port map(ap_clk => ap_clk,
-                                d_in => w64_to_particle(calo_delayed(isort)),
+                                d_in => w72_to_anyparticle(calo_delayed(isort)),
                                 valid_in => calo_delayed_valid(isort),
                                 roll => calo_delayed_roll(0),
                                 d_out => calo_sorted((isort+1)*NCALOSORTED-1 downto isort*NCALOSORTED),
@@ -290,7 +290,7 @@ begin
         mu_sorter : entity work.stream_sort
                             generic map(NITEMS => NMUSORTED)
                             port map(ap_clk => ap_clk,
-                                d_in => w64_to_particle(mu_delayed(isort)),
+                                d_in => w72_to_anyparticle(mu_delayed(isort)),
                                 valid_in => mu_delayed_valid(isort),
                                 roll => mu_delayed_roll(0),
                                 d_out => mu_sorted((isort+1)*NMUSORTED-1 downto isort*NMUSORTED),
@@ -340,21 +340,21 @@ begin
             if rising_edge(ap_clk) then
                 for i in 0 to NTKSORTED-1 loop
                     if tracks_mux_valid(i) = '1' then
-                        tracks_out(i) <= particle_to_w64(tracks_mux(i));
+                        tracks_out(i) <= anyparticle_to_w72(tracks_mux(i));
                     else
                         tracks_out(i) <= (others => '0');
                     end if;
                 end loop;
                 for i in 0 to NCALOSORTED-1 loop
                     if calo_mux_valid(i) = '1' then
-                        calo_out(i) <= particle_to_w64(calo_mux(i));
+                        calo_out(i) <= anyparticle_to_w72(calo_mux(i));
                     else
                         calo_out(i) <= (others => '0');
                     end if;
                 end loop;
                 for i in 0 to NMUSORTED-1 loop
                     if mu_mux_valid(i) = '1' then
-                        mu_out(i) <= particle_to_w64(mu_mux(i));
+                        mu_out(i) <= anyparticle_to_w72(mu_mux(i));
                     else
                         mu_out(i) <= (others => '0');
                     end if;

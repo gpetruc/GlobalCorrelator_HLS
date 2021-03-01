@@ -12,9 +12,9 @@ entity rolling_fifo is
     --);
     port(
         ap_clk   : in std_logic;
-        d_in     : in particle;
+        d_in     : in anyparticle;
         write_in : in std_logic;
-        d_out    : out particle;
+        d_out    : out anyparticle;
         valid_out : out std_logic;
         full      : in std_logic;
     -- debug
@@ -26,13 +26,13 @@ entity rolling_fifo is
 end rolling_fifo;
 
 architecture Behavioral of rolling_fifo is
-    signal d64, q64 : std_logic_vector(63 downto 0);
+    signal d72, q72 : std_logic_vector(71 downto 0);
     signal raddr, waddr : std_logic_vector(14 downto 0);
     signal rptr : unsigned(5 downto 0) := (0=>'1', others => '0'); -- need to count up to 63
     signal wptr : unsigned(5 downto 0) := (others => '0');         -- need to count up to 63
     signal wren, valid_next : std_logic := '0';
     signal roll_delay: std_logic_vector(2 downto 0) := (others => '0');
-    signal cache : particle;
+    signal cache : anyparticle;
     signal cache_valid, mem_out_valid : std_logic := '0';
     signal use_cache   : std_logic := '0';
 begin
@@ -53,14 +53,14 @@ begin
             ADDRBWRADDR => waddr,
             CLKARDCLK => ap_clk,
             CLKBWRCLK => ap_clk,
-            DINADIN => d64(31 downto 0),
-            DINBDIN => d64(63 downto 32),
-            DINPADINP => (others => '0'),
-            DINPBDINP => (others => '0'),
-            DOUTADOUT => q64(31 downto 0),
-            DOUTBDOUT => q64(63 downto 32),
-            DOUTPADOUTP => open,
-            DOUTPBDOUTP => open,
+            DINADIN => d72(31 downto 0),
+            DINBDIN => d72(63 downto 32),
+            DINPADINP => d72(67 downto 64),
+            DINPBDINP => d72(71 downto 68),
+            DOUTADOUT => q72(31 downto 0),
+            DOUTBDOUT => q72(63 downto 32),
+            DOUTPADOUTP => q72(67 downto 64),
+            DOUTPBDOUTP => q72(71 downto 68),
             ENARDEN => valid_next, -- avoid collisions 
             ENBWREN => wren,
             REGCEAREGCE => '1',
@@ -102,12 +102,12 @@ begin
      raddr(5 downto 0) <= (others => '0');
      waddr(5 downto 0) <= (others => '0');
 
-     out_switch: process(cache,q64,use_cache)
+     out_switch: process(cache,q72,use_cache)
      begin
          if use_cache = '1' then
              d_out <= cache;
          else
-             d_out <= w64_to_particle(q64);
+             d_out <= w72_to_anyparticle(q72);
          end if;
       end process;
      valid_out_switch: process(cache_valid,mem_out_valid,use_cache)
@@ -148,7 +148,7 @@ begin
                 end if;
                 wren <= write_in;
 
-                d64 <= particle_to_w64(d_in);
+                d72 <= anyparticle_to_w72(d_in);
 
                 roll_delay(0) <= roll;
                 roll_delay(2 downto 1) <= roll_delay(1 downto 0);
@@ -172,12 +172,12 @@ begin
 
                 if full_and_valid_out then
                     if use_cache = '0' then
-                        cache <= w64_to_particle(q64);
+                        cache <= w72_to_anyparticle(q72);
                         cache_valid <= mem_out_valid;
                     end if;
                     use_cache <= '1';
                 else 
-                    cache <= w64_to_particle(q64);
+                    cache <= w72_to_anyparticle(q72);
                     cache_valid <= mem_out_valid;
                     use_cache   <= '0';
                 end if;
@@ -193,6 +193,7 @@ begin
        dbg_w64(31 downto 22) <= (others => '0');
        dbg_w64(37 downto 32) <= std_logic_vector(wptr);
        dbg_w64(47 downto 38) <= (others => '0');
-       dbg_w64(63 downto 48) <= std_logic_vector(cache.pt);
+       dbg_w64(61 downto 48) <= std_logic_vector(cache.pt);
+       dbg_w64(63 downto 62) <= (others => '0');
     
 end Behavioral;

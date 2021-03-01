@@ -41,7 +41,11 @@ inline P etaPhiShifted(const P & t, l1ct::eta_t eta_shift, int phi_shift) {
 #define PFREGION_PHI_BORDER 57 // size of the phi border of a PF region (0.25 rad = 57, 0.30 rad = 69)
 #define PFREGION_ETA_SIZE 230  // size of an eta sector: 1.0 rad => 229, round up to 230 be even  
 #define PFREGION_ETA_BORDER 57 // size of the eta border of a PF region (0.25 rad = 57, 0.30 rad = 69)
+#if defined(ROUTER_NOSTREAM)
 #define PFLOWII  6
+#else
+#define PFLOWII  4
+#endif
 
 #define NPUPPIFINALSORTED 18
 

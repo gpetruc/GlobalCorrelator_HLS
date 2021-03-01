@@ -66,3 +66,58 @@ l1r-mf-stream-csim:
     <<: *l1reg-multififo-csim-variables
     pfReg: HGCal
     regionizerMode: stream
+
+.l1reg-multififo-vhdl-common: &l1reg-multififo-vhdl-common
+  <<: *l1reg-multififo-common
+  stage: pre-build2
+  before_script:
+    - source /opt/Xilinx/Vivado/2019.2/settings64.sh
+    - export PATH=${PWD}/utils:${PATH}
+    - cd l1-regionizer/multififo/vhdl/firmware/testbench
+  after_script:
+  artifacts:
+    when: always
+    expire_in: 7 days
+    paths:
+      - l1-regionizer/multififo/vhdl/firmware/testbench/vhdl-${regionizerMode}-*_xsim.dir/*.txt
+      - l1-regionizer/multififo/vhdl/firmware/testbench/vhdl-${regionizerMode}-*_xsim.dir/x*.log
+
+.l1reg-multififo-vhdl-variables: &l1reg-multififo-vhdl-variables
+    pfBoard: none
+
+l1r-mf-vhdl-nomux:
+  <<: *l1reg-multififo-vhdl-common
+  variables:
+    <<: *l1reg-multififo-vhdl-variables
+    pfReg: HGCal
+    regionizerMode: nomux
+  dependencies:
+    - l1r-mf-nomux-csim
+  script:
+    - "./run_vhdltb.sh vhdl-nomux-tk && pattern_diff.py vhdl-nomux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -l 6 exact"
+    - "./run_vhdltb.sh vhdl-nomux-calo && pattern_diff.py vhdl-nomux-calo_xsim.dir/output-{ref-calo,calo-vhdl_tb}.txt -l 7 exact"
+    - "./run_vhdltb.sh vhdl-nomux-mu && pattern_diff.py vhdl-nomux-mu_xsim.dir/output-{ref-mu,mu-vhdl_tb}.txt -l 5 exact"
+
+l1r-mf-vhdl-mux:
+  <<: *l1reg-multififo-vhdl-common
+  variables:
+    <<: *l1reg-multififo-vhdl-variables
+    pfReg: HGCal
+    regionizerMode: mux
+  dependencies:
+    - l1r-mf-mux-csim
+  script:
+    - "./run_vhdltb.sh vhdl-mux-tk  && pattern_diff.py vhdl-mux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -s 54 --sr 54 -l 8 exact"
+    - "./run_vhdltb.sh vhdl-mux-all && pattern_diff.py vhdl-mux-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
+
+l1r-mf-vhdl-stream:
+  <<: *l1reg-multififo-vhdl-common
+  variables:
+    <<: *l1reg-multififo-vhdl-variables
+    pfReg: HGCal
+    regionizerMode: stream
+  dependencies:
+    - l1r-mf-stream-csim
+  script:
+    - "./run_vhdltb.sh vhdl-stream-tk  && pattern_diff.py vhdl-stream-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -c 1-25 -l 10 exact"
+    - "./run_vhdltb.sh vhdl-stream-all && pattern_diff.py vhdl-stream-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"

@@ -24,16 +24,25 @@ end tk_router_element;
 architecture Behavioral of tk_router_element is
 begin
     link2fifo : process(ap_clk)
-        variable link_this, link_next, link_prev : std_logic;
+        variable link_this, link_next, link_prev, link_eta : std_logic;
     begin
         if rising_edge(ap_clk) then
             for ifib in 0 to NTKFIBERS-1 loop
+                if links_in(ifib).eta <= ETATK_HALFWIDTH_POS and links_in(ifib).eta >= ETATK_HALFWIDTH_NEG then
+                    link_eta := '1';
+                else
+                    link_eta := '0';
+                end if;
                 if enabled = '0' or links_in(ifib).pt = 0 then
                     link_this := '0';
                     link_prev := '0';
                     link_next := '0';
                 else
-                    link_this := '1';
+                    if links_in(ifib).phi <= PHI_HALFWIDTH_POS and links_in(ifib).phi >= PHI_HALFWIDTH_NEG then
+                        link_this := '1';
+                    else
+                        link_this := '0';
+                    end if;
                     if links_in(ifib).phi >= PHI_MARGIN_POS then
                         link_prev := '0';
                         link_next := '1';
@@ -45,18 +54,21 @@ begin
                         link_next := '0';
                     end if;
                 end if;
-                fifo_same(ifib)      <= links_in(ifib);
+                fifo_same(ifib).pt   <= links_in(ifib).pt;
+                fifo_same(ifib).eta  <= links_in(ifib).eta + ETASHIFT_TK;
+                fifo_same(ifib).phi  <= links_in(ifib).phi;
+                fifo_same(ifib).rest <= links_in(ifib).rest;
                 fifo_next(ifib).pt   <= links_in(ifib).pt;
-                fifo_next(ifib).eta  <= links_in(ifib).eta;
+                fifo_next(ifib).eta  <= links_in(ifib).eta + ETASHIFT_TK;
                 fifo_next(ifib).phi  <= links_in(ifib).phi - PHI_SHIFT;
                 fifo_next(ifib).rest <= links_in(ifib).rest;
                 fifo_prev(ifib).pt   <= links_in(ifib).pt;
-                fifo_prev(ifib).eta  <= links_in(ifib).eta;
+                fifo_prev(ifib).eta  <= links_in(ifib).eta + ETASHIFT_TK;
                 fifo_prev(ifib).phi  <= links_in(ifib).phi + PHI_SHIFT;
                 fifo_prev(ifib).rest <= links_in(ifib).rest;
-                fifo_same_write(ifib) <= link_this;
-                fifo_next_write(ifib) <= link_next;
-                fifo_prev_write(ifib) <= link_prev;
+                fifo_same_write(ifib) <= link_this and link_eta;
+                fifo_next_write(ifib) <= link_next and link_eta;
+                fifo_prev_write(ifib) <= link_prev and link_eta;
                 fifo_same_roll(ifib)  <= newevent;
                 fifo_next_roll(ifib)  <= newevent;
                 fifo_prev_roll(ifib)  <= newevent;

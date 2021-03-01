@@ -11,12 +11,12 @@ entity cascade_stream_sort_elem is
     port(
         ap_clk  : in std_logic;
         roll    : in std_logic;
-        d_in    : in particle;
+        d_in    : in anyparticle;
         valid_in : in std_logic;
         shift_in : in std_logic;
-        d_out      : out particles(NITEMS-1 downto 0);
+        d_out      : out anyparticles(NITEMS-1 downto 0);
         valid_out  : out std_logic_vector(NITEMS-1 downto 0);
-        d_tail     : out particle;
+        d_tail     : out anyparticle;
         valid_tail : out std_logic;
         shift_out  : out std_logic;
         roll_out   : out std_logic
@@ -25,7 +25,7 @@ end cascade_stream_sort_elem;
 
 
 architecture Behavioral of cascade_stream_sort_elem is
-    signal sorted : particles(NITEMS-1 downto 0);
+    signal sorted : anyparticles(NITEMS-1 downto 0);
     signal valid  : std_logic_vector(NITEMS-1 downto 0) := (others => '0');
 begin
      roll_out <= roll; -- the clock cycle a new event comes in here is also the clock cycle at which we're done with the old one
