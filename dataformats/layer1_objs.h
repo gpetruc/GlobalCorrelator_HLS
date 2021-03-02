@@ -284,6 +284,36 @@ namespace l1ct {
   };
   inline void clear(MuObj &c) { c.clear(); }
 
+  struct PVObj {
+    z0_t hwZ0;
+
+    inline bool operator==(const PVObj &other) const {
+      return hwZ0 == other.hwZ0;
+    }
+
+    inline void clear() {
+      hwZ0 = 0;
+    }
+
+    float floatZ0() const { return Scales::floatZ0(hwZ0); }
+
+    static const int BITWIDTH = z0_t::width;
+    inline ap_uint<BITWIDTH> pack() const {
+      ap_uint<BITWIDTH> ret;
+      unsigned int start = 0;
+      _pack_into_bits(ret, start, hwZ0);
+      return ret;
+    }
+    inline static PVObj unpack(const ap_uint<BITWIDTH> &src) {
+      PVObj ret;
+      unsigned int start = 0;
+      _unpack_from_bits(src, start, ret.hwZ0);
+      return ret;
+    }
+  };
+  inline void clear(PVObj &c) { c.clear(); }
+
+
 }  // namespace l1ct
 
 #endif

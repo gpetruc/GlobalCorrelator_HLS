@@ -92,7 +92,7 @@ int main() {
         // get the inputs from the input object
         if (!inputs.nextPFRegion()) break;
 
-        const PVObjEmu & pv = inputs.event().pvs.front();
+        PVObjEmu pv = inputs.event().pv();
         hwZPV = pv.hwZ0;
         region = inputs.pfregion().region;
         
