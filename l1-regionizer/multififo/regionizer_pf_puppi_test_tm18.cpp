@@ -1,75 +1,72 @@
 #include "firmware/regionizer.h"
-#include "../utils/pattern_serializer.h"
-#include "../utils/test_utils.h"
-#include "firmware/obj_unpackers.h"
-#include "utils/obj_packers.h"
-
+#include "regionizer_new_ref.h"
+#include "../../utils/pattern_serializer.h"
+#include "../../utils/test_utils.h"
+#include "../../utils/DumpFileReader.h"
+#include "firmware/dummy_obj_unpackers.h"
+#include "utils/dummy_obj_packers.h"
 #include "utils/tmux18_utils.h"
-#include "utils/readMC.h"
-
 #include "tdemux/tdemux_ref.h"
-#include "regionizer_ref.h"
-#include "../ref/pfalgo2hgc_ref.h"
-#include "../puppi/linpuppi_ref.h"
+#include "../../pf/ref/pfalgo2hgc_ref.h"
+#include "../../pf/firmware/pfalgo2hgc.h"
+#include "../../puppi/linpuppi_ref.h"
+#include "../../puppi/firmware/linpuppi.h"
+#include "../../common/bitonic_sort_ref.h"
 
 #include <cstdlib>
 #include <cstdio>
 #include <cstdint>
 #include <vector>
-#include <string>
+#include <memory>
 
 #define TLEN REGIONIZERNCLOCKS 
 
 
+template<unsigned int NCHANN, unsigned int NBITS>
+class Channels {
+    public:
+        Channels() { clear(); }
+        Channels(const char *name) :
+            serializer(new PatternSerializer(name, NCHANN*((NBITS+63)/64)))
+        {
+            clear(); 
+        }
+        void clear(bool isvalid=false) {
+            for (unsigned int iclock = 0; iclock < NCHANN; ++iclock) {
+                data[iclock] = 0; valid[iclock] = isvalid;
+            }
+        }
+        unsigned int size() const { return NCHANN; }
+        void dump() { serializer->packAndWrite(NCHANN, data, valid); }
+
+        ap_uint<NBITS> data[NCHANN];
+        bool valid[NCHANN];
+    private:
+        std::unique_ptr<PatternSerializer> serializer;
+};
+
 int main(int argc, char **argv) {
-    pfalgo_config pfcfg(NTRACK,NCALO,NMU, NSELCALO,
-                        PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
-                        PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
-    linpuppi_config pucfg(NTRACK, NALLNEUTRALS, NNEUTRALS,
-                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
-                          LINPUPPI_etaCut, LINPUPPI_invertEta,
-                          LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
-                          LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
-                          LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
-                          LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          LINPUPPI_ptCut, LINPUPPI_ptCut_1);
 
-    std::string sample = "TTbar_PU200";
-    FILE *fMC_calo  = fopen(("caloDump_hgcal."+sample+".txt").c_str(), "r");
-    FILE *fMC_tk  = fopen(("trackDump_hgcalPos."+sample+".txt").c_str(), "r");
-    FILE *fMC_mu  = fopen(("muonDump_all."+sample+".txt").c_str(), "r");
-    FILE *fMC_vtx = fopen(("vertexDump_all."+sample+".txt").c_str(), "r");
-    if (!fMC_calo || !fMC_tk || !fMC_mu || !fMC_vtx) {
-        printf("Couldn't open input files\n");
-        return 2;
-    }
-    const glbeta_t etaCenter = 2*PFREGION_ETA_SIZE; // eta = +2.0
+    DumpFileReader inputs("TTbar_PU200_HGCal.dump");
 
-    PatternSerializer serPatternsTM("input-emp.txt"), serPatternsVCU118("input-emp-vcu118.txt"), serPatternsIn("input-emp-tm6.txt");
-    PatternSerializer serPatternsTDemux("input-emp-tdemux.txt"), serPatternsDecode("input-emp-decoded.txt");
-    PatternSerializer serPatternsReg("output-emp-regionized-ref.txt"), serPatternsPf("output-emp-pf-ref.txt");
-    PatternSerializer serPatternsPuppi("output-emp-puppi-ref.txt"), serPatternsPuppiSort("output-emp-puppisort-ref.txt");;
-    assert(PACKING_NCHANN >= NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1);
+    const unsigned int nchann_in = NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1, nchann_vcu118 = 120;
+    const unsigned int nchann_decoded = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS + 1;
+    const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT;
+    const unsigned int nchann_pf = NTRACK + NCALO + NMU, nchann_puppi = NTRACK + NCALO, nchann_sort = NPUPPIFINALSORTED;
     const unsigned int tk_offs = 0, calo_offs = NTKSECTORS*3, mu_offs = calo_offs + NCALOSECTORS * NCALOFIBERS * 3, vtx_offs = mu_offs + 3;
 
-    assert(PACKING_NCHANN >= NTKOUT + NCALOOUT + NMUOUT);
-    ap_uint<64> all_channels_tmux[PACKING_NCHANN], all_channels_vcu118[PACKING_NCHANN], all_channels_in[PACKING_NCHANN], all_channels_regionized[PACKING_NCHANN];
-    ap_uint<64> all_channels_pf[PACKING_NCHANN], all_channels_puppi[PACKING_NCHANN], all_channels_puppisort[PACKING_NCHANN];
-    ap_uint<64> all_channels_tdemux[PACKING_NCHANN], all_channels_decode[PACKING_NCHANN];
-    bool all_valids_tmux[PACKING_NCHANN], all_valids_vcu118[PACKING_NCHANN], all_valids_tdemux[PACKING_NCHANN], all_valids_decode[PACKING_NCHANN];
-    for (unsigned int i = 0; i < PACKING_NCHANN; ++i) {
-        all_channels_tmux[i] = 0; all_channels_vcu118[i] = 0; all_channels_tdemux[i] = 0;  all_channels_decode[i] = 0; 
-        all_channels_in[i] = 0; all_channels_regionized[i] = 0; all_channels_pf[i] = 0; all_channels_puppi[i] = 0;  all_channels_puppisort[i] = 0;  
-        all_valids_tmux[i] = 0; all_valids_vcu118[i] = 0;  all_valids_tdemux[i] = 0; all_valids_decode[i] = 0; 
+    Channels<nchann_in,64> channelsTM("input-emp.txt"), channelsTDemux("input-emp-tdemux.txt");
+    Channels<nchann_vcu118,64> channelsVCU118("input-emp-vcu118.txt");
+    Channels<nchann_decoded,72> channelsDecode("input-emp-decoded.txt"), channelsIn("input-emp-decoded-ref.txt");
+    Channels<nchann_regionized,72> channelsReg("output-emp-regionized-ref.txt");
+    Channels<nchann_pf,72> channelsPf("output-emp-pf-ref.txt");
+    Channels<nchann_puppi,64> channelsPuppi("output-emp-puppi-ref.txt");
+    Channels<nchann_sort,64> channelsPuppiSort("output-emp-puppisort-ref.txt");
 
-    }
-    serPatternsIn(all_channels_in, false); // prepend one null frame at the beginning
-    serPatternsTM(all_channels_tmux, all_valids_tmux); // prepend one null frame at the beginning
-    serPatternsVCU118(all_channels_vcu118, all_valids_vcu118); // prepend one null frame at the beginning
-    serPatternsTDemux(all_channels_tdemux, false); // prepend one null frame at the beginning
-    serPatternsDecode(all_channels_decode, false); // prepend one null frame at the beginning
-
-
+    ap_uint<72> decoded_validation_data[2*TLEN+1][nchann_decoded];
+    bool        decoded_validation_valid[2*TLEN+1][nchann_decoded];
+    unsigned int decoded_validation_index = 0;
+    
     // TMux encoders
     TM18LinkMultiplet<ap_uint<64>,TLEN> tk_tmuxer(NTKSECTORS), calo_tmuxer(NCALOSECTORS*NCALOFIBERS), mu_tmuxer(1);
     // TMux decoders, for testing
@@ -84,209 +81,235 @@ int main(int argc, char **argv) {
     //          region 0 fiber 4 mapped to PV
     //          regions 1-3 + 24-27 = 28 fibers mapped to tracker (3x9 fibers)
     //          regions 9-17 = 36 fibers mapped to HGCal
-    std::vector<int> vcu118_links(PACKING_NCHANN, 0); // index is tmux link, value is VCU118 link
+    std::vector<int> vcu118_links(nchann_vcu118, 0); // index is tmux link, value is VCU118 link
     vcu118_links[vtx_offs] = 3;
-    for (int i =  0; i < 3; ++i) vcu118_links[mu_offs+i] = i;
-    for (int i =  0; i < 3*NTKSECTORS; ++i) vcu118_links[tk_offs+i] = (i <= 11) ? (i + 4) : ((i-12) + 4*24);
-    for (int i =  0; i < 3*NCALOSECTORS*NCALOFIBERS; ++i) vcu118_links[calo_offs+i] = i + 4*9;
-    //for (int i =  0; i <= vtx_offs; ++i) {
-    //    printf("Input link %3d mapped to VCU channel %3d\n", i, vcu118_links[i]);
+    for (int iclock =  0; iclock < 3; ++iclock) vcu118_links[mu_offs+iclock] = iclock;
+    for (int iclock =  0; iclock < 3*NTKSECTORS; ++iclock) vcu118_links[tk_offs+iclock] = (iclock <= 11) ? (iclock + 4) : ((iclock-12) + 4*24);
+    for (int iclock =  0; iclock < 3*NCALOSECTORS*NCALOFIBERS; ++iclock) vcu118_links[calo_offs+iclock] = iclock + 4*9;
+    //for (int iclock =  0; iclock <= vtx_offs; ++iclock) {
+    //    printf("Input link %3d mapped to VCU channel %3d\n", iclock, vcu118_links[iclock]);
     //}
 
-    int frame = 0; 
-    bool ok = true; 
-    z0_t pvZ0_prev = 0; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
-    for (int itest = 0; itest < 50; ++itest) {
-        std::vector<TkObj>      tk_inputs[NTKSECTORS];
-        std::vector<HadCaloObj> calo_inputs[NCALOSECTORS*NCALOFIBERS];
-        std::vector<GlbMuObj>   mu_inputs;
-        std::vector<std::pair<z0_t,pt_t>> vtx_inputs;
+    unsigned int frame = 0, ilink; 
+    bool ok = true, first = true;
+    const bool mux = ROUTER_ISMUX, stream = ROUTER_ISSTREAM;
+    assert(NTKOUT == NTRACK && NCALOOUT == NCALO && NMUOUT == NMU);
+    l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, /*ii=*/(stream?4:6));
+    l1ct::PFAlgo2HGCEmulator pfEmulator(NTRACK, NCALO, NMU, NCALO,
+                        PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
+                        PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
+    const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
+    const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
+    const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
+    pfEmulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
+    l1ct::LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NALLNEUTRALS,
+                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                          l1ct::Scales::makeGlbEta(LINPUPPI_etaCut), 
+                          LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
+                          LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
+                          LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
+                          LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
+                          l1ct::Scales::makePt(LINPUPPI_ptCut), l1ct::Scales::makePt(LINPUPPI_ptCut_1));
 
-        uint32_t run = 0, lumi = 0; uint64_t event = 0;
-        if (!readEventTk(fMC_tk, tk_inputs, run, lumi, event) || 
-            !readEventCalo(fMC_calo, calo_inputs, /*zside=*/true, run, lumi, event) ||
-            !readEventMu(fMC_mu, mu_inputs, run, lumi, event) ||
-            !readEventVtx(fMC_vtx, vtx_inputs, run, lumi, event)) {
-                printf("Reached end of input file.\n");
-            break;
-        }
+    l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
+    for (int itest = 0; itest < 50; ++itest) {
+        if (!inputs.nextEvent()) break;
+        const auto & decodedObjs = inputs.event().decoded;
+
+        // now we make a single endcap setup
+        l1ct::RegionizerDecodedInputs in; std::vector<l1ct::PFInputRegion> allpfin;
+        for (auto & sec : inputs.event().decoded.track) if (sec.region.floatEtaCenter() >= 0) in.track.push_back(sec);
+        for (auto & sec : inputs.event().decoded.hadcalo) if (sec.region.floatEtaCenter() >= 0) in.hadcalo.push_back(sec);
+        for (auto & sec : inputs.event().decoded.emcalo) if (sec.region.floatEtaCenter() >= 0) in.emcalo.push_back(sec);
+        in.muon = inputs.event().decoded.muon;
+        for (auto & reg : inputs.event().pfinputs) if (reg.region.floatEtaCenter() >= 0) allpfin.push_back(reg);
+        const l1ct::glbeta_t etaCenter = l1ct::Scales::makeGlbEta(2.0);
+        l1ct::PFInputRegion pfin;
+        l1ct::OutputRegion pfout;
+
+        if (first) { regEmulator.initSectorsAndRegions(in, allpfin); first = false; }
 
         // enqueue frames (outside of the frame loop, since it takes 3*TLEN and not TLEN)
-        tk_tmuxer.push_links(itest, tk_inputs, pack_tracks);
-        calo_tmuxer.push_links(itest, calo_inputs, pack_hgcal);
-        mu_tmuxer.push_link(itest, mu_inputs, pack_muons);
+        tk_tmuxer.push_links(itest, in.track, pack_tracks);
+        calo_tmuxer.push_links(itest, in.hadcalo, pack_hgcal);
+        mu_tmuxer.push_link(itest, in.muon, pack_muons);
 
-        z0_t vtxZ0 = vtx_inputs.empty() ? z0_t(0) : vtx_inputs.front().first;
-        //if (itest == 0) printf("Vertexis at z0 = %d\n", vtxZ0.to_int());
+        //if (itest == 0) printf("Vertexis at z0 = %d\n", inputs.event().pv().hwZ0.to_int());
 
-        for (int i = 0; i < TLEN; ++i, ++frame) {
-            TkObj tk_links_in[NTKSECTORS][NTKFIBERS];
-            PackedTkObj tk_links64_in[NTKSECTORS][NTKFIBERS];
-
-            unsigned int ilink = 0;
-
-            for (int s = 0; s < NTKSECTORS; ++s) {
-                for (int f = 0; f < NTKFIBERS; ++f) {
-                    int itk = 2*i+f;
-                    clear(tk_links_in[s][f]);
-                    if (itk < TLEN-1 && itk < int(tk_inputs[s].size())) { // emp protocol, must leave one null frame at the end
-                        tk_links_in[s][f]  = tk_inputs[s][itk];
-                    }
-                    tk_links64_in[s][f] = l1pf_pattern_pack_one(tk_links_in[s][f]);
-                    all_channels_in[ilink++] = tk_links64_in[s][f];
-                }
-            }
-
-            HadCaloObj    calo_links_in[NCALOSECTORS][NCALOFIBERS];
-            PackedCaloObj calo_links64_in[NCALOSECTORS][NCALOFIBERS];
-            for (int s = 0; s < NCALOSECTORS; ++s) {
-                for (int f = 0; f < NCALOFIBERS; ++f) {
-                    clear(calo_links_in[s][f]);
-                    if (i < TLEN-1 && i < int(calo_inputs[s*NCALOFIBERS+f].size())) { // emp protocol, must leave one null frame at the end
-                        calo_links_in[s][f]  = calo_inputs[s*NCALOFIBERS+f][i];
-                    }
-                    calo_links64_in[s][f] = l1pf_pattern_pack_one(calo_links_in[s][f]);
-                    all_channels_in[ilink++] = calo_links64_in[s][f];
-                }
-            }
-
-            GlbMuObj    mu_links_in[NMUFIBERS];
-            PackedMuObj mu_links64_in[NMUFIBERS];
-            for (int f = 0; f < NMUFIBERS; ++f) {
-                int imu = 3*i/2+f;
-                clear(mu_links_in[f]);
-                if ((f == 0 || i%2 == 1) && imu < TLEN-1 && imu < int(mu_inputs.size())) { // emp protocol, must leave one null frame at the end
-                    mu_links_in[f]  = mu_inputs[imu];
-                }
-                mu_links64_in[f] = l1pf_pattern_pack_one(mu_links_in[f]);
-                all_channels_in[ilink++] = mu_links64_in[f];
-            }
-
-            all_channels_in[ilink++] = (i < int(vtx_inputs.size())) ? vtx_inputs[i].first : z0_t(0);
-
+        for (int iclock = 0; iclock < TLEN; ++iclock, ++frame) {
             // pop out frames from the tmuxer for printing. for each sector, we put the 3 links for 3 set of events next to each other
-            tk_tmuxer.pop_frame(all_channels_tmux, all_valids_tmux); 
-            calo_tmuxer.pop_frame(all_channels_tmux, all_valids_tmux, calo_offs);
-            mu_tmuxer.pop_frame(all_channels_tmux, all_valids_tmux, mu_offs);
+            const unsigned int tk_offs = 0, calo_offs = NTKSECTORS*3, mu_offs = calo_offs + NCALOSECTORS * NCALOFIBERS * 3, vtx_offs = mu_offs + 3;
+            tk_tmuxer.pop_frame(channelsTM, tk_offs); 
+            calo_tmuxer.pop_frame(channelsTM, calo_offs);
+            mu_tmuxer.pop_frame(channelsTM, mu_offs);
             // the vertex is not TMUXed so we just add it at the end
-            all_channels_tmux[vtx_offs] = (i < int(vtx_inputs.size())) ? vtx_inputs[i].first : z0_t(0);
-            all_valids_tmux[vtx_offs] = (i < TLEN-1);
+            channelsTM.data[vtx_offs]  = inputs.event().pv(iclock).pack();
+            channelsTM.valid[vtx_offs] = (iclock < TLEN-1);
+            channelsTM.dump();
             
             // make also version with vcu118 link mapping
             for (ilink = 0; ilink <= vtx_offs; ++ilink) {
-                all_channels_vcu118[vcu118_links[ilink]] = all_channels_tmux[ilink];
-                all_valids_vcu118[vcu118_links[ilink]] = all_valids_tmux[ilink];
+                channelsVCU118.data[vcu118_links[ilink]] = channelsTM.data[ilink];
+                channelsVCU118.valid[vcu118_links[ilink]] = channelsTM.valid[ilink];
             }
+            channelsVCU118.dump();
 
             // now let's run the time demultiplexer
-            bool newEvt = (i == 0 && itest == 0);
+            bool newEvt = (iclock == 0 && itest == 0);
             for (int s = 0; s < NTKSECTORS; ++s) {
-                tk_tdemuxer[s]( newEvt, &all_channels_tmux  [3*s], &all_valids_tmux  [3*s],
-                                        &all_channels_tdemux[3*s], &all_valids_tdemux[3*s]);
+                tk_tdemuxer[s]( newEvt, &channelsTM.data  [3*s], &channelsTM.valid  [3*s],
+                                        &channelsTDemux.data[3*s], &channelsTDemux.valid[3*s]);
             }
             for (int s = 0; s < NCALOSECTORS; ++s) {
                 for (int f = 0; f < NCALOFIBERS; ++f) {
                     ilink = calo_offs + 3*(s*NCALOFIBERS + f);
-                    calo_tdemuxer[s][f]( newEvt, &all_channels_tmux  [ilink], &all_valids_tmux  [ilink],
-                                                 &all_channels_tdemux[ilink], &all_valids_tdemux[ilink]);
+                    calo_tdemuxer[s][f]( newEvt, &channelsTM.data  [ilink], &channelsTM.valid  [ilink],
+                                                 &channelsTDemux.data[ilink], &channelsTDemux.valid[ilink]);
                 }
             }
-            mu_tdemuxer(newEvt, &all_channels_tmux  [mu_offs], &all_valids_tmux  [mu_offs],
-                                &all_channels_tdemux[mu_offs], &all_valids_tdemux[mu_offs]);
+            mu_tdemuxer(newEvt, &channelsTM.data  [mu_offs], &channelsTM.valid  [mu_offs],
+                                &channelsTDemux.data[mu_offs], &channelsTDemux.valid[mu_offs]);
             // note: the PV is delayed to realign it to the other demuxed channels
-            pv_delayer(all_channels_tmux  [vtx_offs], all_valids_tmux  [vtx_offs],
-                       all_channels_tdemux[vtx_offs], all_valids_tdemux[vtx_offs]);
+            pv_delayer(channelsTM.data    [vtx_offs], channelsTM.valid    [vtx_offs],
+                       channelsTDemux.data[vtx_offs], channelsTDemux.valid[vtx_offs]);
+            if (frame > 2*TLEN) channelsTDemux.dump();
 
             // and now we unpack to 64 bit format
             ilink = 0; unsigned int iout = 0;
             for (int s = 0; s < NTKSECTORS; ++s) {
-                unpack_track_3to2(all_channels_tdemux[ilink+0], all_valids_tdemux[ilink+0],
-                                  all_channels_tdemux[ilink+1], all_valids_tdemux[ilink+1],
-                                  all_channels_tdemux[ilink+2], all_valids_tdemux[ilink+2],
-                                  all_channels_decode[iout+0], all_valids_decode[iout+0],
-                                  all_channels_decode[iout+1], all_valids_decode[iout+1]);
+                unpack_track_3to2(channelsTDemux.data[ilink+0], channelsTDemux.valid[ilink+0],
+                                  channelsTDemux.data[ilink+1], channelsTDemux.valid[ilink+1],
+                                  channelsTDemux.data[ilink+2], channelsTDemux.valid[ilink+2],
+                                  channelsDecode.data[iout+0], channelsDecode.valid[iout+0],
+                                  channelsDecode.data[iout+1], channelsDecode.valid[iout+1]);
                 ilink += 3; iout += 2;
             }
             for (int s = 0; s < NCALOSECTORS; ++s) {
                 for (int f = 0; f < NCALOFIBERS; ++f) {
-                    unpack_hgcal_3to1(all_channels_tdemux[ilink+0], all_valids_tdemux[ilink+0],
-                                      all_channels_tdemux[ilink+1], all_valids_tdemux[ilink+1],
-                                      all_channels_tdemux[ilink+2], all_valids_tdemux[ilink+2],
-                                      all_channels_decode[iout+0], all_valids_decode[iout+0]);
+                    unpack_hgcal_3to1(channelsTDemux.data[ilink+0], channelsTDemux.valid[ilink+0],
+                                      channelsTDemux.data[ilink+1], channelsTDemux.valid[ilink+1],
+                                      channelsTDemux.data[ilink+2], channelsTDemux.valid[ilink+2],
+                                      channelsDecode.data[iout+0], channelsDecode.valid[iout+0]);
                     ilink += 3; iout += 1;
                 }
             }
-            unpack_mu_3to12(all_channels_tdemux[ilink+0], all_valids_tdemux[ilink+0],
-                            all_channels_tdemux[ilink+1], all_valids_tdemux[ilink+1],
-                            all_channels_tdemux[ilink+2], all_valids_tdemux[ilink+2],
-                            all_channels_decode[iout+0], all_valids_decode[iout+0],
-                            all_channels_decode[iout+1], all_valids_decode[iout+1]); 
-            if (all_valids_decode[iout+0]) all_valids_decode[iout+1] = 1; // for our purposes, mark both valid if the first is valid
+            unpack_mu_3to12(channelsTDemux.data[ilink+0], channelsTDemux.valid[ilink+0],
+                            channelsTDemux.data[ilink+1], channelsTDemux.valid[ilink+1],
+                            channelsTDemux.data[ilink+2], channelsTDemux.valid[ilink+2],
+                            channelsDecode.data[iout+0], channelsDecode.valid[iout+0],
+                            channelsDecode.data[iout+1], channelsDecode.valid[iout+1]); 
+            if (channelsDecode.valid[iout+0]) channelsDecode.valid[iout+1] = 1; // for our purposes, mark both valid if the first is valid
             ilink += 3; iout += 2;
             // the vertex is trivial
-            all_channels_decode[iout] = all_channels_tdemux[ilink];
-            all_valids_decode  [iout] = all_valids_tdemux  [ilink];
-            ilink++; iout++;
+            channelsDecode.data[iout]  = channelsTDemux.data [ilink];
+            channelsDecode.valid[iout] = channelsTDemux.valid[ilink];
+            if (frame > 2*TLEN) {
+                channelsDecode.dump();
+                // validation
+                unsigned int ref_index = (decoded_validation_index + 0) % (2*TLEN+1);
+                for (unsigned int i = 0; i < nchann_decoded; ++i) {
+                    if (decoded_validation_data[ref_index][i] != channelsDecode.data[i] ||
+                        decoded_validation_valid[ref_index][i] != channelsDecode.valid[i]) {
+                        if (ok) printf("Mismatch in decoded validation, frame %d, ref_index %u:\n", frame, ref_index); 
+                        printf("channel %3u: ref %dv %20s vs emu %dv %20s\n", i, 
+                                        int(decoded_validation_valid[ref_index][i]), decoded_validation_data[ref_index][i].to_string(16).c_str(),
+                                        int(channelsDecode.valid[i]), channelsDecode.data[i].to_string(16).c_str());
+                        ok = false;
+                    }
+                }
+                if (!ok) break;
+            }
             // done unpacking
 
+            // emulate regionizer
+            std::vector<l1ct::TkObjEmu> tk_links_in, tk_out;
+            std::vector<l1ct::HadCaloObjEmu> calo_links_in, calo_out;
+            std::vector<l1ct::MuObjEmu> mu_links_in, mu_out;
 
-            TkObj        tk_links_ref[NTKOUT];
-            HadCaloObj calo_links_ref[NCALOOUT];
-            MuObj        mu_links_ref[NMUOUT]; 
+            regEmulator.fillLinks(iclock, in, tk_links_in);
+            regEmulator.fillLinks(iclock, in, calo_links_in);
+            regEmulator.fillLinks(iclock, in, mu_links_in);
 
-            bool newevt_ref = (i == 0);
-            bool   tk_ref_good =   tk_router_ref(i == 0,   tk_links_in, tk_links_ref);
-            bool calo_ref_good = calo_router_ref(i == 0, calo_links_in, calo_links_ref);
-            bool   mu_ref_good =   mu_router_ref(i == 0, etaCenter, mu_links_in, mu_links_ref);
+            ilink = 0; channelsIn.clear(/*valid=*/(iclock < TLEN-1));
+            for (int itk = 0; itk < NTKSECTORS*NTKFIBERS; ++itk) 
+                channelsIn.data[ilink++] = tk_links_in[itk].pack(); 
+            for (int icalo = 0; icalo < NCALOSECTORS*NCALOFIBERS; ++icalo) 
+                channelsIn.data[ilink++] = calo_links_in[icalo].pack(); 
+            for (int imu = 0; imu < NMUFIBERS; ++imu) 
+                channelsIn.data[ilink++] = mu_links_in[imu].pack();
+            channelsIn.data[ilink++] = inputs.event().pv(iclock).pack();
+            channelsIn.dump();
 
-            l1pf_pattern_pack<NTKOUT,0>(tk_links_ref, all_channels_regionized);
-            l1pf_pattern_pack<NCALOOUT,NTKOUT>(calo_links_ref, all_channels_regionized);
-            l1pf_pattern_pack<NMUOUT,NTKOUT+NCALOOUT>(mu_links_ref, all_channels_regionized);
+            // put good decoded data for validation in the ring buffer
+            for (unsigned int i = 0; i < nchann_decoded; ++i) {
+                 decoded_validation_data[decoded_validation_index][i] = channelsIn.data[i];
+                 decoded_validation_valid[decoded_validation_index][i] = channelsIn.valid[i];
+            }
+            decoded_validation_index = (decoded_validation_index + 1) % (2*TLEN+1);
 
-            if ((itest > 0) && (i % PFLOWII == 0) && (i/PFLOWII < NPFREGIONS)) {
+            bool newevt_ref = (iclock == 0);
+            regEmulator.step(newevt_ref, tk_links_in, tk_out, mux);
+            regEmulator.step(newevt_ref, calo_links_in, calo_out, mux);
+            regEmulator.step(newevt_ref, mu_links_in, mu_out, mux);
+
+            ilink = 0; channelsReg.clear(true);
+            for (int i = 0; i < NTKOUT; ++i) 
+                channelsReg.data[ilink++] = tk_out[i].pack(); 
+            for (int i = 0; i < NCALOOUT; ++i) 
+                channelsReg.data[ilink++] = calo_out[i].pack(); 
+            for (int i = 0; i < NMUOUT; ++i) 
+                channelsReg.data[ilink++] = mu_out[i].pack();
+            channelsReg.dump();
+
+            if ((itest > 0) && (iclock % PFLOWII == 0) && (iclock/PFLOWII < NPFREGIONS)) {
+                int ireg = (iclock/PFLOWII);
                 ////  ok we can run PF and puppi
-                // PF objects
-                PFChargedObj pfch[NTRACK], pfmu[NMU]; PFNeutralObj pfallne[NALLNEUTRALS];
-                assert(NTKOUT == NTRACK && NCALOOUT == NCALO && NMUOUT == NMU);
-                if (itest <= 5) printf("Will run PF event %d, region %d\n", itest-1, i/PFLOWII);
-                pfalgo2hgc_ref_set_debug(itest <= 5);
-                pfalgo2hgc_ref(pfcfg, calo_links_ref, tk_links_ref, mu_links_ref, pfch, pfallne, pfmu); 
-                pfalgo2hgc_pack_out(pfch, pfallne, pfmu, all_channels_pf);
+                pfin.clear();
+                pfin.region  = allpfin[ireg].region;
+                pfin.track   = tk_out;
+                pfin.hadcalo = calo_out;
+                pfin.muon    = mu_out;
+                if (itest <= 5) printf("Will run PF event %d, region %d\n", itest-1, ireg);
+                pfEmulator.setDebug(itest <= 5);
+                pfEmulator.run(pfin, pfout);
+                pfEmulator.mergeNeutrals(pfout);
+
+                channelsPf.clear(true);
+                for (int i = 0, n = pfout.pfcharged.size(), ilink = 0; i < n; ++i, ++ilink)
+                    channelsPf.data[ilink] = pfout.pfcharged[i].pack();
+                for (int i = 0, n = pfout.pfneutral.size(), ilink = NTRACK; i < n; ++i, ++ilink)
+                    channelsPf.data[ilink] = pfout.pfneutral[i].pack();
+                for (int i = 0, n = pfout.pfmuon.size(), ilink = NTRACK+NCALO; i < n; ++i, ++ilink)
+                    channelsPf.data[ilink] = pfout.pfmuon[i].pack();
+
                 // Puppi objects
-                if (itest <= 5) printf("Will run Puppi with z0 = %d in event %d, region %d\n", pvZ0_prev.to_int(), itest-1, i/PFLOWII);
-                PuppiObj outallch[NTRACK];
-                PuppiObj outallne_nocut[NALLNEUTRALS], outallne[NALLNEUTRALS], outselne[NNEUTRALS]; 
-                PuppiObj outpresort[NTRACK+NALLNEUTRALS];
-                linpuppi_ref(pucfg, tk_links_ref, pvZ0_prev, pfallne, outallne_nocut, outallne, outselne, itest <= 1);
-                linpuppi_chs_ref(pucfg, pvZ0_prev, pfch, outallch, itest <= 1);
-                std::copy(outallch, outallch+NTRACK, outpresort);
-                std::copy(outallne, outallne+NALLNEUTRALS, outpresort+NTRACK);
-                PuppiObj outsorted[NPUPPIFINALSORTED];
-                puppisort_and_crop_ref(NTRACK+NALLNEUTRALS, NPUPPIFINALSORTED, outpresort, outsorted);
-                l1pf_pattern_pack<NTRACK+NALLNEUTRALS,0>(outpresort, all_channels_puppi);
-                l1pf_pattern_pack<NPUPPIFINALSORTED,0>(outsorted, all_channels_puppisort);
+                if (itest <= 5) printf("Will run Puppi with z0 = %d in event %d, region %d\n", pv_prev.hwZ0.to_int(), itest-1, ireg);
+                puEmulator.setDebug(itest <= 5);
+
+                std::vector<l1ct::PuppiObjEmu> outallch, outselne;
+                puEmulator.linpuppi_chs_ref(pfin.region, pv_prev, pfout.pfcharged, outallch);
+                puEmulator.linpuppi_ref(pfin.region, pfin.track, pv_prev, pfout.pfneutral, outselne);
+
+                outallch.resize(NTRACK);
+                outselne.resize(NCALO);
+                outallch.insert(outallch.end(), outselne.begin(), outselne.end());
+                ilink = 0; channelsPuppi.clear(true);
+                for (auto & pup : outallch) channelsPuppi.data[ilink++] = pup.pack();
+
+                pfout.puppi.resize(NPUPPIFINALSORTED);
+                bitonic_sort_and_crop_ref(NTRACK+NCALO, NPUPPIFINALSORTED, &outallch[0], &pfout.puppi[0]);
+                ilink = 0; channelsPuppiSort.clear(true);
+                for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
 
-            serPatternsTM(all_channels_tmux, all_valids_tmux);
-            serPatternsVCU118(all_channels_vcu118, all_valids_vcu118);
+            channelsPf.dump();
+            channelsPuppi.dump();
+            channelsPuppiSort.dump();
 
-            if (frame >= 108) {
-                serPatternsTDemux(all_channels_tdemux, all_valids_tdemux);
-                serPatternsDecode(all_channels_decode, all_valids_decode);
-            }
-            serPatternsIn(all_channels_in, (i < TLEN-1));
-            serPatternsReg(all_channels_regionized);
-            serPatternsPf(all_channels_pf);
-            serPatternsPuppi(all_channels_puppi);
-            serPatternsPuppiSort(all_channels_puppisort);
-
-            if (i == TLEN-1) pvZ0_prev = vtx_inputs.empty() ? z0_t(0) : vtx_inputs.front().first;
+            if (iclock == TLEN-1) pv_prev = inputs.event().pv();
         }
+        if (!ok) break;
     } 
 
-    fclose(fMC_tk);
-    fclose(fMC_calo);
-    fclose(fMC_mu);
-    fclose(fMC_vtx);
     return ok ? 0 : 1;
 }
