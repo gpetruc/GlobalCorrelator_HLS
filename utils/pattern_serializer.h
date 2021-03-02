@@ -139,7 +139,7 @@ void PatternSerializer::packAndWrite(unsigned int N, const ap_uint<NB> event[], 
         std::unique_ptr<bool[]> bits(new bool[nin_]);
 
         for (unsigned int i = 0; i < nin_; ++i) {
-            words[i] = (i < N ? event[i] : Word(0));
+            words[i] = (i < N ? event[i] : ap_uint<NB>(0));
             bits[i]  = (i < N ? valid[i] : false  );
         }
 
