@@ -46,7 +46,7 @@ elif [[ "${PROJ}" == "vhdl-mux-tk" ]]; then
     HLSPROJ="project_csim_HGCal_mux"
     DET="tk"
 elif [[ "${PROJ}" == "vhdl-mux-all" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd ${FW}/stream_sort.vhd ${FW}/region_mux.vhd"
+    VHDLS="${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd ${FW}/stream_sort.vhd ${FW}/region_mux.vhd ${FW}/pfregion_loop.vhd"
     VHDLS="${VHDLS} ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/tk_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/calo_router.vhd ${FW}/calo_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/mu_router.vhd ${FW}/mu_regionizer.vhd "
@@ -62,7 +62,7 @@ elif [[ "${PROJ}" == "vhdl-stream-tk" ]]; then
     DET="tk"
 elif [[ "${PROJ}" == "vhdl-stream-all" ]]; then
     VHDLS="${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd "
-    VHDLS="${VHDLS} ${FW}/stream_sort.vhd  ${FW}/cascade_stream_sort_elem.vhd  ${FW}/cascade_stream_sort.vhd ${FW}/region_mux_stream.vhd ${FW}/delay_sort_mux_stream.vhd"
+    VHDLS="${VHDLS} ${FW}/stream_sort.vhd  ${FW}/cascade_stream_sort_elem.vhd  ${FW}/cascade_stream_sort.vhd ${FW}/region_mux_stream.vhd ${FW}/delay_sort_mux_stream.vhd ${FW}/pfregion_loop.vhd"
     VHDLS="${VHDLS} ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/tk_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/calo_router.vhd ${FW}/calo_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/mu_router.vhd ${FW}/mu_regionizer.vhd "

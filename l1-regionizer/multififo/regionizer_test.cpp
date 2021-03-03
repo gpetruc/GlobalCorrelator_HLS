@@ -30,7 +30,12 @@ int main(int argc, char **argv) {
     FILE *fold_calo = fopen("output-old-calo.txt", "w");
     FILE *fold_mu = fopen("output-old-mu.txt", "w");
 
-    const unsigned int nchann_in = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS, nchann_out = NTKOUT + NCALOOUT + NMUOUT;
+    const unsigned int nchann_in = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS;
+    #ifdef ROUTER_NOMUX
+    const unsigned int nchann_out = NTKOUT + NCALOOUT + NMUOUT;
+    #else
+    const unsigned int nchann_out = NTKOUT + NCALOOUT + NMUOUT + 1;
+    #endif
     PatternSerializer serPatternsIn("input-emp.txt",2*nchann_in), serPatternsOut("output-emp.txt",2*nchann_out), serPatternsRef("output-ref-emp.txt",2*nchann_out);
     ap_uint<PackedTkObj::width> all_channels_in[nchann_in], all_channels_ref[nchann_out], all_channels_out[nchann_out];
     for (unsigned int i = 0; i < nchann_in; ++i) all_channels_in[i] = 0;
@@ -131,6 +136,9 @@ int main(int argc, char **argv) {
             for (int r = 0; r < NTKOUT; ++r) all_channels_ref[ilink++] = tk_out_emu[r].pack();
             for (int r = 0; r < NCALOOUT; ++r) all_channels_ref[ilink++] = calo_out_emu[r].pack();
             for (int r = 0; r < NMUOUT; ++r) all_channels_ref[ilink++] = mu_out_emu[r].pack();
+            unsigned int iregion = i / (stream ? 4 : 6); bool region_valid = iregion < pfin.size();
+            all_channels_ref[ilink++] = region_valid ? pfin[iregion].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
+
             ilink = 0;
             for (int r = 0; r < NTKOUT; ++r) all_channels_out[ilink++] = tk_links64_out[r];
             for (int r = 0; r < NCALOOUT; ++r) all_channels_out[ilink++] = calo_links64_out[r];

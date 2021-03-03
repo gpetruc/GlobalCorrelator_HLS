@@ -19,6 +19,14 @@ package regionizer_data is
         pt : signed(13 downto 0);
         rest : std_logic_vector(57 downto 0);
     end record;
+    type pfregion is record
+        etaCenter : signed(11 downto 0);
+        phiCenter : signed(10 downto 0);
+        etaHalfWidth : signed(9 downto 0);
+        phiHalfWidth : signed(9 downto 0);
+        etaExtra : signed(9 downto 0);
+        phiExtra : signed(9 downto 0);
+    end record;
 
     subtype word64 is std_logic_vector(63 downto 0);
     subtype word65 is std_logic_vector(64 downto 0);
@@ -37,6 +45,8 @@ package regionizer_data is
     function any_to_particle(p: anyparticle) return particle;
     function any_to_glbparticle(p: anyparticle) return glbparticle;
     function null_anyparticle return anyparticle;
+    function pfregion_to_w72(p : pfregion) return word72;
+    function w72_to_pfregion(d : word72) return pfregion;
 
     type particles is array(natural range <>) of particle;
     type w64s      is array(natural range <>) of word64;
@@ -52,16 +62,20 @@ package regionizer_data is
     constant PHI_MARGIN_NEG : signed(9 downto 0) := to_signed(-(160/2-57), 10);  -- same but with negative sign
     constant PHI_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(160/2+57), 10); -- half size of a full region (fiducial PLUS border)
     constant PHI_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(160/2+57), 10);  
+    constant PHI_HALFWIDTH_FID : signed(9 downto 0) := to_signed(+(160/2), 10);   -- half size of a full region (fiducial only)
     constant ETA_HALFWIDTH_POS : signed(9 downto 0) := to_signed(+(230/2+57), 10); -- half size of a full region (fiducial PLUS border)
     constant ETA_HALFWIDTH_NEG : signed(9 downto 0) := to_signed(-(230/2+57), 10);  
+    constant ETA_HALFWIDTH_FID : signed(9 downto 0) := to_signed(+(230/2), 10); -- half size of a full region (fiducial only)
 
     constant PHI_CALOSHIFT    : signed(9 downto 0) := to_signed( 480,        10);  -- 2*pi/3, size of an HGCal sector
     constant PHI_CALOSHIFT1   : signed(9 downto 0) := to_signed( 320,        10);  -- 2*pi/3 - 2*pi/9, distance between center of hgcal sector 1 and pf region 1 = 2 * size of a phi nonant
     constant PHI_CALOEDGE_POS : signed(9 downto 0) := to_signed(+(480/2-57), 10);  -- +(half-size of calo sector)-border
     constant PHI_CALOEDGE_NEG : signed(9 downto 0) := to_signed(-(480/2-57), 10);  -- -(half-size of calo sector)+border
 
-    constant PHI_MPI : signed(11 downto 0) := to_signed(-PHI_SHIFT_INT*9/2, 12);  -- same but with negative sign
-    constant PHI_2PI : signed(11 downto 0) := to_signed( PHI_SHIFT_INT*9,   12);  -- same but with negative sign
+    constant PHI_PI  : signed(11 downto 0) := to_signed(+PHI_SHIFT_INT*9/2, 12);
+    constant PHI_MPI : signed(11 downto 0) := to_signed(-PHI_SHIFT_INT*9/2, 12);
+    constant PHI_2PI : signed(11 downto 0) := to_signed( PHI_SHIFT_INT*9,   12);
+    constant PHI_M2PI: signed(11 downto 0) := to_signed(-PHI_SHIFT_INT*9,   12);
 
     constant ETASHIFT_TK   : signed(9 downto 0) := to_signed(-172, 10);
     constant ETASHIFT_CALO : signed(9 downto 0) := to_signed( +58, 10);
@@ -213,6 +227,31 @@ package body regionizer_data is
     begin
         return w72_to_glbparticle(anyparticle_to_w72(p));
     end any_to_glbparticle;
+
+    function pfregion_to_w72(p : pfregion) return word72 is
+        variable ret : word72;
+    begin
+        ret(11 downto  0) := std_logic_vector(p.etaCenter);
+        ret(22 downto 12) := std_logic_vector(p.phiCenter);
+        ret(32 downto 23) := std_logic_vector(p.etaHalfWidth);
+        ret(42 downto 33) := std_logic_vector(p.phiHalfWidth);
+        ret(52 downto 43) := std_logic_vector(p.etaExtra);
+        ret(62 downto 53) := std_logic_vector(p.phiExtra);
+        ret(71 downto 63) := (others => '0');
+        return ret;
+    end pfregion_to_w72;
+
+    function w72_to_pfregion(d : word72) return pfregion is
+        variable ret : pfregion;
+    begin
+        ret.etaCenter    := signed(d(11 downto  0));
+        ret.phiCenter    := signed(d(22 downto 12));
+        ret.etaHalfWidth := signed(d(32 downto 23));
+        ret.phiHalfWidth := signed(d(42 downto 33));
+        ret.etaExtra     := signed(d(51 downto 43));
+        ret.phiExtra     := signed(d(62 downto 53));
+        return ret;
+    end w72_to_pfregion;
 
 end regionizer_data;
 

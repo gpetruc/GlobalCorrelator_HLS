@@ -56,6 +56,7 @@ entity full_regionizer_mux_stream is
             tracks_out : OUT w72s(NTKSTREAM-1 downto 0);
             calo_out   : OUT w72s(NCALOSTREAM-1 downto 0);
             mu_out     : OUT w72s(NMUSTREAM-1   downto 0);
+            pfreg_out  : OUT word72;
             newevent_out : OUT STD_LOGIC
     );
 end full_regionizer_mux_stream;
@@ -73,6 +74,9 @@ architecture Behavioral of full_regionizer_mux_stream is
     signal mu_regionized:        w72s(NPFREGIONS-1 downto 0);
     signal mu_regionized_valid:  std_logic_vector(NPFREGIONS-1 downto 0) := (others => '0');
     signal mu_regionized_roll:   std_logic := '0';
+
+    signal pfreg : pfregion := (others => (others => '0'));
+    signal pfreg_valid, pfreg_roll : std_logic := '0';
 
 begin
 
@@ -193,7 +197,8 @@ begin
                          valid_in => tracks_regionized_valid,
                          roll => tracks_regionized_roll,
                          d_out => tracks_out,
-                         roll_out => newevent_out);
+                         roll_out => newevent_out,
+                         roll_out_tm2 => pfreg_roll);
 
     calo_delay_sort_mux_stream : entity work.delay_sort_mux_stream
                 generic map(NREGIONS => NPFREGIONS, 
@@ -220,4 +225,23 @@ begin
                          roll => mu_regionized_roll,
                          d_out => mu_out,
                          roll_out => open);
+
+    pfreg_loop: entity work.pfregion_loop
+                        generic map(ETA_CENTER => to_signed(MU_ETA_CENTER, 12),
+                                    OUTII    => PFII240)
+                        port map(ap_clk => ap_clk,
+                                 roll   => pfreg_roll,
+                                 reg_out => pfreg,
+                                 vld_out => pfreg_valid);
+    pfreg_format: process(ap_clk)
+        begin
+            if rising_edge(ap_clk) then
+                if pfreg_valid = '1' then
+                    pfreg_out <= pfregion_to_w72(pfreg);
+                else
+                    pfreg_out <= (others => '0');
+                end if;
+            end if;
+        end process pfreg_format;
+
 end Behavioral;

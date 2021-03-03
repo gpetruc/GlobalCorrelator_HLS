@@ -18,7 +18,8 @@ entity delay_sort_mux_stream is
         valid_in : IN STD_LOGIC_VECTOR(NREGIONS-1 downto 0);
         roll     : IN STD_LOGIC;
         d_out    : OUT w72s(NSTREAM-1 downto 0);
-        roll_out : OUT STD_LOGIC
+        roll_out : OUT STD_LOGIC;
+        roll_out_tm2 : OUT STD_LOGIC -- anticipates roll_out by 2 clock cycles
     );
 end delay_sort_mux_stream;
 
@@ -81,6 +82,8 @@ begin
                         );
             end generate gen_sort_cascade;
         end generate gen_sorters;
+
+    roll_out_tm2 <= sorted_roll(0);
 
     muxer: entity work.region_mux_stream
                     generic map(NREGIONS => NREGIONS, 

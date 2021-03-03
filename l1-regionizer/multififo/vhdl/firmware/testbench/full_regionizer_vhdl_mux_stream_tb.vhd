@@ -16,7 +16,7 @@ end testbench;
 
 architecture Behavioral of testbench is
     constant NPATTERNS_IN  : natural := NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS;
-    constant NPATTERNS_OUT : natural := NTKSTREAM + NCALOSTREAM + NMUSTREAM;
+    constant NPATTERNS_OUT : natural := NTKSTREAM + NCALOSTREAM + NMUSTREAM + 1;
 
     signal clk : std_logic := '0';
     signal rst : std_logic := '0';
@@ -29,6 +29,7 @@ architecture Behavioral of testbench is
     signal calo_out: w72s(NCALOSTREAM-1 downto 0) := (others => (others => '0'));
     signal mu_in:  w72s(NMUFIBERS-1 downto 0) := (others => (others => '0'));
     signal mu_out: w72s(NMUSTREAM-1 downto 0) := (others => (others => '0'));
+    signal reg_out : word72 := (others => '0');
 
     file Fi : text open read_mode  is "input-emp.txt";
     file Fo : text open write_mode is "output-emp-vhdl_tb.txt";
@@ -85,6 +86,7 @@ begin
                  tracks_out => tk_out,
                  calo_out   => calo_out,
                  mu_out     => mu_out,
+                 pfreg_out    => reg_out,
                  newevent_out => newevent_out
              );
    
@@ -153,6 +155,7 @@ begin
             for i in 0 to NMUSTREAM-1 loop
                 encoded_out(i+NTKSTREAM+NCALOSTREAM) := mu_out(i);
             end loop;
+            encoded_out(NPATTERNS_OUT-1) := reg_out;
             for i in 0 to NPATTERNS_OUT-1 loop
                 patterns_out(2*i+0)(63 downto 0) := encoded_out(i)(63 downto  0);
                 patterns_out(2*i+1)( 7 downto 0) := encoded_out(i)(71 downto 64);
