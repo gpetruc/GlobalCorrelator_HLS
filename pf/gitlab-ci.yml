@@ -1,4 +1,4 @@
-.pf-common: &pf-common
+.pf-common: 
   tags: [ vivado20192 ]
   before_script:
     - source /opt/Xilinx/Vivado/2019.2/settings64.sh
@@ -16,21 +16,24 @@
       - pf/**/*
       - utils/**/*
 
-.pf-csim-common: &pf-csim-common
-  <<: *pf-common
+.pf-csim-common: 
+  extends: .pf-common
   stage: pre-build
+  variables: 
+    pfBoard: none
   artifacts:
     paths:
       - pf/vivado_hls.${CI_JOB_NAME}.txt
       - pf/proj_pf${pfReg}_${pfBoard}/solution/csim/build/*.txt
 
-.pf-csim-variables: &pf-csim-variables
-    pfBoard: none
 
-.pf-csynth-common: &pf-csynth-common
-  <<: *pf-common
+.pf-csynth-common:
+  extends: .pf-common
   stage: build
   when: manual
+  variables:
+      pfBoard: VCU118
+      DO_SYNTH: 1
   artifacts:
     paths:
       - pf/vivado_hls.${CI_JOB_NAME}.txt
@@ -39,39 +42,31 @@
       - pf/proj_pf${pfReg}_${pfBoard}/solution/impl/vhdl/*
   dependencies: 
 
-.pf-csynth-variables: &pf-csynth-variables
-    pfBoard: VCU118
-    DO_SYNTH: 1
-
    
 pfalgo3-csim:
-  <<: *pf-csim-common
+  extends: .pf-csim-common
   variables:
-    <<: *pf-csim-variables
     pfReg: Barrel
   script:
     - vivado_hls -f run_hls_pfalgo3.tcl
 
 pfalgo2hgc-csim:
-  <<: *pf-csim-common
+  extends: .pf-csim-common
   variables:
-    <<: *pf-csim-variables
     pfReg: HGCal
   script:
     - vivado_hls -f run_hls_pfalgo2hgc.tcl
 
 pfalgo3-csynth:
-  <<: *pf-csynth-common
+  extends: .pf-csynth-common
   variables:
-    <<: *pf-csynth-variables
     pfReg: Barrel
   script:
     - vivado_hls -f run_hls_pfalgo3.tcl
 
 pfalgo2hgc-csynth:
-  <<: *pf-csynth-common
+  extends: .pf-csynth-common
   variables:
-    <<: *pf-csynth-variables
     pfReg: HGCal
   script:
     - vivado_hls -f run_hls_pfalgo2hgc.tcl

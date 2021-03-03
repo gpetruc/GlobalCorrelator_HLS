@@ -1,4 +1,4 @@
-.puppi-common: &puppi-common
+.puppi-common: 
   tags: [ vivado20192 ]
   before_script:
     - source /opt/Xilinx/Vivado/2019.2/settings64.sh
@@ -17,21 +17,23 @@
       - puppi/**/*
       - utils/**/*
 
-.puppi-csim-common: &puppi-csim-common
-  <<: *puppi-common
+.puppi-csim-common:
+  extends: .puppi-common
   stage: pre-build
+  variables: 
+    puppiBoard: none
   artifacts:
     paths:
       - puppi/vivado_hls.${CI_JOB_NAME}.txt
       - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/csim/build/*.txt
 
-.puppi-csim-variables: &puppi-csim-variables
-    puppiBoard: none
-
-.puppi-csynth-common: &puppi-csynth-common
-  <<: *puppi-common
+.puppi-csynth-common: 
+  extends: .puppi-common
   stage: build
   when: manual
+  variables:
+    puppiBoard: VCU118
+    DO_SYNTH: 1
   artifacts:
     paths:
       - puppi/vivado_hls.${CI_JOB_NAME}.txt
@@ -45,71 +47,59 @@
       - puppi/firmware/*
   dependencies: 
 
-.puppi-csynth-variables: &puppi-csynth-variables
-    puppiBoard: VCU118
-    DO_SYNTH: 1
-
 
 linpuppi-Barrel-csim:
-  <<: *puppi-csim-common
+  extends: .puppi-csim-common
   variables:
-    <<: *puppi-csim-variables
     puppiReg: Barrel
   script:
     - vivado_hls -f run_hls_linpuppi_tracker.tcl
 
 linpuppi-HGCal-csim:
-  <<: *puppi-csim-common
+  extends: .puppi-csim-common
   variables:
-    <<: *puppi-csim-variables
     puppiReg: HGCal
   script:
     - vivado_hls -f run_hls_linpuppi_tracker.tcl
 
 linpuppi-HGCalNoTK-csim:
-  <<: *puppi-csim-common
+  extends: .puppi-csim-common
   variables:
-    <<: *puppi-csim-variables
     puppiReg: HGCalNoTK
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl
 
 linpuppi-HF-csim:
-  <<: *puppi-csim-common
+  extends: .puppi-csim-common
   variables:
-    <<: *puppi-csim-variables
     puppiReg: HF
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl
  
 linpuppi-Barrel-csynth:
-  <<: *puppi-csynth-common
+  extends: .puppi-csynth-common
   variables:
-    <<: *puppi-csynth-variables
     puppiReg: Barrel
   script:
     - vivado_hls -f run_hls_linpuppi_tracker.tcl
 
 linpuppi-HGCal-csynth:
-  <<: *puppi-csynth-common
+  extends: .puppi-csynth-common
   variables:
-    <<: *puppi-csynth-variables
     puppiReg: HGCal
   script:
     - vivado_hls -f run_hls_linpuppi_tracker.tcl
 
 linpuppi-HGCalNoTK-csynth:
-  <<: *puppi-csynth-common
+  extends: .puppi-csynth-common
   variables:
-    <<: *puppi-csynth-variables
     puppiReg: HGCalNoTK
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl
 
 linpuppi-HF-csynth:
-  <<: *puppi-csynth-common
+  extends: .puppi-csynth-common
   variables:
-    <<: *puppi-csynth-variables
     puppiReg: HF
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl

@@ -1,4 +1,4 @@
-.l1reg-multififo-common: &l1reg-multififo-common
+.l1reg-multififo-common:
   tags: [ vivado20192 ]
   before_script:
     - source /opt/Xilinx/Vivado/2019.2/settings64.sh
@@ -17,18 +17,17 @@
       - l1-regionizer/multififo/**/*
       - utils/**/*
 
-.l1reg-multififo-csim-common: &l1reg-multififo-csim-common
-  <<: *l1reg-multififo-common
+.l1reg-multififo-csim-common:
+  extends: .l1reg-multififo-common
   stage: pre-build
   artifacts:
     paths:
       - l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
       - l1-regionizer/multififo/project_csim_${pfReg}_${regionizerMode}/solution/csim/build/*.txt
+  variables:
+    pfBoard: none
   script:
     - vivado_hls -f run_hls_csim.tcl
-
-.l1reg-multififo-csim-variables: &l1reg-multififo-csim-variables
-    pfBoard: none
 
 #.l1reg-multififo-csynth-common: &l1reg-multififo-csynth-common
 #  <<: *l1reg-multififo-common
@@ -44,28 +43,25 @@
 #    DO_SYNTH: 1
 
 l1r-mf-nomux-csim:
-  <<: *l1reg-multififo-csim-common
+  extends: .l1reg-multififo-csim-common
   variables:
-    <<: *l1reg-multififo-csim-variables
     pfReg: HGCal
     regionizerMode: nomux
 
 l1r-mf-mux-csim:
-  <<: *l1reg-multififo-csim-common
+  extends: .l1reg-multififo-csim-common
   variables:
-    <<: *l1reg-multififo-csim-variables
     pfReg: HGCal
     regionizerMode: mux
 
 l1r-mf-stream-csim:
-  <<: *l1reg-multififo-csim-common
+  extends: .l1reg-multififo-csim-common
   variables:
-    <<: *l1reg-multififo-csim-variables
     pfReg: HGCal
     regionizerMode: stream
 
-.l1reg-multififo-vhdl-common: &l1reg-multififo-vhdl-common
-  <<: *l1reg-multififo-common
+.l1reg-multififo-vhdl-common:
+  extends: .l1reg-multififo-common
   stage: pre-build2
   before_script:
     - source /opt/Xilinx/Vivado/2019.2/settings64.sh
@@ -78,14 +74,12 @@ l1r-mf-stream-csim:
     paths:
       - l1-regionizer/multififo/vhdl/firmware/testbench/vhdl-${regionizerMode}-*_xsim.dir/*.txt
       - l1-regionizer/multififo/vhdl/firmware/testbench/vhdl-${regionizerMode}-*_xsim.dir/x*.log
-
-.l1reg-multififo-vhdl-variables: &l1reg-multififo-vhdl-variables
+  variables:
     pfBoard: none
 
 l1r-mf-vhdl-nomux:
-  <<: *l1reg-multififo-vhdl-common
+  extends: .l1reg-multififo-vhdl-common
   variables:
-    <<: *l1reg-multififo-vhdl-variables
     pfReg: HGCal
     regionizerMode: nomux
   dependencies:
@@ -96,9 +90,8 @@ l1r-mf-vhdl-nomux:
     - "./run_vhdltb.sh vhdl-nomux-mu && pattern_diff.py vhdl-nomux-mu_xsim.dir/output-{ref-mu,mu-vhdl_tb}.txt -l 5 exact"
 
 l1r-mf-vhdl-mux:
-  <<: *l1reg-multififo-vhdl-common
+  extends: .l1reg-multififo-vhdl-common
   variables:
-    <<: *l1reg-multififo-vhdl-variables
     pfReg: HGCal
     regionizerMode: mux
   dependencies:
@@ -108,9 +101,8 @@ l1r-mf-vhdl-mux:
     - "./run_vhdltb.sh vhdl-mux-all && pattern_diff.py vhdl-mux-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
 
 l1r-mf-vhdl-stream:
-  <<: *l1reg-multififo-vhdl-common
+  extends: .l1reg-multififo-vhdl-common
   variables:
-    <<: *l1reg-multififo-vhdl-variables
     pfReg: HGCal
     regionizerMode: stream
   dependencies:
@@ -121,12 +113,12 @@ l1r-mf-vhdl-stream:
 
 
 l1r-mf-tm18-csim:
-  <<: *l1reg-multififo-common
+  extends: .l1reg-multififo-common
   stage: build
   artifacts:
     paths:
       - l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
-      - l1-regionizer/multififo/project_csim_HGCal_pf_puppi_tm18solution/csim/build/*.txt
+      - l1-regionizer/multififo/project_csim_HGCal_pf_puppi_tm18/solution/csim/build/*.txt
   variables:
     pfReg: HGCal
     pfBoard: VCU118
