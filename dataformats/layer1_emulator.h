@@ -252,10 +252,12 @@ namespace l1ct {
     void clear();
     void init(uint32_t run, uint32_t lumi, uint64_t event);
     inline l1ct::PVObjEmu pv(unsigned int ipv = 0) const {
-        l1ct::PVObjEmu ret;
-        if (ipv < pvs.size()) ret = pvs[ipv];
-        else ret.clear();
-        return ret;
+      l1ct::PVObjEmu ret;
+      if (ipv < pvs.size())
+        ret = pvs[ipv];
+      else
+        ret.clear();
+      return ret;
     }
   };
 

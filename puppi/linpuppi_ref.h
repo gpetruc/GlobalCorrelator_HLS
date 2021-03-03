@@ -145,8 +145,8 @@ namespace l1ct {
                       const PVObjEmu &pv,
                       const std::vector<PFNeutralObjEmu> &pfallne /*[nIn]*/,
                       std::vector<PuppiObjEmu> &outselne /*[nOut]*/) const {
-        std::vector<PuppiObjEmu> outallne_nocut, outallne;
-        linpuppi_ref(region, track, pv, pfallne, outallne_nocut, outallne, outselne);
+      std::vector<PuppiObjEmu> outallne_nocut, outallne;
+      linpuppi_ref(region, track, pv, pfallne, outallne_nocut, outallne, outselne);
     }
 
     // neutrals, forward
