@@ -9,3 +9,4 @@ xvhdl.*
 debug_vhdl_tb.txt
 test.wcfg
 test.wdb
+*sim.dir

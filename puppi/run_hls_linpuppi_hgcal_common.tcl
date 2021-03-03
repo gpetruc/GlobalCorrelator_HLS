@@ -60,6 +60,6 @@ proc make_puppi { puppiReg puppiBoard clk name kind cflags hlsIPVersion } {
     csim_design
     csynth_design
     #cosim_design -trace_level all
-    export_design -format ip_catalog -vendor "cern-cms" -version ${hlsIPVersion} -description "${hlsTopFunc}"
+    #export_design -format ip_catalog -vendor "cern-cms" -version ${hlsIPVersion} -description "${hlsTopFunc}"
 
 }

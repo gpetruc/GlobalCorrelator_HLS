@@ -15,6 +15,7 @@ src region_mux_stream.vhd
 src tk_regionizer.vhd
 src mu_regionizer.vhd
 src calo_regionizer.vhd
+src pfregion_loop.vhd
 src full_regionizer_mux.vhd
 src delay_sort_mux_stream.vhd
 src full_regionizer_mux_stream.vhd
