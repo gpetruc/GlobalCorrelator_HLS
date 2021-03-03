@@ -56,6 +56,7 @@ entity full_regionizer_mux is
             tracks_out : OUT w72s(NTKSORTED-1 downto 0);
             calo_out   : OUT w72s(NCALOSORTED-1 downto 0);
             mu_out     : OUT w72s(NMUSORTED-1   downto 0);
+            pfreg_out  : OUT word72;
             newevent_out : OUT STD_LOGIC
     );
 end full_regionizer_mux;
@@ -110,6 +111,8 @@ architecture Behavioral of full_regionizer_mux is
     signal mu_mux_valid :  std_logic_vector(NMUSORTED-1 downto 0) := (others => '0');
     signal mu_mux_roll :   std_logic := '0';
 
+    signal pfreg : pfregion := (others => (others => '0'));
+    signal pfreg_valid : std_logic := '0';
 begin
 
     tk_regionizer : entity work.tk_regionizer 
@@ -335,6 +338,14 @@ begin
                                 valid_out => mu_mux_valid,
                                 roll_out => mu_mux_roll);
 
+    pfreg_loop: entity work.pfregion_loop
+                            generic map(ETA_CENTER => to_signed(MU_ETA_CENTER, 12),
+                                        OUTII    => PFII)
+                            port map(ap_clk => ap_clk,
+                                     roll   => tracks_sorted_roll(0),
+                                     reg_out => pfreg,
+                                     vld_out => pfreg_valid);
+
     format: process(ap_clk)
         begin
             if rising_edge(ap_clk) then
@@ -359,6 +370,11 @@ begin
                         mu_out(i) <= (others => '0');
                     end if;
                 end loop;
+                if pfreg_valid = '1' then
+                    pfreg_out <= pfregion_to_w72(pfreg);
+                else
+                    pfreg_out <= (others => '0');
+                end if;
                 newevent_out <= tracks_mux_roll;
             end if;
         end process format;

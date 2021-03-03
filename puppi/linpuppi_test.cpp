@@ -47,7 +47,11 @@ int main() {
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
                           Scales::makePt(LINPUPPI_ptCut), Scales::makePt(LINPUPPI_ptCut_1));
 #endif
-    
+    const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
+    const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
+    const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
+    pfEmulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);
+     
     // input TP objects and PV
     PFRegion region;
     TkObj track[NTRACK]; 
@@ -88,7 +92,7 @@ int main() {
         // get the inputs from the input object
         if (!inputs.nextPFRegion()) break;
 
-        const PVObjEmu & pv = inputs.event().pvs.front();
+        PVObjEmu pv = inputs.event().pv();
         hwZPV = pv.hwZ0;
         region = inputs.pfregion().region;
         

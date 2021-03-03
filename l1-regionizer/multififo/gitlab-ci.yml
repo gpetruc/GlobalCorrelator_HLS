@@ -22,9 +22,6 @@
   stage: pre-build
   artifacts:
     paths:
-      - pf/vivado_hls.${CI_JOB_NAME}.txt
-  artifacts:
-    paths:
       - l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
       - l1-regionizer/multififo/project_csim_${pfReg}_${regionizerMode}/solution/csim/build/*.txt
   script:
@@ -121,3 +118,30 @@ l1r-mf-vhdl-stream:
   script:
     - "./run_vhdltb.sh vhdl-stream-tk  && pattern_diff.py vhdl-stream-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -c 1-25 -l 10 exact"
     - "./run_vhdltb.sh vhdl-stream-all && pattern_diff.py vhdl-stream-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
+
+
+l1r-mf-tm18-csim:
+  <<: *l1reg-multififo-common
+  stage: build
+  artifacts:
+    paths:
+      - l1-regionizer/multififo/vivado_hls.${CI_JOB_NAME}.txt
+      - l1-regionizer/multififo/project_csim_HGCal_pf_puppi_tm18solution/csim/build/*.txt
+  variables:
+    pfReg: HGCal
+    pfBoard: VCU118
+  script:
+    - vivado_hls -f run_hls_csim_pf_puppi_tm18.tcl
+  only:
+    changes:
+      - "*"
+      - dataformats/**/*
+      - data/**/*
+      - pf/**/*
+      - puppi/**/*
+      - common/**/*
+      - l1-regionizer/common/**/*
+      - l1-regionizer/multififo/**/*
+      - utils/**/*
+
+

@@ -47,8 +47,6 @@ inline P etaPhiShifted(const P & t, l1ct::eta_t eta_shift, int phi_shift) {
 #define PFLOWII  4
 #endif
 
-#define NPUPPIFINALSORTED 18
-
 #define NTKSECTORS 9
 #define NTKFIBERS  2
 #define NTKFIFOS   6

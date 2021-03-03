@@ -1,5 +1,4 @@
 # get the configuration
-#set pfBoard "none"
 set pfBoard "VCU118"
 set pfReg "HGCal"
 set hlsIPVersion 25.4
@@ -28,11 +27,9 @@ set_part {xcvu9p-flga2104-2L-e}
 create_clock -period 2.5 -name default
 
 config_interface -trim_dangling_port
-# do stuff
-csim_design
-csynth_design
-#cosim_design -trace_level all
-export_design -format ip_catalog -vendor "cern-cms" -version ${hlsIPVersion} -description "${hlsTopFunc}"
 
-# exit Vivado HLS
+csim_design
+
+csynth_design
+
 exit
