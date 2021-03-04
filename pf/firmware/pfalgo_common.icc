@@ -242,17 +242,26 @@ void tk2calo_link_drdpt(const HadCaloObj calo[NCALO], const TkObj track[NTRACK],
 }
 
 pt_t tk2calo_tkerr(const TkObj & track, const PFRegion & region) {
-    const float edges[PTERR_BINS]  = PTERR_EDGES;
-    const float offss[PTERR_BINS]  = PTERR_OFFS;
-    const float scales[PTERR_BINS] = PTERR_SCALE;
+    const float f_edges[PTERR_BINS]  = PTERR_EDGES;
+    const float f_offss[PTERR_BINS]  = PTERR_OFFS;
+    const float f_scales[PTERR_BINS] = PTERR_SCALE;
+    glbeta_t edges[PTERR_BINS];
+    ptErrScale_t scales[PTERR_BINS];
+    ptErrOffs_t offss[PTERR_BINS];
+    for (int i = 0; i < PTERR_BINS; ++i) {
+       #pragma HLS unroll
+       edges[i] = Scales::makeGlbEta(f_edges[i]);
+       scales[i] = f_scales[i];
+       offss[i] = f_offss[i];
     
+    }
     glbeta_t abseta = region.hwGlbEta(track.hwEta);
     if (abseta < 0) abseta = -abseta;
     
     ptErrScale_t scale = 0.3125;
     ptErrOffs_t offs = 7.0;
     for (int i = 0; i < PTERR_BINS; ++i) {
-        if (abseta < Scales::makeGlbEta(edges[i])) {
+        if (abseta < edges[i]) {
            scale = scales[i];
            offs  = offss[i];
            break;
