@@ -259,7 +259,6 @@ int main(int argc, char **argv) {
                 channelsReg.data[ilink++] = calo_out[i].pack(); 
             for (int i = 0; i < NMUOUT; ++i) 
                 channelsReg.data[ilink++] = mu_out[i].pack();
-            channelsReg.dump();
 
             if ((itest > 0) && (iclock % PFLOWII == 0) && (iclock/PFLOWII < NPFREGIONS)) {
                 int ireg = (iclock/PFLOWII);
@@ -286,13 +285,13 @@ int main(int argc, char **argv) {
                 if (itest <= 5) printf("Will run Puppi with z0 = %d in event %d, region %d\n", pv_prev.hwZ0.to_int(), itest-1, ireg);
                 puEmulator.setDebug(itest <= 5);
 
-                std::vector<l1ct::PuppiObjEmu> outallch, outselne;
+                std::vector<l1ct::PuppiObjEmu> outallch, outallne_nocut, outallne, outselne;
                 puEmulator.linpuppi_chs_ref(pfin.region, pv_prev, pfout.pfcharged, outallch);
-                puEmulator.linpuppi_ref(pfin.region, pfin.track, pv_prev, pfout.pfneutral, outselne);
+                puEmulator.linpuppi_ref(pfin.region, pfin.track, pv_prev, pfout.pfneutral, outallne_nocut, outallne, outselne);
 
                 outallch.resize(NTRACK);
-                outselne.resize(NCALO);
-                outallch.insert(outallch.end(), outselne.begin(), outselne.end());
+                outallne.resize(NCALO);
+                outallch.insert(outallch.end(), outallne.begin(), outallne.end());
                 ilink = 0; channelsPuppi.clear(true);
                 for (auto & pup : outallch) channelsPuppi.data[ilink++] = pup.pack();
 
@@ -302,9 +301,12 @@ int main(int argc, char **argv) {
                 for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
 
-            channelsPf.dump();
-            channelsPuppi.dump();
-            channelsPuppiSort.dump();
+            if (itest > 0) { // avoid dumping frames of zeros
+                channelsReg.dump();
+                channelsPf.dump();
+                channelsPuppi.dump();
+                channelsPuppiSort.dump();
+            }
 
             if (iclock == TLEN-1) pv_prev = inputs.event().pv();
         }
