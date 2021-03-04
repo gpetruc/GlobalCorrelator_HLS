@@ -1,0 +1,9 @@
+include -c l2-deregionizer deregionizer.dep
+src PkgConstants.vhd
+src --vhdl2008 payload.vhd
+src --vhdl2008 link_map.vhd
+src --vhdl2008 -c RuflCore: -l Utilities ReuseableElements/PkgUtilities.vhd
+src --vhdl2008 -c RuflCore: -l Utilities ReuseableElements/PkgDebug.vhd
+include -c emp-fwk:boards/vcu118 vcu118.dep
+src vcu118_decl_full.vhd
+setup -f vhdl2008.tcl
