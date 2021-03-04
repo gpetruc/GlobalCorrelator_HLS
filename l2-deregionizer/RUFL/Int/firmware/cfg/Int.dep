@@ -1,0 +1,4 @@
+src --vhdl2008 -l Int DataPipe.vhd
+src --vhdl2008 -l Int Debugger.vhd
+src --vhdl2008 -l Int PkgArrayTypes.vhd
+src --vhdl2008 -l Int PkgInt.vhd
