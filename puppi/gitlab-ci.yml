@@ -1,136 +1,41 @@
-.puppi-common: 
-  tags: [ vivado20192 ]
-  before_script:
-    - source /opt/Xilinx/Vivado/2019.2/settings64.sh
-    - cd puppi
-  after_script:
-    - mv puppi/vivado_hls.log puppi/vivado_hls.${CI_JOB_NAME}.txt
-  artifacts:
-    when: always
-    expire_in: 7 days
-  only:
-    refs: [ branches, tags, merge_request, web, schedules ]
-    changes:
-      - "*"
-      - dataformats/**/*
-      - data/**/*
-      - pf/**/*
-      - puppi/**/*
-      - utils/**/*
-      - common/**/*
 
-.puppi-csim-common:
-  tags: [ vivado20192-small ]
-  extends: .puppi-common
-  stage: pre-build
-  variables: 
+hls-csim:puppi:
+  extends: .vivado_hls_csim
+  variables:
     puppiBoard: none
-  artifacts:
-    paths:
-      - puppi/vivado_hls.${CI_JOB_NAME}.txt
-      - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/csim/build/*.txt
+    WORKDIR: puppi
+  parallel:
+    matrix:
+      - puppiReg: Barrel
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-Barrel-csim
+      - puppiReg: HGCal
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HGCal-csim
+      - puppiReg: HGCalNoTK
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HGCalNoTK-csim
+      - puppiReg: HF
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HF-csim
 
-.puppi-csynth-common: 
-  extends: .puppi-common
-  stage: build
-  when: manual
+
+hls-csynth:puppi:
+  extends: .vivado_hls_csynth
   variables:
     puppiBoard: VCU118
-    DO_SYNTH: 1
-  artifacts:
-    paths:
-      - puppi/vivado_hls.${CI_JOB_NAME}.txt
-      - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/csim/build/*.txt
-      - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/syn/report/*
-      - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/impl/vhdl/*
-  only:
-    refs: [ branches, tags, merge_request, web, schedules ]
-    changes:
-      - dataformats/**/*
-      - puppi/*
-      - puppi/firmware/*
-      - common/firmware/*
-  dependencies: 
-
-
-linpuppi-Barrel-csim:
-  extends: .puppi-csim-common
-  variables:
-    puppiReg: Barrel
-  script:
-    - vivado_hls -f run_hls_linpuppi_tracker.tcl
-
-linpuppi-HGCal-csim:
-  extends: .puppi-csim-common
-  variables:
-    puppiReg: HGCal
-  script:
-    - vivado_hls -f run_hls_linpuppi_tracker.tcl
-
-linpuppi-HGCalNoTK-csim:
-  extends: .puppi-csim-common
-  variables:
-    puppiReg: HGCalNoTK
-  script:
-    - vivado_hls -f run_hls_linpuppi_forward.tcl
-
-linpuppi-HF-csim:
-  extends: .puppi-csim-common
-  variables:
-    puppiReg: HF
-  script:
-    - vivado_hls -f run_hls_linpuppi_forward.tcl
-
-puppiSort-HGCal-csim:
-  extends: .puppi-csim-common
-  variables:
-    puppiReg: HGCal
-  script:
-    - vivado_hls -f run_hls_puppi_sort.tcl
-  artifacts:
-    paths:
-      - puppi/vivado_hls.${CI_JOB_NAME}.txt
-
-linpuppi-Barrel-csynth:
-  extends: .puppi-csynth-common
-  variables:
-    puppiReg: Barrel
-  script:
-    - vivado_hls -f run_hls_linpuppi_tracker.tcl
-
-linpuppi-HGCal-csynth:
-  extends: .puppi-csynth-common
-  variables:
-    puppiReg: HGCal
-  script:
-    - vivado_hls -f run_hls_linpuppi_tracker.tcl
-
-linpuppi-HGCalNoTK-csynth:
-  extends: .puppi-csynth-common
-  variables:
-    puppiReg: HGCalNoTK
-  script:
-    - vivado_hls -f run_hls_linpuppi_forward.tcl
-
-linpuppi-HF-csynth:
-  extends: .puppi-csynth-common
-  variables:
-    puppiReg: HF
-  script:
-    - vivado_hls -f run_hls_linpuppi_forward.tcl
-
-puppiSort-hybrid-HGCal-csynth:
-  extends: .puppi-csynth-common
-  variables:
-    puppiReg: HGCal
-    sortAlgo: hybrid
-  script:
-    - vivado_hls -f run_hls_puppi_sort.tcl
-  artifacts:
-    paths:
-      - puppi/vivado_hls.${CI_JOB_NAME}.txt
-      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/csim/build/*.txt
-      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/syn/report/*
-      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/impl/vhdl/*
- 
-
+    WORKDIR: puppi
+  parallel:
+    matrix:
+      - puppiReg: Barrel
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-Barrel-csynth
+      - puppiReg: HGCal
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HGCal-csynth
+      - puppiReg: HGCalNoTK
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HGCalNoTK-csynth
+      - puppiReg: HF
+        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
+        VIVADO_HLS_LOG_ID: linpuppi-HF-csynth

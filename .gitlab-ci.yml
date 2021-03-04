@@ -1,14 +1,21 @@
 include:
+  - local: extern-ci/templates.yml
   - local: 'pf/gitlab-ci.yml'
   - local: 'puppi/gitlab-ci.yml'
   - local: 'l1-regionizer/multififo/gitlab-ci.yml'
+
+
+variables:
+  VIVADO_VERSION: '2019.2'
+
 
 workflow:
   rules:
     - if: $CI_MERGE_REQUEST_IID
     - if: $CI_COMMIT_TAG
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-    - if: $CI_COMMIT_BRANCH =~ /^test/
+    # - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    # - if: $CI_COMMIT_BRANCH =~ /^test/
+    - if: $CI_COMMIT_BRANCH
     
 
 stages:
