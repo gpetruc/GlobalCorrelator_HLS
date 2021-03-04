@@ -146,7 +146,7 @@ void tk2calo_caloalgo(const HadCaloObj calo[NCALO], const pt_t sumtk[NCALO], con
         //pfout[icalo].hwId  = ParticleID(calopt ? (calo[icalo].hwIsEM ? ParticleID::PHOTON : ParticleID::HADZERO) : ParticleID::NONE);
         pfout[icalo].hwId  = ParticleID(calopt ? ParticleID::HADZERO : ParticleID::NONE);
         pfout[icalo].hwEmPt  = calo[icalo].hwIsEM ? calopt : pt_t(0); // FIXME
-        pfout[icalo].hwEmID  = calopt && calo[icalo].hwIsEM ? 1 : 0;
+        pfout[icalo].hwEmID  = calopt ? calo[icalo].hwIsEM  : 0;
         pfout[icalo].hwPUID  = 0;
     }
 }
@@ -193,7 +193,7 @@ void tk2em_photons(const EmCaloObj calo[NEMCALO], const pt_t photonPt[NEMCALO], 
         pfout[icalo].hwPhi = photonPt[icalo] ? calo[icalo].hwPhi : phi_t(0);
         pfout[icalo].hwId  = ParticleID(photonPt[icalo] ? ParticleID::PHOTON : ParticleID::NONE);
         pfout[icalo].hwEmPt  = photonPt[icalo]; // FIXME
-        pfout[icalo].hwEmID  = photonPt[icalo] ? 1 : 0;
+        pfout[icalo].hwEmID  = photonPt[icalo] ? calo[icalo].hwFlags : ap_uint<4>(0);
         pfout[icalo].hwPUID  = 0;
         #ifndef __SYNTHESIS__
         if (gdebug_ && photonPt[icalo]) printf("HW emcalo %2d pt %8.2f promoted to a photon with pt %8.2f\n", icalo, calo[icalo].floatPt(), Scales::floatPt(photonPt[icalo]));
