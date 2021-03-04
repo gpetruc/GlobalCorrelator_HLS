@@ -65,7 +65,7 @@ ipbb add git https://gitlab.cern.ch/cms-cactus/phase2/firmware/correlator-common
 ## Create an emp-fwk simulation project (Modelsim)
 From the directory `my-ipbb-workspace/`:
 ```
-ipbb proj create vivado deregionizer-vcu118 correlator-common:l2-deregionizer/standalone -t deregionizer.dep
+ipbb proj create vivado deregionizer-vcu118 correlator-common:l2-deregionizer/standalone -t deregionizer-sim.dep
 cd proj/deregionizer-vcu118
 ipbb sim make-project
 ```

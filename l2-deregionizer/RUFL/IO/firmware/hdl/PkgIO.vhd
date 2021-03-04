@@ -64,9 +64,9 @@ package body DataType is
   function WriteData(d : tData) return string is 
     variable x : line;
   begin
-    write(x, to_integer(unsigned(d.data(15 downto 0))), right, 15);
-    write(x, to_integer(signed(d.data(25 downto 16))), right, 15);
-    write(x, to_integer(signed(d.data(35 downto 26))), right, 15);
+    write(x, to_integer(unsigned(d.data(13 downto 0))), right, 15);
+    write(x, to_integer(signed(d.data(25 downto 14))), right, 15);
+    write(x, to_integer(signed(d.data(36 downto 26))), right, 15);
     write(x, d.FrameValid, right, 15);
     write(x, d.DataValid, right, 15);
     return x.all;
