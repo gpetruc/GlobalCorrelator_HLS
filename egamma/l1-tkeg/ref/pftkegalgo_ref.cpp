@@ -11,13 +11,14 @@ using namespace l1ct;
 #ifdef CMSSW_GIT_HASH
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
-l1ct::pftkegalgo_config::pftkegalgo_config(const edm::ParameterSet &pset)
+l1ct::PFTkEGAlgoEmuConfig::PFTkEGAlgoEmuConfig(const edm::ParameterSet &pset)
     : nTRACK(pset.getParameter<uint32_t>("nTRACK")),
       nEMCALO(pset.getParameter<uint32_t>("nEMCALO")),
       nEMCALOSEL_EGIN(pset.getParameter<uint32_t>("nEMCALOSEL_EGIN")),
       nEM_EGOUT(pset.getParameter<uint32_t>("nEM_EGOUT")),
       filterHwQuality(pset.getParameter<bool>("filterHwQuality")),
       doBremRecovery(pset.getParameter<bool>("doBremRecovery")),
+      writeBeforeBremRecovery(pset.getParameter<bool>("writeBeforeBremRecovery")),
       caloHwQual(pset.getParameter<int>("caloHwQual")),
       emClusterPtMin(pset.getParameter<double>("caloEtMin")),
       dEtaMaxBrem(pset.getParameter<double>("dEtaMaxBrem")),
@@ -25,7 +26,22 @@ l1ct::pftkegalgo_config::pftkegalgo_config(const edm::ParameterSet &pset)
       absEtaBoundaries(pset.getParameter<std::vector<double>>("absEtaBoundaries")),
       dEtaValues(pset.getParameter<std::vector<double>>("dEtaValues")),
       dPhiValues(pset.getParameter<std::vector<double>>("dPhiValues")),
-      trkQualityPtMin(pset.getParameter<double>("trkQualityPtMin")) {}
+      trkQualityPtMin(pset.getParameter<double>("trkQualityPtMin")),
+      writeEgSta(pset.getParameter<bool>("writeEGSta")),
+      tkIsoParams_tkEle(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEle")),
+      tkIsoParams_tkEm(pset.getParameter<edm::ParameterSet>("tkIsoParametersTkEm")),
+      pfIsoParams_tkEle(pset.getParameter<edm::ParameterSet>("pfIsoParametersTkEle")),
+      pfIsoParams_tkEm(pset.getParameter<edm::ParameterSet>("pfIsoParametersTkEm")),
+      doTkIso(pset.getParameter<bool>("doTkIso")),
+      doPfIso(pset.getParameter<bool>("doPfIso")),
+      hwIsoTypeTkEle(static_cast<EGIsoEleObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEle"))),
+      hwIsoTypeTkEm(static_cast<EGIsoObjEmu::IsoType>(pset.getParameter<uint32_t>("hwIsoTypeTkEm"))) {}
+
+l1ct::PFTkEGAlgoEmuConfig::IsoParameters::IsoParameters(const edm::ParameterSet &pset)
+    : tkQualityPtMin(pset.getParameter<double>("tkQualityPtMin")),
+      dZ(pset.getParameter<double>("dZ")),
+      dRMin2(pset.getParameter<double>("dRMin") * pset.getParameter<double>("dRMin")),
+      dRMax2(pset.getParameter<double>("dRMax") * pset.getParameter<double>("dRMax")) {}
 
 #endif
 
@@ -150,9 +166,10 @@ void PFTkEGAlgoEmulator::run(const PFInputRegion &in, OutputRegion &out) const {
   std::vector<int> emCalo2tk(emcalo_sel.size(), -1);
   link_emCalo2tk(in.region, emcalo_sel, in.track, emCalo2tk);
 
+  out.egsta.clear();
   std::vector<EGIsoObjEmu> egobjs;
   std::vector<EGIsoEleObjEmu> egeleobjs;
-  eg_algo(emcalo_sel, in.track, emCalo2emCalo, emCalo2tk, egobjs, egeleobjs);
+  eg_algo(emcalo_sel, in.track, emCalo2emCalo, emCalo2tk, out.egsta, egobjs, egeleobjs);
 
   unsigned int nEGOut = std::min<unsigned>(cfg.nEM_EGOUT, egobjs.size());
   unsigned int nEGEleOut = std::min<unsigned>(cfg.nEM_EGOUT, egeleobjs.size());
@@ -168,6 +185,7 @@ void PFTkEGAlgoEmulator::eg_algo(const std::vector<EmCaloObjEmu> &emcalo,
                                  const std::vector<TkObjEmu> &track,
                                  const std::vector<int> &emCalo2emCalo,
                                  const std::vector<int> &emCalo2tk,
+                                 std::vector<EGObjEmu> &egstas,
                                  std::vector<EGIsoObjEmu> &egobjs,
                                  std::vector<EGIsoEleObjEmu> &egeleobjs) const {
   for (int ic = 0, nc = emcalo.size(); ic < nc; ++ic) {
@@ -183,29 +201,48 @@ void PFTkEGAlgoEmulator::eg_algo(const std::vector<EmCaloObjEmu> &emcalo,
     int itk = emCalo2tk[ic];
 
     // check if brem recovery is on
-    if (!cfg.doBremRecovery) {
+    if (!cfg.doBremRecovery || cfg.writeBeforeBremRecovery) {
       // 1. create EG objects before brem recovery
-      addEgObjsToPF(emcalo, track, ic, calo.hwFlags, calo.hwPt, itk, egobjs, egeleobjs);
-      continue;
+      addEgObjsToPF(egstas, egobjs, egeleobjs, emcalo, track, ic, calo.hwFlags, calo.hwPt, itk);
     }
+
+    if (!cfg.doBremRecovery)
+      continue;
 
     // check if the cluster has already been used in a brem reclustering
     if (emCalo2emCalo[ic] != -1)
       continue;
 
     pt_t ptBremReco = calo.hwPt;
+    std::vector<unsigned int> components;
 
     for (int jc = ic; jc < nc; ++jc) {
       if (emCalo2emCalo[jc] == ic) {
         auto &otherCalo = emcalo[jc];
         ptBremReco += otherCalo.hwPt;
+        components.push_back(jc);
       }
     }
 
     // 2. create EG objects with brem recovery
-    // FIXME: duplicating the object is suboptimal but this is done for keeping things as in TDR code...
-    addEgObjsToPF(emcalo, track, ic, calo.hwFlags + 1, ptBremReco, itk, egobjs, egeleobjs);
+    // NOTE: duplicating the object is suboptimal but this is done for keeping things as in TDR code...
+    addEgObjsToPF(egstas, egobjs, egeleobjs, emcalo, track, ic, calo.hwFlags + 1, ptBremReco, itk, components);
   }
+}
+
+EGObjEmu &PFTkEGAlgoEmulator::addEGStaToPF(std::vector<EGObjEmu> &egobjs,
+                                           const EmCaloObjEmu &calo,
+                                           const int hwQual,
+                                           const pt_t ptCorr,
+                                           const std::vector<unsigned int> &components) const {
+  EGObjEmu egsta;
+  egsta.clear();
+  egsta.hwPt = ptCorr;
+  egsta.hwEta = calo.hwEta;
+  egsta.hwPhi = calo.hwPhi;
+  egsta.hwQual = hwQual;
+  egobjs.push_back(egsta);
+  return egobjs.back();
 }
 
 EGIsoObjEmu &PFTkEGAlgoEmulator::addEGIsoToPF(std::vector<EGIsoObjEmu> &egobjs,
@@ -216,13 +253,13 @@ EGIsoObjEmu &PFTkEGAlgoEmulator::addEGIsoToPF(std::vector<EGIsoObjEmu> &egobjs,
     std::cout << "[REF] Add EGIsoObjEmu with pt: " << ptCorr << " qual: " << hwQual << " eta: " << calo.hwEta << " phi "
               << calo.hwPhi << std::endl;
 
-  // FIXME: content
   EGIsoObjEmu egiso;
+  egiso.clear();
   egiso.hwPt = ptCorr;
   egiso.hwEta = calo.hwEta;
   egiso.hwPhi = calo.hwPhi;
-  // egiso.hwQual = hwQual;
-  // egiso.hwIso = 0;
+  egiso.hwQual = hwQual;
+  egiso.srcCluster = calo.src;
   egobjs.push_back(egiso);
   return egobjs.back();
 }
@@ -236,33 +273,119 @@ EGIsoEleObjEmu &PFTkEGAlgoEmulator::addEGIsoEleToPF(std::vector<EGIsoEleObjEmu> 
     std::cout << "[REF] Add EGIsoEleObjEmu with pt: " << ptCorr << " qual: " << hwQual << " eta: " << calo.hwEta
               << " phi " << calo.hwPhi << std::endl;
 
-  // FIXME: event content
   EGIsoEleObjEmu egiso;
+  egiso.clear();
   egiso.hwPt = ptCorr;
   egiso.hwEta = calo.hwEta;
   egiso.hwPhi = calo.hwPhi;
-
-  // egiso.hwVtxEta = track.hwVtxEta;
-  // egiso.hwVtxPhi = track.hwVtxPhi;
+  egiso.hwQual = hwQual;
+  egiso.hwDEta = track.hwVtxEta() - egiso.hwEta;
+  egiso.hwDPhi = abs(track.hwVtxPhi() - egiso.hwPhi);
   egiso.hwZ0 = track.hwZ0;
-  // egiso.hwCharge = track.hwCharge;
-
-  // egiso.hwQual = hwQual;
-  // egiso.hwIso = 0;
+  egiso.hwCharge = track.hwCharge;
+  egiso.srcCluster = calo.src;
+  egiso.srcTrack = track.src;
   egobjs.push_back(egiso);
   return egobjs.back();
 }
 
-void PFTkEGAlgoEmulator::addEgObjsToPF(const std::vector<EmCaloObjEmu> &emcalo,
+void PFTkEGAlgoEmulator::addEgObjsToPF(std::vector<EGObjEmu> &egstas,
+                                       std::vector<EGIsoObjEmu> &egobjs,
+                                       std::vector<EGIsoEleObjEmu> &egeleobjs,
+                                       const std::vector<EmCaloObjEmu> &emcalo,
                                        const std::vector<TkObjEmu> &track,
                                        const int calo_idx,
                                        const int hwQual,
                                        const pt_t ptCorr,
                                        const int tk_idx,
-                                       std::vector<EGIsoObjEmu> &egobjs,
-                                       std::vector<EGIsoEleObjEmu> &egeleobjs) const {
+                                       const std::vector<unsigned int> &components) const {
+  int sta_idx = -1;
+  if (writeEgSta()) {
+    addEGStaToPF(egstas, emcalo[calo_idx], hwQual, ptCorr, components);
+    sta_idx = egstas.size() - 1;
+  }
   EGIsoObjEmu &egobj = addEGIsoToPF(egobjs, emcalo[calo_idx], hwQual, ptCorr);
+  egobj.sta_idx = sta_idx;
   if (tk_idx != -1) {
-    addEGIsoEleToPF(egeleobjs, emcalo[calo_idx], track[tk_idx], hwQual, ptCorr);
+    EGIsoEleObjEmu &eleobj = addEGIsoEleToPF(egeleobjs, emcalo[calo_idx], track[tk_idx], hwQual, ptCorr);
+    eleobj.sta_idx = sta_idx;
+  }
+}
+
+void PFTkEGAlgoEmulator::runIso(const PFInputRegion &in,
+                                const std::vector<l1ct::PVObjEmu> &pvs,
+                                OutputRegion &out) const {
+  float z0 = Scales::floatZ0(pvs[0].hwZ0);
+  if (cfg.doTkIso) {
+    compute_isolation(out.egelectron, in.track, cfg.tkIsoParams_tkEle, z0);
+    compute_isolation(out.egphoton, in.track, cfg.tkIsoParams_tkEm, z0);
+  }
+  if (cfg.doPfIso) {
+    compute_isolation(out.egelectron, out.pfcharged, out.pfneutral, cfg.pfIsoParams_tkEle, z0);
+    compute_isolation(out.egphoton, out.pfcharged, out.pfneutral, cfg.pfIsoParams_tkEm, z0);
+  }
+
+  std::for_each(out.egelectron.begin(), out.egelectron.end(), [&](EGIsoEleObjEmu &obj) {
+    obj.hwIso = obj.hwIsoVar(cfg.hwIsoTypeTkEle);
+  });
+  std::for_each(
+      out.egphoton.begin(), out.egphoton.end(), [&](EGIsoObjEmu &obj) { obj.hwIso = obj.hwIsoVar(cfg.hwIsoTypeTkEm); });
+}
+
+void PFTkEGAlgoEmulator::compute_isolation(std::vector<EGIsoObjEmu> &egobjs,
+                                           const std::vector<TkObjEmu> &objects,
+                                           const PFTkEGAlgoEmuConfig::IsoParameters &params,
+                                           const float z0) const {
+  for (int ic = 0, nc = egobjs.size(); ic < nc; ++ic) {
+    auto &egphoton = egobjs[ic];
+    float sumPt = 0.;
+    float sumPtPV = 0.;
+    compute_sumPt(sumPt, sumPtPV, objects, egphoton, params, z0);
+    egphoton.setHwIso(EGIsoObjEmu::IsoType::TkIso, Scales::makeIso(sumPt));
+    egphoton.setHwIso(EGIsoObjEmu::IsoType::TkIsoPV, Scales::makeIso(sumPtPV));
+  }
+}
+
+void PFTkEGAlgoEmulator::compute_isolation(std::vector<EGIsoEleObjEmu> &egobjs,
+                                           const std::vector<TkObjEmu> &objects,
+                                           const PFTkEGAlgoEmuConfig::IsoParameters &params,
+                                           const float z0) const {
+  for (int ic = 0, nc = egobjs.size(); ic < nc; ++ic) {
+    auto &egele = egobjs[ic];
+    float sumPt = 0.;
+    float sumPtPV = 0.;
+    compute_sumPt(sumPt, sumPtPV, objects, egele, params, z0);
+    egele.setHwIso(EGIsoEleObjEmu::IsoType::TkIso, Scales::makeIso(sumPtPV));
+  }
+}
+
+void PFTkEGAlgoEmulator::compute_isolation(std::vector<EGIsoObjEmu> &egobjs,
+                                           const std::vector<PFChargedObjEmu> &charged,
+                                           const std::vector<PFNeutralObjEmu> &neutrals,
+                                           const PFTkEGAlgoEmuConfig::IsoParameters &params,
+                                           const float z0) const {
+  for (int ic = 0, nc = egobjs.size(); ic < nc; ++ic) {
+    auto &egphoton = egobjs[ic];
+    float sumPt = 0.;
+    float sumPtPV = 0.;
+    compute_sumPt(sumPt, sumPtPV, charged, egphoton, params, z0);
+    compute_sumPt(sumPt, sumPtPV, neutrals, egphoton, params, z0);
+    egphoton.setHwIso(EGIsoObjEmu::IsoType::PfIso, Scales::makeIso(sumPt));
+    egphoton.setHwIso(EGIsoObjEmu::IsoType::PfIsoPV, Scales::makeIso(sumPtPV));
+  }
+}
+
+void PFTkEGAlgoEmulator::compute_isolation(std::vector<EGIsoEleObjEmu> &egobjs,
+                                           const std::vector<PFChargedObjEmu> &charged,
+                                           const std::vector<PFNeutralObjEmu> &neutrals,
+                                           const PFTkEGAlgoEmuConfig::IsoParameters &params,
+                                           const float z0) const {
+  for (int ic = 0, nc = egobjs.size(); ic < nc; ++ic) {
+    auto &egele = egobjs[ic];
+    float sumPt = 0.;
+    float sumPtPV = 0.;
+    compute_sumPt(sumPt, sumPtPV, charged, egele, params, z0);
+    compute_sumPt(sumPt, sumPtPV, neutrals, egele, params, z0);
+    egele.setHwIso(EGIsoEleObjEmu::IsoType::PfIso, Scales::makeIso(sumPtPV));
   }
 }
