@@ -77,9 +77,13 @@ void link_emCalo2emCalo(const EmCaloObj emcalo[NEMCALO_EGIN], ap_uint<NEMCALO_EG
     auto &calo = emcalo[ic];
     brem_reco_inner_loop: for (int jc = ic + 1; jc < NEMCALO_EGIN; ++jc) {
       auto &otherCalo = emcalo[jc];
+      ap_int<eta_t::width+1> deta =  otherCalo.hwEta - calo.hwEta;
+      deta = (deta > 0) ? deta : ap_int<eta_t::width+1>(-deta);
+      ap_int<phi_t::width+1> dphi = otherCalo.hwPhi - calo.hwPhi;
+      dphi = (dphi > 0) ? dphi : ap_int<phi_t::width+1>(-dphi);
       if (calo.hwPt != 0 && otherCalo.hwPt != 0 &&
-        hls::abs(otherCalo.hwEta - calo.hwEta) < dEtaMaxBrem_ &&
-          hls::abs(otherCalo.hwPhi - calo.hwPhi) < dPhiMaxBrem_) {
+        deta < dEtaMaxBrem_ &&
+        dphi < dPhiMaxBrem_) {
             emCalo2emcalo_bit[ic][jc] = 1;
             emCalo2emcalo_bit[jc][jc] = 1; // use diagonal bit to mark the cluster as already used
             // std::cout << "[FW] BREM: set to be used " << ic << " " << jc << std::endl;
