@@ -30,13 +30,13 @@ int main() {
     bool doBremRecovery = false;
     float emClusterPtMin = 2.;
 #endif
-
+  bool writeBeforeBremRecovery = false;
   int caloHwQual = 4;
   float dEtaMaxBrem = 0.02;
   float dPhiMaxBrem = 0.1;
-  std::vector<float> absEtaBoundaries={0.0, 1.5};
-  std::vector<float> dEtaValues={0.015, 0.0174533};
-  std::vector<float> dPhiValues={0.07, 0.07};
+  std::vector<double> absEtaBoundaries={0.0, 1.5};
+  std::vector<double> dEtaValues={0.015, 0.0174533};
+  std::vector<double> dPhiValues={0.07, 0.07};
   
   // FIXME: need region center in FW, we don't have it for now hence we keep 1 value for the barrel
   // std::vector<float> absEtaBoundaries_{0.0, 0.9, 1.5};
@@ -61,9 +61,9 @@ int main() {
   EGIsoEleObj egele[NEM_EGOUT];
 
 
-  l1ct::pftkegalgo_config cfg(
+  l1ct::PFTkEGAlgoEmuConfig cfg(
     NTRACK, NEMCALO, NEMCALO_EGIN, NEM_EGOUT, 
-    filterHwQuality, doBremRecovery, caloHwQual, emClusterPtMin,
+    filterHwQuality, doBremRecovery, writeBeforeBremRecovery, caloHwQual, emClusterPtMin,
     dEtaMaxBrem, dPhiMaxBrem, absEtaBoundaries, dEtaValues, dPhiValues, trkQualityPtMin);
 
   l1ct::PFTkEGAlgoEmulator emulator(cfg);
