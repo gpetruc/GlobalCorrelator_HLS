@@ -35,7 +35,7 @@ dpt_t ell_dpt_int_cap(glbeta_t abseta_ref, eta_t eta1, phi_t phi1, eta_t eta2, p
 
     ap_uint<22> ell = d_phi*d_phi + d_eta*d_eta*cdeta;
 
-    std::cout << "[FW] ell: " << ell << " cm: " << cm << " match:" << (ell <= int(cm)) <<std::endl;
+    // std::cout << "[FW] ell: " << ell << " cm: " << cm << " match:" << (ell <= int(cm)) <<std::endl;
     
     dpt_t d_pt = hls::abs(pt1 - pt2);
     return (ell <= int(cm)) ? d_pt : max;
@@ -56,7 +56,7 @@ void calo2tk_ellipticdptvals(const l1ct::PFRegion & region, const EmCaloObj &em,
         calo_track_dptval[itk] = eDPTMAX;
       } else {
         calo_track_dptval[itk] = ell_dpt_int_cap(abseta, em.hwEta, em.hwPhi, track[itk].hwEta, track[itk].hwPhi, em.hwPt, track[itk].hwPt, eDPTMAX);
-        std::cout << "[" << itk << "] dpt: " << calo_track_dptval[itk] << std::endl;
+        // std::cout << "[" << itk << "] dpt: " << calo_track_dptval[itk] << std::endl;
       }
     }
 
@@ -82,8 +82,8 @@ void link_emCalo2emCalo(const EmCaloObj emcalo[NEMCALO_EGIN], ap_uint<NEMCALO_EG
           hls::abs(otherCalo.hwPhi - calo.hwPhi) < dPhiMaxBrem_) {
             emCalo2emcalo_bit[ic][jc] = 1;
             emCalo2emcalo_bit[jc][jc] = 1; // use diagonal bit to mark the cluster as already used
-            std::cout << "[FW] BREM: set to be used " << ic << " " << jc << std::endl;
-            std::cout << "[FW] BREM: set to skip " << jc << " " << jc << std::endl;
+            // std::cout << "[FW] BREM: set to be used " << ic << " " << jc << std::endl;
+            // std::cout << "[FW] BREM: set to skip " << jc << " " << jc << std::endl;
       }
     }
   }
@@ -124,8 +124,8 @@ void sel_emCalo(const EmCaloObj emcalo[NEMCALO], EmCaloObj emcalo_sel[NEMCALO_EG
   clear(emcalo_zero);
   in_select_loop: for(int ic = 0; ic < NEMCALO; ++ic) {
     emcalo_sel_temp[ic] = (emcalo[ic].hwFlags == 4) ? emcalo[ic] : emcalo_zero;
-    if(emcalo[ic].hwPt > 0) std::cout << "[FW] IN emcalo[" << ic << "] with pt: " << emcalo[ic].hwPt << " qual: " << emcalo[ic].hwFlags << " eta: " << emcalo[ic].hwEta << " phi " << emcalo[ic].hwPhi << std::endl;
-    if(emcalo_sel_temp[ic].hwPt > 0)std::cout << "[FW] SEL emcalo with pt: " << emcalo_sel_temp[ic].hwPt << " qual: " << emcalo_sel_temp[ic].hwFlags << " eta: " << emcalo_sel_temp[ic].hwEta << " phi " << emcalo_sel_temp[ic].hwPhi << std::endl;
+    // if(emcalo[ic].hwPt > 0) std::cout << "[FW] IN emcalo[" << ic << "] with pt: " << emcalo[ic].hwPt << " qual: " << emcalo[ic].hwFlags << " eta: " << emcalo[ic].hwEta << " phi " << emcalo[ic].hwPhi << std::endl;
+    // if(emcalo_sel_temp[ic].hwPt > 0)std::cout << "[FW] SEL emcalo with pt: " << emcalo_sel_temp[ic].hwPt << " qual: " << emcalo_sel_temp[ic].hwFlags << " eta: " << emcalo_sel_temp[ic].hwEta << " phi " << emcalo_sel_temp[ic].hwPhi << std::endl;
 
   }
   ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALO_EGIN>(emcalo_sel_temp, emcalo_sel);  
@@ -147,8 +147,8 @@ void sel_emCalo(const EmCaloObj emcalo[NEMCALO], EmCaloObj emcalo_sel[NEMCALO_EG
   in_select_loop: for(int ic = 0; ic < NEMCALO; ++ic) {
     // we require pt>2GeV
     emcalo_sel_temp[ic] = (emcalo[ic].hwPt >= 2.) ? emcalo[ic] : emcalo_zero;
-    if(emcalo[ic].hwPt > 0) std::cout << "[FW] IN emcalo [" << ic << "] with pt: " << emcalo[ic].hwPt << " qual: " << emcalo[ic].hwFlags << " eta: " << emcalo[ic].hwEta << " phi " << emcalo[ic].hwPhi << std::endl;
-    if(emcalo_sel_temp[ic].hwPt > 0)std::cout << "[FW] SEL emcalo with pt: " << emcalo_sel_temp[ic].hwPt << " qual: " << emcalo_sel_temp[ic].hwFlags << " eta: " << emcalo_sel_temp[ic].hwEta << " phi " << emcalo_sel_temp[ic].hwPhi << std::endl;
+    // if(emcalo[ic].hwPt > 0) std::cout << "[FW] IN emcalo [" << ic << "] with pt: " << emcalo[ic].hwPt << " qual: " << emcalo[ic].hwFlags << " eta: " << emcalo[ic].hwEta << " phi " << emcalo[ic].hwPhi << std::endl;
+    // if(emcalo_sel_temp[ic].hwPt > 0)std::cout << "[FW] SEL emcalo with pt: " << emcalo_sel_temp[ic].hwPt << " qual: " << emcalo_sel_temp[ic].hwFlags << " eta: " << emcalo_sel_temp[ic].hwEta << " phi " << emcalo_sel_temp[ic].hwPhi << std::endl;
 
   }
   ptsort_hwopt<EmCaloObj,NEMCALO,NEMCALO_EGIN>(emcalo_sel_temp, emcalo_sel);
@@ -208,10 +208,14 @@ void pftkegalgo(const l1ct::PFRegion & region, const EmCaloObj emcalo[NCALO], co
   #pragma HLS ARRAY_PARTITION variable=eles_temp complete dim=1
 
   loop_calo: for (int ic = 0; ic < NEMCALO_EGIN; ++ic) {
-    if(emcalo_sel[ic].hwPt > 0)std::cout << "[FW] emcalo [" << ic << "]  with pt: " << emcalo_sel[ic].hwPt << " qual: " << emcalo_sel[ic].hwFlags << " eta: " << emcalo_sel[ic].hwEta << " phi " << emcalo_sel[ic].hwPhi << std::endl;
+
+    // if(emcalo_sel[ic].hwPt > 0)std::cout << "[FW] emcalo [" << ic << "]  with pt: " << emcalo_sel[ic].hwPt << " qual: " << emcalo_sel[ic].hwFlags << " eta: " << emcalo_sel[ic].hwEta << " phi " << emcalo_sel[ic].hwPhi << std::endl;
 
     clear(photons_temp[ic]);
     clear(eles_temp[ic]);
+    
+    if(emcalo_sel[ic].hwPt == 0) continue;
+
     int track_id = -1;
     loop_track_matched: for(int it = 0; it < NTRACK; ++it) {
       if(emCalo2tk_bit[ic][it]) {
@@ -221,8 +225,10 @@ void pftkegalgo(const l1ct::PFRegion & region, const EmCaloObj emcalo[NCALO], co
     }
 
     pt_t ptcorr = emcalo_sel[ic].hwPt;
+    egquality_t hwQual = egquality_t(emcalo_sel[ic].hwFlags);
     #if defined(DOBREMRECOVERY)
       if(emCalo2emcalo_bit[ic][ic] != 1) {
+        hwQual++;
         // FIXME: we should set the quality bit as "brem-recovery performed"
         loop_calo_brem_reco: for (int ioc = 0; ioc < NEMCALO_EGIN; ++ioc) {
           if(emCalo2emcalo_bit[ic][ioc]) {
@@ -232,7 +238,7 @@ void pftkegalgo(const l1ct::PFRegion & region, const EmCaloObj emcalo[NCALO], co
       } else {
         // This cluster has alread been used in brem reclustering
         // shall we just set the quality to a different value???
-        std::cout << "   skip!" << std::endl;
+        // std::cout << "   skip!" << std::endl;
         continue;
       }
     #endif
@@ -240,15 +246,19 @@ void pftkegalgo(const l1ct::PFRegion & region, const EmCaloObj emcalo[NCALO], co
     photons_temp[ic].hwPt = ptcorr;
     photons_temp[ic].hwEta = emcalo_sel[ic].hwEta;
     photons_temp[ic].hwPhi = emcalo_sel[ic].hwPhi;
-    if(photons_temp[ic].hwPt) std::cout << "[FW] Add EGIsoObj with pt: " << ptcorr << " qual: " << "NULL" << " eta: " << photons_temp[ic].hwEta << " phi " << photons_temp[ic].hwPhi << std::endl;
+    photons_temp[ic].hwQual = hwQual;
+    // if(photons_temp[ic].hwPt) std::cout << "[FW] Add EGIsoObj with pt: " << ptcorr << " qual: " << photons_temp[ic].hwQual << " eta: " << photons_temp[ic].hwEta << " phi " << photons_temp[ic].hwPhi << std::endl;
 
     if(emCalo2tk_bit[ic]) {
       eles_temp[ic].hwPt = ptcorr;
       eles_temp[ic].hwEta = emcalo_sel[ic].hwEta;
       eles_temp[ic].hwPhi = emcalo_sel[ic].hwPhi;
-      // FIXME: add track properties @ vertex using track[track_id]
+      eles_temp[ic].hwQual = hwQual;
+      eles_temp[ic].hwDEta = track[track_id].hwVtxEta() - eles_temp[ic].hwEta;
+      eles_temp[ic].hwDPhi = hls::abs(track[track_id].hwVtxPhi() - eles_temp[ic].hwPhi);
+      eles_temp[ic].hwCharge = track[track_id].hwCharge;
       eles_temp[ic].hwZ0 = track[track_id].hwZ0;
-      if(eles_temp[ic].hwPt) std::cout << "[FW] Add EGIsoEleObj with pt: " << ptcorr << " qual: " << "NULL" << " eta: " << eles_temp[ic].hwEta << " phi " << eles_temp[ic].hwPhi << std::endl;
+      // if(eles_temp[ic].hwPt) std::cout << "[FW] Add EGIsoEleObj with pt: " << ptcorr << " qual: " <<   eles_temp[ic].hwQual << " eta: " << eles_temp[ic].hwEta << " phi " << eles_temp[ic].hwPhi << std::endl;
 
     } 
 
