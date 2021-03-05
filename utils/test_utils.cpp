@@ -83,11 +83,12 @@ bool puppi_equals(const l1ct::PuppiObj &out_ref, const l1ct::PuppiObj &out, cons
 bool egiso_equals(const l1ct::EGIsoObj &out_ref, const l1ct::EGIsoObj &out, const char *what, int idx) {
     bool ret = (out_ref == out);
     if  (!ret) {
-        printf("Mismatch at %s[%d] ref vs test, hwPt % .2f % .2f   hwEta %+7d %+7d   hwPhi %+7d %+7d  \n", what, idx,
+        printf("Mismatch at %s[%d] ref vs test, hwPt % .2f % .2f   hwEta %+7d %+7d   hwPhi %+7d %+7d  hwQual %+7d %+7d, hwIso %+7d %+7d,\n", what, idx,
                 out_ref.floatPt(), out.floatPt(),
                 out_ref.intEta(), out.intEta(),
-                out_ref.intPhi(), out.intPhi());
-                // FIXME: complete
+                out_ref.intPhi(), out.intPhi(),
+                out_ref.intQual(), out.intQual(),
+                out_ref.intIso(), out.intIso());
     }
     return ret;
 }
