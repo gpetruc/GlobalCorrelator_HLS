@@ -20,7 +20,9 @@
 #include <memory>
 
 #define TLEN REGIONIZERNCLOCKS 
-
+#ifndef NTEST
+#define NTEST 50
+#endif
 
 template<unsigned int NCHANN, unsigned int NBITS>
 class Channels {
@@ -97,7 +99,7 @@ int main(int argc, char **argv) {
     l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, /*ii=*/(stream?4:6));
     l1ct::PFAlgo2HGCEmulator pfEmulator(NTRACK, NCALO, NMU, NCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
-                        PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
+                        l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
@@ -112,7 +114,7 @@ int main(int argc, char **argv) {
                           l1ct::Scales::makePt(LINPUPPI_ptCut), l1ct::Scales::makePt(LINPUPPI_ptCut_1));
 
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
-    for (int itest = 0; itest < 50; ++itest) {
+    for (int itest = 0; itest < NTEST; ++itest) {
         if (!inputs.nextEvent()) break;
         const auto & decodedObjs = inputs.event().decoded;
 
@@ -259,7 +261,6 @@ int main(int argc, char **argv) {
                 channelsReg.data[ilink++] = calo_out[i].pack(); 
             for (int i = 0; i < NMUOUT; ++i) 
                 channelsReg.data[ilink++] = mu_out[i].pack();
-            channelsReg.dump();
 
             if ((itest > 0) && (iclock % PFLOWII == 0) && (iclock/PFLOWII < NPFREGIONS)) {
                 int ireg = (iclock/PFLOWII);
@@ -286,13 +287,13 @@ int main(int argc, char **argv) {
                 if (itest <= 5) printf("Will run Puppi with z0 = %d in event %d, region %d\n", pv_prev.hwZ0.to_int(), itest-1, ireg);
                 puEmulator.setDebug(itest <= 5);
 
-                std::vector<l1ct::PuppiObjEmu> outallch, outselne;
+                std::vector<l1ct::PuppiObjEmu> outallch, outallne_nocut, outallne, outselne;
                 puEmulator.linpuppi_chs_ref(pfin.region, pv_prev, pfout.pfcharged, outallch);
-                puEmulator.linpuppi_ref(pfin.region, pfin.track, pv_prev, pfout.pfneutral, outselne);
+                puEmulator.linpuppi_ref(pfin.region, pfin.track, pv_prev, pfout.pfneutral, outallne_nocut, outallne, outselne);
 
                 outallch.resize(NTRACK);
-                outselne.resize(NCALO);
-                outallch.insert(outallch.end(), outselne.begin(), outselne.end());
+                outallne.resize(NCALO);
+                outallch.insert(outallch.end(), outallne.begin(), outallne.end());
                 ilink = 0; channelsPuppi.clear(true);
                 for (auto & pup : outallch) channelsPuppi.data[ilink++] = pup.pack();
 
@@ -302,9 +303,12 @@ int main(int argc, char **argv) {
                 for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
 
-            channelsPf.dump();
-            channelsPuppi.dump();
-            channelsPuppiSort.dump();
+            if (itest > 0) { // avoid dumping frames of zeros
+                channelsReg.dump();
+                channelsPf.dump();
+                channelsPuppi.dump();
+                channelsPuppiSort.dump();
+            }
 
             if (iclock == TLEN-1) pv_prev = inputs.event().pv();
         }

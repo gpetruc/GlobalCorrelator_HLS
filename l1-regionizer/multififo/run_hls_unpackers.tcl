@@ -1,6 +1,6 @@
 if { [ info exists env(pfBoard) ] } { set pfBoard $env(pfBoard) } { set pfBoard "VCU118" }
 if { [ info exists env(pfReg) ] } { set pfReg $env(pfReg) } { set pfReg "HGCal" }
-set regionizerCFlags "-DROUTER_NOSTREAM -DNO_VALIDATE -DROUTER_ISMUX=1 -DROUTER_ISSTREAM=0";
+set regionizerCFlags "-DROUTER_NOSTREAM -DNO_VALIDATE -DROUTER_ISMUX=1 -DROUTER_ISSTREAM=0 -DNTEST=10";
 
 set cflags "-std=c++0x -DREG_${pfReg} -DBOARD_${pfBoard} ${regionizerCFlags}"
 
@@ -30,7 +30,9 @@ foreach func ${funcs} {
 
     csim_design
     csynth_design
-    cosim_design -trace_level all
+    if { [info exists env(DO_COSIM)] && $env(DO_COSIM) == "1"  } {
+        cosim_design -trace_level all
+    }
 }
 
 exit
