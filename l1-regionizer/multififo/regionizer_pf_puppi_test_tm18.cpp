@@ -20,7 +20,9 @@
 #include <memory>
 
 #define TLEN REGIONIZERNCLOCKS 
-
+#ifndef NTEST
+#define NTEST 50
+#endif
 
 template<unsigned int NCHANN, unsigned int NBITS>
 class Channels {
@@ -112,7 +114,7 @@ int main(int argc, char **argv) {
                           l1ct::Scales::makePt(LINPUPPI_ptCut), l1ct::Scales::makePt(LINPUPPI_ptCut_1));
 
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
-    for (int itest = 0; itest < 50; ++itest) {
+    for (int itest = 0; itest < NTEST; ++itest) {
         if (!inputs.nextEvent()) break;
         const auto & decodedObjs = inputs.event().decoded;
 
