@@ -21,9 +21,9 @@
     - .vivado_base
   stage: pre-build
   script:
-    - vivado_hls -f ${VIVADO_HLS_TCL_SCRIPT}
+    - vivado_hls -f $(echo ${VIVADO_HLS_TCL_SCRIPT} | envsubst)
   after_script:
-    - mv -v ${WORKDIR}/vivado_hls.log ${WORKDIR}/vivado_hls.${VIVADO_HLS_LOG_ID}.log
+    - 'mv -v ${WORKDIR}/vivado_hls.log ${WORKDIR}/vivado_hls.$(echo ${VIVADO_HLS_LOG_ID} | envsubst).log'
   artifacts:
     paths:
       - ${WORKDIR}/vivado_hls.${VIVADO_HLS_LOG_ID}.log
@@ -38,9 +38,9 @@
   when: manual
   allow_failure: false
   script:
-    - DO_SYNTH=1 vivado_hls -f ${VIVADO_HLS_TCL_SCRIPT}
+    - DO_SYNTH=1 vivado_hls -f $(echo ${VIVADO_HLS_TCL_SCRIPT} | envsubst)
   after_script:
-    - mv -v ${WORKDIR}/vivado_hls.log ${WORKDIR}/vivado_hls.${VIVADO_HLS_LOG_ID}.log
+    - mv -v ${WORKDIR}/vivado_hls.log ${WORKDIR}/vivado_hls.$(echo ${VIVADO_HLS_LOG_ID} | envsubst).log
   artifacts:
     paths:
       - ${WORKDIR}/vivado_hls.${VIVADO_HLS_LOG_ID}.log

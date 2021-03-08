@@ -1,41 +1,28 @@
 
-hls-csim:puppi:
-  extends: .vivado_hls_csim
+.puppi-hls-common:
   variables:
-    puppiBoard: none
     WORKDIR: puppi
   parallel:
     matrix:
-      - puppiReg: Barrel
+      - puppiReg: [Barrel, HGCal]
         VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-Barrel-csim
-      - puppiReg: HGCal
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HGCal-csim
-      - puppiReg: HGCalNoTK
+      - puppiReg: [HGCalNoTK, HF]
         VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HGCalNoTK-csim
-      - puppiReg: HF
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HF-csim
+
+
+hls-csim:puppi:
+  extends:
+    - .vivado_hls_csim
+    - .puppi-hls-common
+  variables:
+    puppiBoard: none
+    VIVADO_HLS_LOG_ID: linpuppi-$${puppiReg}-csim
 
 
 hls-csynth:puppi:
-  extends: .vivado_hls_csynth
+  extends:
+    - .vivado_hls_csynth
+    - .puppi-hls-common
   variables:
     puppiBoard: VCU118
-    WORKDIR: puppi
-  parallel:
-    matrix:
-      - puppiReg: Barrel
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-Barrel-csynth
-      - puppiReg: HGCal
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_tracker.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HGCal-csynth
-      - puppiReg: HGCalNoTK
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HGCalNoTK-csynth
-      - puppiReg: HF
-        VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
-        VIVADO_HLS_LOG_ID: linpuppi-HF-csynth
+    VIVADO_HLS_LOG_ID: linpuppi-$${puppiReg}-csynth

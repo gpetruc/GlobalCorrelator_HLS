@@ -4,25 +4,21 @@ hls-csim:l1r-multififo:
   variables:
     pfBoard: none
     pfReg: HGCal
+    VIVADO_HLS_LOG_ID: l1r-mf-$${regionizerMode}-csim
     VIVADO_HLS_TCL_SCRIPT: run_hls_csim.tcl
     WORKDIR: l1-regionizer/multififo
   parallel:
     matrix:
-      - regionizerMode: mux
-        VIVADO_HLS_LOG_ID: l1r-mf-mux-csim
-      - regionizerMode: nomux
-        VIVADO_HLS_LOG_ID: l1r-mf-nomux-csim
-      - regionizerMode: stream
-        VIVADO_HLS_LOG_ID: l1r-mf-stream-csim
+      - regionizerMode: [mux, nomux, stream]
 
 
 hls-csim:l1r-multififo-tm18:
   extends: .vivado_hls_csim
   variables:
-    pfReg: HGCal
     pfBoard: VCU118
-    VIVADO_HLS_TCL_SCRIPT: run_hls_csim_pf_puppi_tm18.tcl
+    pfReg: HGCal
     VIVADO_HLS_LOG_ID: l1r-mf-tm18-csim
+    VIVADO_HLS_TCL_SCRIPT: run_hls_csim_pf_puppi_tm18.tcl
     WORKDIR: l1-regionizer/multififo
 
 
@@ -45,7 +41,7 @@ hdl-sim:l1r-multififo-mux:
   variables:
     regionizerMode: mux
   dependencies:
-    - 'hls-csim:l1r-multififo: [mux, l1r-mf-mux-csim]'
+    - 'hls-csim:l1r-multififo: [mux]'
   script:
     - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
     - "./run_vhdltb.sh vhdl-mux-tk  && pattern_diff.py vhdl-mux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -s 54 --sr 54 -l 8 exact"
@@ -56,7 +52,7 @@ hdl-sim:l1r-multififo-nomux:
   variables:
     regionizerMode: nomux
   dependencies:
-    - 'hls-csim:l1r-multififo: [nomux, l1r-mf-nomux-csim]'
+    - 'hls-csim:l1r-multififo: [nomux]'
   script:
     - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
     - "./run_vhdltb.sh vhdl-nomux-tk && pattern_diff.py vhdl-nomux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -l 6 exact"
@@ -68,7 +64,7 @@ hdl-sim:l1r-multififo-stream:
   variables:
     regionizerMode: stream
   dependencies:
-    - 'hls-csim:l1r-multififo: [stream, l1r-mf-stream-csim]'
+    - 'hls-csim:l1r-multififo: [stream]'
   script:
     - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
     - "./run_vhdltb.sh vhdl-stream-tk  && pattern_diff.py vhdl-stream-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -c 1-25 -l 10 exact"

@@ -1,29 +1,29 @@
 
-hls-csim:pf:
-  extends: .vivado_hls_csim
+.pf-hls-common:
   variables:
+    VIVADO_HLS_TCL_SCRIPT: run_hls_$${PF_ALGO_TAG}.tcl
     WORKDIR: pf
-    pfBoard: none
   parallel:
     matrix:
-      - pfReg: Barrel
-        VIVADO_HLS_TCL_SCRIPT: run_hls_pfalgo3.tcl
-        VIVADO_HLS_LOG_ID: pfalgo3-csim
-      - pfReg: HGCal
-        VIVADO_HLS_TCL_SCRIPT: run_hls_pfalgo2hgc.tcl
-        VIVADO_HLS_LOG_ID: pfalgo2hgc-csim
+      - PF_ALGO_TAG: pfalgo3
+        pfReg: Barrel
+      - PF_ALGO_TAG: pfalgo2hgc
+        pfReg: HGCal
+
+
+hls-csim:pf:
+  extends:
+    - .vivado_hls_csim
+    - .pf-hls-common
+  variables:
+    pfBoard: none
+    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}-csim
 
 
 hls-csynth:pf:
-  extends: .vivado_hls_csynth
+  extends:
+    - .vivado_hls_csynth
+    - .pf-hls-common
   variables:
-    WORKDIR: pf
     pfBoard: VCU118
-  parallel:
-    matrix:
-      - pfReg: Barrel
-        VIVADO_HLS_TCL_SCRIPT: run_hls_pfalgo3.tcl
-        VIVADO_HLS_LOG_ID: pfalgo3-csynth
-      - pfReg: HGCal
-        VIVADO_HLS_TCL_SCRIPT: run_hls_pfalgo2hgc.tcl
-        VIVADO_HLS_LOG_ID: pfalgo2hgc-csynth
+    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}-csynth
