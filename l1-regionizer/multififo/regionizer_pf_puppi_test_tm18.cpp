@@ -11,7 +11,7 @@
 #include "../../pf/firmware/pfalgo2hgc.h"
 #include "../../puppi/linpuppi_ref.h"
 #include "../../puppi/firmware/linpuppi.h"
-#include "../../common/bitonic_sort_ref.h"
+#include "../../common/bitonic_hybrid_sort_ref.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -299,7 +299,8 @@ int main(int argc, char **argv) {
                 for (auto & pup : outallch) channelsPuppi.data[ilink++] = pup.pack();
 
                 pfout.puppi.resize(NPUPPIFINALSORTED);
-                bitonic_sort_and_crop_ref(NTRACK+NCALO, NPUPPIFINALSORTED, &outallch[0], &pfout.puppi[0]);
+                hybrid_bitonic_sort_and_crop_ref(NTRACK+NCALO, NPUPPIFINALSORTED, &outallch[0], &pfout.puppi[0]);
+
                 ilink = 0; channelsPuppiSort.clear(true);
                 for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
