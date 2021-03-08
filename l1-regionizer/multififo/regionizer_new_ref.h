@@ -30,6 +30,11 @@ namespace l1ct {
             bool step(bool newEvent, const std::vector<l1ct::EmCaloObjEmu> & links, std::vector<l1ct::EmCaloObjEmu> & out , bool mux=true) ;
             bool step(bool newEvent, const std::vector<l1ct::HadCaloObjEmu> & links, std::vector<l1ct::HadCaloObjEmu> & out , bool mux=true) ;
             bool step(bool newEvent, const std::vector<l1ct::MuObjEmu> & links, std::vector<l1ct::MuObjEmu> & out , bool mux=true) ;
+            void destream(int iclock, const std::vector<l1ct::TkObjEmu> & tk_out, 
+                                      const std::vector<l1ct::EmCaloObjEmu> & em_out, 
+                                      const std::vector<l1ct::HadCaloObjEmu> & calo_out,
+                                      const std::vector<l1ct::MuObjEmu> & mu_out,
+                                      PFInputRegion & out);
 
             // link emulation from decoded inputs (for simulation)
             void fillLinks(unsigned int iclock, const RegionizerDecodedInputs & in, std::vector<l1ct::TkObjEmu> & links);
@@ -44,7 +49,7 @@ namespace l1ct {
             void toFirmware(const std::vector<l1ct::MuObjEmu> & emu, MuObj fw[NMU_LINKS]) ;
             
         private:
-            unsigned int nendcaps_, nclocks_, ntk_, ncalo_, nem_, nmu_, outii_;
+            unsigned int nendcaps_, nclocks_, ntk_, ncalo_, nem_, nmu_, outii_, nregions_;
             bool streaming_;
             bool init_;
 

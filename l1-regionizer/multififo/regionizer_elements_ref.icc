@@ -266,3 +266,17 @@ bool l1ct::multififo_regionizer::Regionizer<T>::step(bool newEvent, const std::v
     }
 }
 
+template<typename T>
+void l1ct::multififo_regionizer::Regionizer<T>::destream(int iclock, const std::vector<T> & streams, std::vector<T> & out) {
+    assert(streaming_ && outii_ > 0);
+    assert(streams.size() == nout_);
+    int local_clk = iclock % outii_;
+    if (local_clk == 0) {
+        out.resize(nsorted_);
+        for (auto & o : out) o.clear();
+    }
+    for (unsigned int i = 0, j = local_clk; j < nsorted_; ++i, j += outii_) {
+        out[j] = streams[i];
+    }
+}
+

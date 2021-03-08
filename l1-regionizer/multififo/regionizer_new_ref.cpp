@@ -52,7 +52,9 @@ l1ct::MultififoRegionizerEmulator::~MultififoRegionizerEmulator()
 }
 
 void l1ct::MultififoRegionizerEmulator::initSectorsAndRegions(const RegionizerDecodedInputs & in, const std::vector<PFInputRegion> & out) {
+    assert(!init_); init_ = true;
     assert(out.size() == NTK_SECTORS*nendcaps_);
+    nregions_ = out.size();
     if (ntk_) {
         assert(in.track.size() == NTK_SECTORS*nendcaps_);
         tkRegionizer_.initSectors(in.track);
@@ -186,7 +188,76 @@ void l1ct::MultififoRegionizerEmulator::toFirmware(const std::vector<l1ct::MuObj
     }
 }
 
+void l1ct::MultififoRegionizerEmulator::destream(int iclock, const std::vector<l1ct::TkObjEmu> & tk_out, 
+                                      const std::vector<l1ct::EmCaloObjEmu> & em_out, 
+                                      const std::vector<l1ct::HadCaloObjEmu> & calo_out,
+                                      const std::vector<l1ct::MuObjEmu> & mu_out,
+                                      PFInputRegion & out) {
+    if (ntk_) tkRegionizer_.destream(iclock, tk_out, out.track);
+    if (ncalo_) hadCaloRegionizer_.destream(iclock, calo_out, out.hadcalo);
+    if (nem_) emCaloRegionizer_.destream(iclock, em_out, out.emcalo);
+    if (nmu_) muRegionizer_.destream(iclock, mu_out, out.muon);
+}
+
+
 void l1ct::MultififoRegionizerEmulator::run(const RegionizerDecodedInputs & in, std::vector<PFInputRegion> & out) {
-    assert(false);
+    if (!init_) initSectorsAndRegions(in, out);
+    tkRegionizer_.reset();
+    emCaloRegionizer_.reset();
+    hadCaloRegionizer_.reset();
+    muRegionizer_.reset();
+    std::vector<l1ct::TkObjEmu> tk_links_in, tk_out;
+    std::vector<l1ct::EmCaloObjEmu> em_links_in, em_out;
+    std::vector<l1ct::HadCaloObjEmu> calo_links_in, calo_out;
+    std::vector<l1ct::MuObjEmu> mu_links_in, mu_out;
+
+    // read and sort the inputs
+    for (int iclock = 0; iclock < nclocks_; ++iclock) {
+        fillLinks(iclock, in, tk_links_in);
+        fillLinks(iclock, in, em_links_in);
+        fillLinks(iclock, in, calo_links_in);
+        fillLinks(iclock, in, mu_links_in);
+
+        bool newevt = (iclock == 0), mux = true;
+        step(newevt, tk_links_in, tk_out, mux);
+        step(newevt, em_links_in, em_out, mux);
+        step(newevt, calo_links_in, calo_out, mux);
+        step(newevt, mu_links_in, mu_out, mux);
+    }
+
+    // set up an empty event
+    for (auto & l: tk_links_in) l.clear();
+    for (auto & l: em_links_in) l.clear();
+    for (auto & l: calo_links_in) l.clear();
+    for (auto & l: mu_links_in) l.clear();
+
+    // read and put the inputs in the regions
+    assert(out.size() == nregions_);
+    for (int iclock = 0; iclock < nclocks_; ++iclock) {
+        bool newevt = (iclock == 0), mux = true;
+        step(newevt, tk_links_in, tk_out, mux);
+        step(newevt, em_links_in, em_out, mux);
+        step(newevt, calo_links_in, calo_out, mux);
+        step(newevt, mu_links_in, mu_out, mux);
+
+        int ireg = iclock/outii_; 
+        if (ireg >= nregions_) break;
+
+        if (streaming_) {
+            destream(iclock, tk_out, em_out, calo_out, mu_out, out[ireg]);
+        } else {
+            if (iclock % outii_ == 0) {
+                out[ireg].track   = tk_out;
+                out[ireg].emcalo  = em_out;
+                out[ireg].hadcalo = calo_out;
+                out[ireg].muon    = mu_out;
+            }
+        }
+    }
+
+    tkRegionizer_.reset();
+    emCaloRegionizer_.reset();
+    hadCaloRegionizer_.reset();
+    muRegionizer_.reset();
 }
 

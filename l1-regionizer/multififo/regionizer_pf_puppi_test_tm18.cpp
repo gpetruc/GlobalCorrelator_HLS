@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     const unsigned int nchann_in = NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1, nchann_vcu118 = 120;
     const unsigned int nchann_decoded = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS + 1;
-    const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT;
+    const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT + 1;
     const unsigned int nchann_pf = NTRACK + NCALO + NMU, nchann_puppi = NTRACK + NCALO, nchann_sort = NPUPPIFINALSORTED;
     const unsigned int tk_offs = 0, calo_offs = NTKSECTORS*3, mu_offs = calo_offs + NCALOSECTORS * NCALOFIBERS * 3, vtx_offs = mu_offs + 3;
 
@@ -95,8 +95,8 @@ int main(int argc, char **argv) {
     unsigned int frame = 0, ilink; 
     bool ok = true, first = true;
     const bool mux = ROUTER_ISMUX, stream = ROUTER_ISSTREAM;
-    assert(NTKOUT == NTRACK && NCALOOUT == NCALO && NMUOUT == NMU);
-    l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, /*ii=*/(stream?4:6));
+    const unsigned int regii = (stream ? 4 : 6), pfii = 6;
+    l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, stream, regii);
     l1ct::PFAlgo2HGCEmulator pfEmulator(NTRACK, NCALO, NMU, NCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                         l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
@@ -225,6 +225,7 @@ int main(int argc, char **argv) {
 
             // emulate regionizer
             std::vector<l1ct::TkObjEmu> tk_links_in, tk_out;
+            std::vector<l1ct::EmCaloObjEmu> em_links_in, em_out; // not used but needed by interface
             std::vector<l1ct::HadCaloObjEmu> calo_links_in, calo_out;
             std::vector<l1ct::MuObjEmu> mu_links_in, mu_out;
 
@@ -261,15 +262,15 @@ int main(int argc, char **argv) {
                 channelsReg.data[ilink++] = calo_out[i].pack(); 
             for (int i = 0; i < NMUOUT; ++i) 
                 channelsReg.data[ilink++] = mu_out[i].pack();
+            unsigned int ireg = iclock/regii; bool region_valid = ireg < allpfin.size();
+            channelsReg.data[ilink++] = region_valid ? allpfin[ireg].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
 
-            if ((itest > 0) && (iclock % PFLOWII == 0) && (iclock/PFLOWII < NPFREGIONS)) {
-                int ireg = (iclock/PFLOWII);
-                ////  ok we can run PF and puppi
-                pfin.clear();
-                pfin.region  = allpfin[ireg].region;
-                pfin.track   = tk_out;
-                pfin.hadcalo = calo_out;
-                pfin.muon    = mu_out;
+            if (itest > 0 && region_valid) {
+                regEmulator.destream(iclock, tk_out, em_out, calo_out, mu_out, allpfin[ireg]);
+            }
+            if (itest > 0 && (iclock % pfii == pfii - 1) && (iclock / pfii < NPFREGIONS)) {
+                ireg = (iclock/pfii);
+                pfin = allpfin[ireg];
                 if (itest <= 5) printf("Will run PF event %d, region %d\n", itest-1, ireg);
                 pfEmulator.setDebug(itest <= 5);
                 pfEmulator.run(pfin, pfout);
@@ -303,8 +304,9 @@ int main(int argc, char **argv) {
                 for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
 
-            if (itest > 0) { // avoid dumping frames of zeros
-                channelsReg.dump();
+                
+            if (itest > 0) channelsReg.dump(); // avoid dumping frames of zeros
+            if (frame >= TLEN + pfii - 1) {  // avoid dumping frames of zeros
                 channelsPf.dump();
                 channelsPuppi.dump();
                 channelsPuppiSort.dump();

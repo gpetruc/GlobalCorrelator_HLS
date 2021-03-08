@@ -107,6 +107,7 @@ namespace l1ct {
                     // single clock emulation
                     bool step(bool newEvent, const std::vector<T> & links, std::vector<T> & out, bool mux=true) ;
 
+                    void destream(int iclock, const std::vector<T> & streams, std::vector<T> & out);
                 private:
                     unsigned int nsectors_, nregions_, nsorted_, nout_, outii_;
                     bool streaming_;
