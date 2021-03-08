@@ -1,6 +1,6 @@
 if { [ info exists env(pfBoard) ] } { set pfBoard $env(pfBoard) } { set pfBoard "VCU118" }
 if { [ info exists env(pfReg) ] } { set pfReg $env(pfReg) } { set pfReg "HGCal" }
-set regionizerCFlags "-DROUTER_NOSTREAM -DNO_VALIDATE -DROUTER_ISMUX=1 -DROUTER_ISSTREAM=0 -DNTEST=10";
+set regionizerCFlags "-DROUTER_STREAM -DNO_VALIDATE -DROUTER_ISMUX=1 -DROUTER_ISSTREAM=1 -DNTEST=10";
 
 set cflags "-std=c++0x -DREG_${pfReg} -DBOARD_${pfBoard} ${regionizerCFlags}"
 
