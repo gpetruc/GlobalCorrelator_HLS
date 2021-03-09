@@ -2,7 +2,6 @@
 #include "../../utils/pattern_serializer.h"
 #include "../../utils/test_utils.h"
 #include "../../utils/DumpFileReader.h"
-#include "regionizer_ref.h"
 #include "regionizer_new_ref.h"
 
 #include <cstdlib>
@@ -26,9 +25,6 @@ int main(int argc, char **argv) {
     FILE *fref_tk   = fopen("output-ref-tk.txt", "w");
     FILE *fref_calo = fopen("output-ref-calo.txt", "w");
     FILE *fref_mu = fopen("output-ref-mu.txt", "w");
-    FILE *fold_tk   = fopen("output-old-tk.txt", "w");
-    FILE *fold_calo = fopen("output-old-calo.txt", "w");
-    FILE *fold_mu = fopen("output-old-mu.txt", "w");
 
     const unsigned int nchann_in = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS;
     #ifdef ROUTER_NOMUX
@@ -72,9 +68,9 @@ int main(int argc, char **argv) {
         if (first) { emulator.initSectorsAndRegions(in, pfin); first = false; }
 
         for (int i = 0; i < TLEN; ++i, ++frame) {
-            std::vector<l1ct::TkObjEmu> tk_links_in_emu, tk_out_oldemu, tk_out_emu;
-            std::vector<l1ct::HadCaloObjEmu> calo_links_in_emu, calo_out_oldemu, calo_out_emu;
-            std::vector<l1ct::MuObjEmu> mu_links_in_emu, mu_out_oldemu, mu_out_emu;
+            std::vector<l1ct::TkObjEmu> tk_links_in_emu, tk_out_emu;
+            std::vector<l1ct::HadCaloObjEmu> calo_links_in_emu, calo_out_emu;
+            std::vector<l1ct::MuObjEmu> mu_links_in_emu, mu_out_emu;
 
             emulator.fillLinks(i, in, tk_links_in_emu);
             emulator.fillLinks(i, in, calo_links_in_emu);
@@ -116,9 +112,6 @@ int main(int argc, char **argv) {
             bool tk_ref_good   = emulator.step(newevt_ref, tk_links_in_emu, tk_out_emu, mux);
             bool calo_ref_good = emulator.step(newevt_ref, calo_links_in_emu, calo_out_emu, mux);
             bool mu_ref_good = emulator.step(newevt_ref, mu_links_in_emu, mu_out_emu, mux);
-            bool tk_old_good   = tk_router_ref(newevt_ref, tk_links_in_emu, tk_out_oldemu);
-            bool calo_old_good = calo_router_ref(newevt_ref, calo_links_in_emu, calo_out_oldemu);
-            bool mu_old_good = mu_router_ref(newevt_ref, etaCenter, mu_links_in_emu, mu_out_oldemu);
 
 #if defined(ROUTER_NOMERGE) || defined(ROUTER_NOMUX)
             bool tk_good   = tk_router(i == 0, tk_links64_in, tk_links64_out, tk_newevt_out);
@@ -165,43 +158,27 @@ int main(int argc, char **argv) {
             fprintf(fin_mu, "\n");
             fprintf(fout_tk, "%5d %1d %1d   ", frame, int(tk_good), int(tk_newevt_out));
             fprintf(fref_tk, "%5d %1d %1d   ", frame, int(tk_ref_good), int(newevt_ref));
-            fprintf(fold_tk, "%5d %1d %1d   ", frame, int(tk_old_good), int(newevt_ref));
             fprintf(fout_calo, "%5d %1d %1d   ", frame, int(calo_good), int(calo_newevt_out));
             fprintf(fref_calo, "%5d %1d %1d   ", frame, int(calo_ref_good), int(newevt_ref));
-            fprintf(fold_calo, "%5d %1d %1d   ", frame, int(calo_old_good), int(newevt_ref));
             fprintf(fout_mu, "%5d %1d %1d   ", frame, int(mu_good), int(mu_newevt_out));
             fprintf(fref_mu, "%5d %1d %1d   ", frame, int(mu_ref_good), int(newevt_ref));
-            fprintf(fold_mu, "%5d %1d %1d   ", frame, int(mu_old_good), int(newevt_ref));
             for (int r = 0; r < NTKOUT; ++r) printTrack(fout_tk, tk_links_out[r]);
             for (int r = 0; r < NTKOUT; ++r) printTrack(fref_tk, tk_out_emu[r]);
-            for (int r = 0; r < NTKOUT; ++r) printTrack(fold_tk, tk_out_oldemu[r]);
             for (int r = 0; r < NCALOOUT; ++r) printCalo(fout_calo, calo_links_out[r]);
             for (int r = 0; r < NCALOOUT; ++r) printCalo(fref_calo, calo_out_emu[r]);
-            for (int r = 0; r < NCALOOUT; ++r) printCalo(fold_calo, calo_out_oldemu[r]);
             for (int r = 0; r < NMUOUT; ++r) printMu(fout_mu, mu_links_out[r]);
             for (int r = 0; r < NMUOUT; ++r) printMu(fref_mu, mu_out_emu[r]);
-            for (int r = 0; r < NMUOUT; ++r) printMu(fold_mu, mu_out_oldemu[r]);
             fprintf(fout_tk, "\n");
             fprintf(fout_calo, "\n");
             fprintf(fout_mu, "\n");
             fprintf(fref_tk, "\n");
             fprintf(fref_calo, "\n");
             fprintf(fref_mu, "\n");
-            fprintf(fold_tk, "\n");
-            fprintf(fold_calo, "\n");
-            fprintf(fold_mu, "\n");
 
             serPatternsIn.packAndWrite(nchann_in, all_channels_in, i < TLEN-1);
             serPatternsOut.packAndWrite(nchann_out, all_channels_out);
             serPatternsRef.packAndWrite(nchann_out, all_channels_ref);
              
-
-#ifdef NO_REF_VALIDATE
-            continue;
-#endif
-            for (int r = 0; r < NTKOUT; ++r) ok = ok && track_equals(tk_out_emu[r], tk_out_oldemu[r], "track emu vs old ", r);
-            for (int r = 0; r < NCALOOUT; ++r)  ok = ok && had_equals(calo_out_emu[r], calo_out_oldemu[r], "calo emu vs old ", r);
-            for (int r = 0; r < NMUOUT; ++r)  ok = ok && mu_equals(mu_out_emu[r], mu_out_oldemu[r], "mu emu vs old ", r);
 
 #ifdef NO_VALIDATE
             continue;
@@ -273,15 +250,12 @@ int main(int argc, char **argv) {
 
     fclose(fin_tk);
     fclose(fref_tk);
-    fclose(fold_tk);
     fclose(fout_tk);
     fclose(fin_calo);
     fclose(fref_calo);
-    fclose(fold_calo);
     fclose(fout_calo);
     fclose(fin_mu);
     fclose(fref_mu);
-    fclose(fold_mu);
     fclose(fout_mu);
 
     return ok ? 0 : 1;

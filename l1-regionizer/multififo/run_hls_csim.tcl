@@ -8,7 +8,6 @@ set_top ${hlsTopFunc}
 add_files firmware/calo_regionizer.cpp -cflags "${cflags}"
 add_files firmware/tk_regionizer.cpp -cflags "${cflags}"
 add_files firmware/mu_regionizer.cpp -cflags "${cflags}"
-add_files -tb regionizer_ref.cpp -cflags "${cflags}"
 add_files -tb regionizer_new_ref.cpp -cflags "${cflags}"
 add_files -tb regionizer_test.cpp -cflags "${cflags}"
 add_files -tb ../common/regionizer_base_ref.cpp -cflags "${cflags}"
