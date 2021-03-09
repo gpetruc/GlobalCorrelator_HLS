@@ -1,12 +1,7 @@
 #ifndef multififo_regionizer_elements_ref_h
 #define multififo_regionizer_elements_ref_h
 
-
-#ifdef CMSSW_GIT_HASH
-    #include "../../dataformats/layer1_emulator.h"
-#else
-    #include "../../dataformats/layer1_emulator.h"
-#endif
+#include "../../dataformats/layer1_emulator.h"
 
 #include <list>
 #include <vector>

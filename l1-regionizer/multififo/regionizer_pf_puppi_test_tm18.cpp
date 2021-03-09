@@ -1,5 +1,5 @@
 #include "firmware/regionizer.h"
-#include "regionizer_new_ref.h"
+#include "multififo_regionizer_ref.h"
 #include "../../utils/pattern_serializer.h"
 #include "../../utils/test_utils.h"
 #include "../../utils/DumpFileReader.h"

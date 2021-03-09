@@ -1,8 +1,8 @@
-#include "regionizer_new_ref.h"
+#include "multififo_regionizer_ref.h"
 
 #include <iostream>
 
-#include "regionizer_elements_ref.icc"
+#include "multififo_regionizer_elements_ref.icc"
 
 
 l1ct::MultififoRegionizerEmulator::MultififoRegionizerEmulator(unsigned int nendcaps, unsigned int nclocks, unsigned int ntk, unsigned int ncalo, unsigned int nem, unsigned int nmu, bool streaming, unsigned int outii) :

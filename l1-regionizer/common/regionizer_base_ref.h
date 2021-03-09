@@ -1,11 +1,7 @@
 #ifndef REGIONIZER_BASE_REF_H
 #define REGIONIZER_BASE_REF_H
 
-#ifdef CMSSW_GIT_HASH
-#include "../dataformats/layer1_emulator.h"
-#else
 #include "../../dataformats/layer1_emulator.h"
-#endif
 
 namespace l1ct {
 

@@ -1,13 +1,9 @@
 #ifndef multififo_regionizer_ref_h
 #define multififo_regionizer_ref_h
 
-#ifdef CMSSW_GIT_HASH
-    #include "../regionizer_base_ref.h"
-#else
-    #include "../common/regionizer_base_ref.h"
-#endif
+#include "../common/regionizer_base_ref.h"
 
-#include "regionizer_elements_ref.h"
+#include "multififo_regionizer_elements_ref.h"
 
 namespace l1ct {
     class MultififoRegionizerEmulator : public RegionizerEmulator {

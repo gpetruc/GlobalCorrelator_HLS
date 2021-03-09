@@ -18,7 +18,7 @@ add_files -tb ../../pf/ref/pfalgo_common_ref.cpp   -cflags "${cflags}"
 add_files -tb ../../pf/ref/pfalgo2hgc_ref.cpp   -cflags "${cflags}"
 add_files -tb ../../puppi/linpuppi_ref.cpp   -cflags "${cflags}"
 add_files -tb ../common/regionizer_base_ref.cpp -cflags "${cflags}"
-add_files -tb regionizer_new_ref.cpp -cflags "${cflags}"
+add_files -tb multififo_regionizer_ref.cpp -cflags "${cflags}"
 add_files -tb ../../utils/pattern_serializer.cpp -cflags "${cflags}"
 add_files -tb ../../utils/test_utils.cpp -cflags "${cflags}"
 add_files -tb ../../data/${sample}_${pfReg}.dump
