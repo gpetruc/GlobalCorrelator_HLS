@@ -23,6 +23,7 @@ foreach algo $algos {
     open_solution -reset "solution"
     set_part {xcvu9p-flga2104-2L-e}
     create_clock -period 1.8 -name default
+    config_rtl -reset none
 
     # just check that the C++ compiles
     csim_design

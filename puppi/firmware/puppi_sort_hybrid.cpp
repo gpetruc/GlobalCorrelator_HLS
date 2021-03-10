@@ -7,6 +7,7 @@ void sort_puppi_cands_bitonic(PackedPuppiObj presort[NTRACK+NALLNEUTRALS],Packed
     #pragma HLS pipeline II=1
     #pragma HLS ARRAY_PARTITION variable=presort complete
     #pragma HLS ARRAY_PARTITION variable=sorted complete
+    #pragma HLS interface ap_none port=sorted
     l1ct::PuppiObj unpacked_presort[NTRACK+NALLNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=unpacked_presort complete
     l1ct::PuppiObj unpacked_sorted[NPUPPIFINALSORTED];
@@ -23,6 +24,7 @@ void sort_puppi_cands_hybrid(PackedPuppiObj presort[NTRACK+NALLNEUTRALS],PackedP
     #pragma HLS pipeline II=1
     #pragma HLS ARRAY_PARTITION variable=presort complete
     #pragma HLS ARRAY_PARTITION variable=sorted complete
+    #pragma HLS interface ap_none port=sorted
     l1ct::PuppiObj unpacked_presort[NTRACK+NALLNEUTRALS];
     #pragma HLS ARRAY_PARTITION variable=unpacked_presort complete
     l1ct::PuppiObj unpacked_sorted[NPUPPIFINALSORTED];
