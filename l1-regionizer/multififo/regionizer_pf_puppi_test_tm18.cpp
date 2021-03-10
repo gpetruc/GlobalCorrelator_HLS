@@ -99,19 +99,19 @@ int main(int argc, char **argv) {
     l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, stream, regii);
     l1ct::PFAlgo2HGCEmulator pfEmulator(NTRACK, NCALO, NMU, NCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
-                        l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
+                        PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
     pfEmulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
     l1ct::LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NALLNEUTRALS,
-                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_iptMax, LINPUPPI_dzCut,
                           l1ct::Scales::makeGlbEta(LINPUPPI_etaCut), 
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          l1ct::Scales::makePt(LINPUPPI_ptCut), l1ct::Scales::makePt(LINPUPPI_ptCut_1));
+                          LINPUPPI_ptCut, LINPUPPI_ptCut_1);
 
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
     for (int itest = 0; itest < NTEST; ++itest) {

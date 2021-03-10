@@ -84,7 +84,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_DR2MAX  4727 // 0.3 cone
 #define LINPUPPI_DR2MIN   257 // 0.07 cone
 #define LINPUPPI_dzCut     10
-#define LINPUPPI_ptMax    200 // 50.0/LINPUPPI_ptLSB 
+#define LINPUPPI_iptMax    200 // 50.0/LINPUPPI_ptLSB 
 
 #define LINPUPPI_ptSlopeNe  0.3
 #define LINPUPPI_ptSlopePh  0.3
@@ -96,7 +96,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_priorNe    5.0
 #define LINPUPPI_priorPh    1.0
 
-#define LINPUPPI_ptCut        4 // 1.0/LINPUPPI_ptLSB
+#define LINPUPPI_ptCut      1.0 
 
 //=================================================
 #elif defined(REG_HGCal) 
@@ -107,7 +107,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_DR2MAX  4727 // 0.3 cone
 #define LINPUPPI_DR2MIN    84 // 0.04 cone
 #define LINPUPPI_dzCut     40
-#define LINPUPPI_ptMax    200 // 50.0/LINPUPPI_ptLSB 
+#define LINPUPPI_iptMax    200 // 50.0/LINPUPPI_ptLSB 
 
 #define LINPUPPI_ptSlopeNe  0.3 
 #define LINPUPPI_ptSlopePh  0.4 
@@ -130,8 +130,8 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_priorPh_1    1.5 
 
 
-#define LINPUPPI_ptCut        4 // 1.0/LINPUPPI_ptLSB
-#define LINPUPPI_ptCut_1      8 // 2.0/LINPUPPI_ptLSB
+#define LINPUPPI_ptCut       1.0
+#define LINPUPPI_ptCut_1     2.0
 
 //=================================================
 #elif defined(REG_HGCalNoTK)
@@ -139,7 +139,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_DR2MAX  4727 // 0.3 cone
 #define LINPUPPI_DR2MIN    84 // 0.04 cone
 #define LINPUPPI_dzCut     40 // unused
-#define LINPUPPI_ptMax    200 // 50.0/LINPUPPI_ptLSB 
+#define LINPUPPI_iptMax    200 // 50.0/LINPUPPI_ptLSB 
 
 #define LINPUPPI_ptSlopeNe  0.3
 #define LINPUPPI_ptSlopePh  0.4
@@ -151,7 +151,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_priorNe    7.0
 #define LINPUPPI_priorPh    5.0
 
-#define LINPUPPI_ptCut       16 // 4.0/LINPUPPI_ptLSB
+#define LINPUPPI_ptCut      4.0
 
 //=================================================
 #elif defined(REG_HF)
@@ -160,7 +160,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_DR2MIN   525 // 0.1 cone
 #define LINPUPPI_dzCut     40 // unused
 
-#define LINPUPPI_ptMax    400 // 100.0/LINPUPPI_ptLSB 
+#define LINPUPPI_iptMax    400 // 100.0/LINPUPPI_ptLSB 
 
 #define LINPUPPI_ptSlopeNe  0.25
 #define LINPUPPI_ptSlopePh  0.25
@@ -172,7 +172,7 @@ void linpuppi_set_debug(bool debug);
 #define LINPUPPI_priorNe    6.0
 #define LINPUPPI_priorPh    6.0
 
-#define LINPUPPI_ptCut      40  // 10.0/LINPUPPI_ptLSB
+#define LINPUPPI_ptCut     10.0 
 
 #endif
 
