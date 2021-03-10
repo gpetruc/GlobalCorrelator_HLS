@@ -3,11 +3,16 @@
 
 #include "../../dataformats/layer1_emulator.h"
 
+namespace edm {
+  class ParameterSet;
+}
+
 namespace l1ct {
 
   class RegionizerEmulator {
   public:
-    RegionizerEmulator() : debug_(false) {}
+    RegionizerEmulator(bool useAlsoVtxCoords = true) : useAlsoVtxCoords_(useAlsoVtxCoords), debug_(false) {}
+    RegionizerEmulator(const edm::ParameterSet& iConfig);
 
     virtual ~RegionizerEmulator();
 
@@ -17,6 +22,7 @@ namespace l1ct {
     virtual void run(const RegionizerDecodedInputs& in, std::vector<PFInputRegion>& out);
 
   protected:
+    bool useAlsoVtxCoords_;
     bool debug_;
   };
 
