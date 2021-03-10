@@ -17,6 +17,7 @@
       - l1-regionizer/common/**/*
       - l1-regionizer/multififo/**/*
       - utils/**/*
+      - common/**/*
 
 .l1reg-multififo-csim-common:
   extends: .l1reg-multififo-common

@@ -1,5 +1,5 @@
 #include "firmware/regionizer.h"
-#include "regionizer_new_ref.h"
+#include "multififo_regionizer_ref.h"
 #include "../../utils/pattern_serializer.h"
 #include "../../utils/test_utils.h"
 #include "../../utils/DumpFileReader.h"
@@ -11,7 +11,7 @@
 #include "../../pf/firmware/pfalgo2hgc.h"
 #include "../../puppi/linpuppi_ref.h"
 #include "../../puppi/firmware/linpuppi.h"
-#include "../../common/bitonic_sort_ref.h"
+#include "../../common/bitonic_hybrid_sort_ref.h"
 
 #include <cstdlib>
 #include <cstdio>
@@ -53,7 +53,7 @@ int main(int argc, char **argv) {
 
     const unsigned int nchann_in = NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1, nchann_vcu118 = 120;
     const unsigned int nchann_decoded = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS + 1;
-    const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT;
+    const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT + 1;
     const unsigned int nchann_pf = NTRACK + NCALO + NMU, nchann_puppi = NTRACK + NCALO, nchann_sort = NPUPPIFINALSORTED;
     const unsigned int tk_offs = 0, calo_offs = NTKSECTORS*3, mu_offs = calo_offs + NCALOSECTORS * NCALOFIBERS * 3, vtx_offs = mu_offs + 3;
 
@@ -95,23 +95,23 @@ int main(int argc, char **argv) {
     unsigned int frame = 0, ilink; 
     bool ok = true, first = true;
     const bool mux = ROUTER_ISMUX, stream = ROUTER_ISSTREAM;
-    assert(NTKOUT == NTRACK && NCALOOUT == NCALO && NMUOUT == NMU);
-    l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, /*streaming=*/stream, /*ii=*/(stream?4:6));
+    const unsigned int regii = (stream ? 4 : 6), pfii = 6;
+    l1ct::MultififoRegionizerEmulator regEmulator(/*nendcaps=*/1, REGIONIZERNCLOCKS, NTRACK, NCALO, /*NEM=*/0, NMU, stream, regii);
     l1ct::PFAlgo2HGCEmulator pfEmulator(NTRACK, NCALO, NMU, NCALO,
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
-                        l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), l1ct::Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
+                        PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
     pfEmulator.loadPtErrBins(PTERR_BINS, ptErr_edges, ptErr_scales, ptErr_offss);   
     l1ct::LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NALLNEUTRALS,
-                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_iptMax, LINPUPPI_dzCut,
                           l1ct::Scales::makeGlbEta(LINPUPPI_etaCut), 
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          l1ct::Scales::makePt(LINPUPPI_ptCut), l1ct::Scales::makePt(LINPUPPI_ptCut_1));
+                          LINPUPPI_ptCut, LINPUPPI_ptCut_1);
 
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
     for (int itest = 0; itest < NTEST; ++itest) {
@@ -225,6 +225,7 @@ int main(int argc, char **argv) {
 
             // emulate regionizer
             std::vector<l1ct::TkObjEmu> tk_links_in, tk_out;
+            std::vector<l1ct::EmCaloObjEmu> em_links_in, em_out; // not used but needed by interface
             std::vector<l1ct::HadCaloObjEmu> calo_links_in, calo_out;
             std::vector<l1ct::MuObjEmu> mu_links_in, mu_out;
 
@@ -261,15 +262,15 @@ int main(int argc, char **argv) {
                 channelsReg.data[ilink++] = calo_out[i].pack(); 
             for (int i = 0; i < NMUOUT; ++i) 
                 channelsReg.data[ilink++] = mu_out[i].pack();
+            unsigned int ireg = iclock/regii; bool region_valid = ireg < allpfin.size();
+            channelsReg.data[ilink++] = region_valid ? allpfin[ireg].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
 
-            if ((itest > 0) && (iclock % PFLOWII == 0) && (iclock/PFLOWII < NPFREGIONS)) {
-                int ireg = (iclock/PFLOWII);
-                ////  ok we can run PF and puppi
-                pfin.clear();
-                pfin.region  = allpfin[ireg].region;
-                pfin.track   = tk_out;
-                pfin.hadcalo = calo_out;
-                pfin.muon    = mu_out;
+            if (itest > 0 && region_valid) {
+                regEmulator.destream(iclock, tk_out, em_out, calo_out, mu_out, allpfin[ireg]);
+            }
+            if (itest > 0 && (iclock % pfii == pfii - 1) && (iclock / pfii < NPFREGIONS)) {
+                ireg = (iclock/pfii);
+                pfin = allpfin[ireg];
                 if (itest <= 5) printf("Will run PF event %d, region %d\n", itest-1, ireg);
                 pfEmulator.setDebug(itest <= 5);
                 pfEmulator.run(pfin, pfout);
@@ -298,13 +299,15 @@ int main(int argc, char **argv) {
                 for (auto & pup : outallch) channelsPuppi.data[ilink++] = pup.pack();
 
                 pfout.puppi.resize(NPUPPIFINALSORTED);
-                bitonic_sort_and_crop_ref(NTRACK+NCALO, NPUPPIFINALSORTED, &outallch[0], &pfout.puppi[0]);
+                hybrid_bitonic_sort_and_crop_ref(NTRACK+NCALO, NPUPPIFINALSORTED, &outallch[0], &pfout.puppi[0]);
+
                 ilink = 0; channelsPuppiSort.clear(true);
                 for (auto & pup : pfout.puppi) channelsPuppiSort.data[ilink++] = pup.pack();
             }
 
-            if (itest > 0) { // avoid dumping frames of zeros
-                channelsReg.dump();
+                
+            if (itest > 0) channelsReg.dump(); // avoid dumping frames of zeros
+            if (frame >= TLEN + pfii - 1) {  // avoid dumping frames of zeros
                 channelsPf.dump();
                 channelsPuppi.dump();
                 channelsPuppiSort.dump();

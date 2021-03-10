@@ -26,11 +26,11 @@ int main() {
                          PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
                          PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NNEUTRALS,
-                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_iptMax, LINPUPPI_dzCut,
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
                           LINPUPPI_priorNe, LINPUPPI_priorPh,
-                          Scales::makePt(LINPUPPI_ptCut));
+                          LINPUPPI_ptCut);
     printf("Multiplicities per region: Tk %d, EmCalo %d, HadCalo %d, Mu %d, PFCharged %d, PFPhoton %d, PFNeutral %d, PFMu %d, Puppi All %d => Sel %d\n",
         NTRACK, NEMCALO, NCALO, NMU, NTRACK, NPHOTON, NSELCALO, NMU, NALLNEUTRALS, NNEUTRALS);
 #elif defined(REG_HGCal)
@@ -39,13 +39,13 @@ int main() {
                         PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_CALO,
                         PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     LinPuppiEmulator puEmulator(NTRACK, NALLNEUTRALS, NNEUTRALS,
-                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                          LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_iptMax, LINPUPPI_dzCut,
                           Scales::makeGlbEta(LINPUPPI_etaCut), 
                           LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopeNe_1, LINPUPPI_ptSlopePh, LINPUPPI_ptSlopePh_1, 
                           LINPUPPI_ptZeroNe, LINPUPPI_ptZeroNe_1, LINPUPPI_ptZeroPh, LINPUPPI_ptZeroPh_1, 
                           LINPUPPI_alphaSlope, LINPUPPI_alphaSlope_1, LINPUPPI_alphaZero, LINPUPPI_alphaZero_1, LINPUPPI_alphaCrop, LINPUPPI_alphaCrop_1, 
                           LINPUPPI_priorNe, LINPUPPI_priorNe_1, LINPUPPI_priorPh, LINPUPPI_priorPh_1,
-                          Scales::makePt(LINPUPPI_ptCut), Scales::makePt(LINPUPPI_ptCut_1));
+                          LINPUPPI_ptCut, LINPUPPI_ptCut_1);
 #endif
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;

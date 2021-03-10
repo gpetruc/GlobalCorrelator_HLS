@@ -20,11 +20,11 @@ int main() {
 #endif
 
     LinPuppiEmulator puEmulator(NTRACK, NCALO, NNEUTRALS,
-                        LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_ptMax, LINPUPPI_dzCut,
+                        LINPUPPI_DR2MIN, LINPUPPI_DR2MAX, LINPUPPI_iptMax, LINPUPPI_dzCut,
                         LINPUPPI_ptSlopeNe, LINPUPPI_ptSlopePh, LINPUPPI_ptZeroNe, LINPUPPI_ptZeroPh, 
                         LINPUPPI_alphaSlope, LINPUPPI_alphaZero, LINPUPPI_alphaCrop, 
                         LINPUPPI_priorNe, LINPUPPI_priorPh,
-                        Scales::makePt(LINPUPPI_ptCut));
+                        LINPUPPI_ptCut);
     
     // input TP objects (used)
     PFRegion region;

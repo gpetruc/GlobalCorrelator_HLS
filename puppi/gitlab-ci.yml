@@ -17,8 +17,10 @@
       - pf/**/*
       - puppi/**/*
       - utils/**/*
+      - common/**/*
 
 .puppi-csim-common:
+  tags: [ vivado20192-small ]
   extends: .puppi-common
   stage: pre-build
   variables: 
@@ -42,10 +44,12 @@
       - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/syn/report/*
       - puppi/proj_linpuppi_${puppiReg}_${puppiBoard}/solution/impl/vhdl/*
   only:
+    refs: [ branches, tags, merge_request, web, schedules ]
     changes:
       - dataformats/**/*
       - puppi/*
       - puppi/firmware/*
+      - common/firmware/*
   dependencies: 
 
 
@@ -76,7 +80,17 @@ linpuppi-HF-csim:
     puppiReg: HF
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl
- 
+
+puppiSort-HGCal-csim:
+  extends: .puppi-csim-common
+  variables:
+    puppiReg: HGCal
+  script:
+    - vivado_hls -f run_hls_puppi_sort.tcl
+  artifacts:
+    paths:
+      - puppi/vivado_hls.${CI_JOB_NAME}.txt
+
 linpuppi-Barrel-csynth:
   extends: .puppi-csynth-common
   variables:
@@ -104,3 +118,19 @@ linpuppi-HF-csynth:
     puppiReg: HF
   script:
     - vivado_hls -f run_hls_linpuppi_forward.tcl
+
+puppiSort-hybrid-HGCal-csynth:
+  extends: .puppi-csynth-common
+  variables:
+    puppiReg: HGCal
+    sortAlgo: hybrid
+  script:
+    - vivado_hls -f run_hls_puppi_sort.tcl
+  artifacts:
+    paths:
+      - puppi/vivado_hls.${CI_JOB_NAME}.txt
+      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/csim/build/*.txt
+      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/syn/report/*
+      - puppi/proj_puppi_sort_${sortAlgo}_${puppiReg}_${puppiBoard}/solution/impl/vhdl/*
+ 
+

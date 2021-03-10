@@ -226,7 +226,7 @@ void fwdlinpuppiSum(const HadCaloObj caloin[NCALO], ap_uint<32> sums[NCALO]) {
     const int DR2MAX = LINPUPPI_DR2MAX; 
     const int DR2MIN = LINPUPPI_DR2MIN; 
     const int DR2MIN_SHIFT =  DR2MIN >> 5; 
-    const int PTMAX2_SHIFT = (LINPUPPI_ptMax)*(LINPUPPI_ptMax) >> 5;
+    const int PTMAX2_SHIFT = (LINPUPPI_iptMax)*(LINPUPPI_iptMax) >> 5;
 
     ap_uint<17> pt2_shift[NCALO];
     #pragma HLS ARRAY_PARTITION variable=pt2_shift complete
@@ -280,7 +280,7 @@ void fwdlinpuppiSum2Pt(const HadCaloObj caloin[NCALO], const ap_uint<32> sums[NC
     const int ptZeroPh = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh = LINPUPPI_priorPh * (1 << x2_bits);
-    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut); 
+    const pt_t ptCut = LINPUPPI_ptCut; 
 
     ap_int<12>  x2a[NCALO], x2ptp[NCALO];
     #pragma HLS ARRAY_PARTITION variable=x2a complete    
@@ -343,7 +343,7 @@ void fwdlinpuppiNoCrop(const PFRegion & region, const HadCaloObj caloin[NCALO], 
 
     fwdlinpuppiPt(caloin, puppiPts, puppiWgts);
 
-    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
+    const pt_t ptCut = LINPUPPI_ptCut;
     for (int in = 0; in < NCALO; ++in) {
         if (region.isFiducial(caloin[in]) && puppiPts[in] >= ptCut) {
             pfallne[in].fill(region, caloin[in], puppiPts[in], puppiWgts[in]);
@@ -386,7 +386,7 @@ void fwdlinpuppi(const PFRegion & region, const HadCaloObj caloin[NCALO], PuppiO
         work[out].clear();
     }
 
-    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut);
+    const pt_t ptCut = LINPUPPI_ptCut;
     for (int in = 0; in < NCALO; ++in) {
         if (!region.isFiducial(caloin[in]) || puppiPts[in] < ptCut) continue;
         for (int iout = NNEUTRALS-1; iout >= 0; --iout) {
@@ -462,7 +462,7 @@ void linpuppiSum(const TkObj track[NTRACK], z0_t pvZ0, const PFNeutralObj caloin
     const int DR2MAX = LINPUPPI_DR2MAX; 
     const int DR2MIN = LINPUPPI_DR2MIN; 
     const int DR2MIN_SHIFT =  DR2MIN >> 5; 
-    const int PTMAX2_SHIFT = (LINPUPPI_ptMax)*(LINPUPPI_ptMax) >> 5;
+    const int PTMAX2_SHIFT = (LINPUPPI_iptMax)*(LINPUPPI_iptMax) >> 5;
 
     bool fromPV[NTRACK];
     #pragma HLS ARRAY_PARTITION variable=fromPV complete
@@ -506,7 +506,7 @@ void linpuppiSum2All(const PFRegion & region, const PFNeutralObj & caloin, const
     const int ptZeroPh = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh = LINPUPPI_priorPh * (1 << x2_bits);
-    const pt_t ptCut = Scales::makePt(LINPUPPI_ptCut); 
+    const pt_t ptCut = LINPUPPI_ptCut; 
 #elif LINPUPPI_etaBins == 2
     const int ptSlopeNe_0 = LINPUPPI_ptSlopeNe * (1 << ptSlope_bits);
     const int ptSlopePh_0 = LINPUPPI_ptSlopePh * (1 << ptSlope_bits);
@@ -514,14 +514,14 @@ void linpuppiSum2All(const PFRegion & region, const PFNeutralObj & caloin, const
     const int ptZeroPh_0 = LINPUPPI_ptZeroPh / LINPUPPI_ptLSB; // in pt scale
     const int priorNe_0 = LINPUPPI_priorNe * (1 << x2_bits);
     const int priorPh_0 = LINPUPPI_priorPh * (1 << x2_bits);
-    const pt_t ptCut_0 = Scales::makePt(LINPUPPI_ptCut); 
+    const pt_t ptCut_0 = LINPUPPI_ptCut; 
     const int ptSlopeNe_1 = LINPUPPI_ptSlopeNe_1 * (1 << ptSlope_bits);
     const int ptSlopePh_1 = LINPUPPI_ptSlopePh_1 * (1 << ptSlope_bits);
     const int ptZeroNe_1 = LINPUPPI_ptZeroNe_1 / LINPUPPI_ptLSB; // in pt scale
     const int ptZeroPh_1 = LINPUPPI_ptZeroPh_1 / LINPUPPI_ptLSB; // in pt scale
     const int priorNe_1 = LINPUPPI_priorNe_1 * (1 << x2_bits);
     const int priorPh_1 = LINPUPPI_priorPh_1 * (1 << x2_bits);
-    const pt_t ptCut_1 = Scales::makePt(LINPUPPI_ptCut_1); 
+    const pt_t ptCut_1 = LINPUPPI_ptCut_1; 
 #endif
 
     ap_int<12>  x2a, x2ptp;
@@ -682,7 +682,7 @@ linpuppi_refobj linpuppi_prepare_track(const TkObj & track, z0_t pvZ0) {
     #pragma HLS PIPELINE II=1
     #pragma HLS LATENCY min=3
 
-    const int PTMAX2_SHIFT = (LINPUPPI_ptMax)*(LINPUPPI_ptMax) >> 5;
+    const int PTMAX2_SHIFT = (LINPUPPI_iptMax)*(LINPUPPI_iptMax) >> 5;
 
     linpuppi_refobj ret;
     ret.hwEta = track.hwEta;

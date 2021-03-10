@@ -29,7 +29,7 @@ int main() {
     PFAlgo3Emulator emulator(NTRACK,NEMCALO,NCALO,NMU, 
                        NPHOTON,NSELCALO,NALLNEUTRALS,
                        PFALGO_DR2MAX_TK_MU, PFALGO_DR2MAX_TK_EM, PFALGO_DR2MAX_EM_CALO, PFALGO_DR2MAX_TK_CALO,
-                       Scales::makePt(PFALGO_TK_MAXINVPT_LOOSE), Scales::makePt(PFALGO_TK_MAXINVPT_TIGHT));
+                       PFALGO_TK_MAXINVPT_LOOSE, PFALGO_TK_MAXINVPT_TIGHT);
     const float ptErr_edges[PTERR_BINS]  = PTERR_EDGES;
     const float ptErr_offss[PTERR_BINS]  = PTERR_OFFS;
     const float ptErr_scales[PTERR_BINS] = PTERR_SCALE;
