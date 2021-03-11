@@ -10,11 +10,12 @@ TDemuxRef::TDemuxRef() {
         offs[i]  =  i * BLKSIZE + (fold[i] ? PAGESIZE : 0);
         std::fill_n(&buffer[i][0], MEMSIZE, 0);
     }
-    toread = -1;
+    toread = BLKSIZE-1;
     readcount = 0;
+    readrobin = 1;
 }
 
-bool TDemuxRef::operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
+void TDemuxRef::operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
     if (newEvent) {
         counter  = 0;
         robin = 0;
@@ -22,7 +23,8 @@ bool TDemuxRef::operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINK
             fold[i] = (i == 0 ? 1 : 0);
             offs[i]  =  i * BLKSIZE + (fold[i] ? PAGESIZE : 0);
         }
-        toread = -1;
+        toread = BLKSIZE-1;
+        readrobin = 1;
         //printf("Initialized\n");
     }
     for (int i = 0; i < NLINKS; ++i) {
@@ -56,28 +58,15 @@ bool TDemuxRef::operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINK
             }
         }
     }
-    if (toread == -1) {
-        //printf("counter %4d, threshold %4d, toread %6d, readrobin %d, readcount %3d\n", counter, (NLINKS-1)*BLKSIZE, toread, readrobin, readcount);
-        if (counter == (NLINKS-1)*BLKSIZE + 1) { 
-            toread = PAGESIZE;
-            readrobin = 0; readcount = 0;
-        }
-        for (int i = 0; i < NLINKS; ++i) {
-            out[i] = 0;
-        }
-        return false;
-    } else {
-        for (int i = 0; i < NLINKS; ++i) {
-            out[i] = buffer[(i+readrobin)%NLINKS][toread];
-        }
-        toread    = (toread+1)    % MEMSIZE;
-        readcount = (readcount+1) % BLKSIZE;
-        if (readcount == 0) readrobin = (readrobin+1) % NLINKS;
-        return true;
+    for (int i = 0; i < NLINKS; ++i) {
+        out[i] = buffer[(i+readrobin)%NLINKS][toread];
     }
+    toread    = (toread+1)    % MEMSIZE;
+    readcount = (readcount+1) % BLKSIZE;
+    if (readcount == 0) readrobin = (readrobin+1) % NLINKS;
 }
 
-bool TDemuxRef::operator()(bool newEvent, const w64 links[NLINKS], const bool valid[NLINKS], 
+void TDemuxRef::operator()(bool newEvent, const w64 links[NLINKS], const bool valid[NLINKS], 
                                                 w64 out[NLINKS],         bool vout[NLINKS]) {
     w65 links65[NLINKS], out65[NLINKS];
     for (int i = 0; i < NLINKS; ++i) {

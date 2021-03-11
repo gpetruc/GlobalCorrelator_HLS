@@ -10,44 +10,47 @@ int main() {
     w65 data[NLINKS][NDATA], in[NLINKS], out[NLINKS], refout[NLINKS];
 
     FILE * f_patterns_in, * f_patterns_out; char fnbuff[25]; 
-    TDemuxRef tdemux_ref;
+
+    unsigned int maxlen = TMUX_IN*NCLK;
 
     for (unsigned int itest = 0, ntest = 20; itest <= ntest; ++itest) {
+        TDemuxRef tdemux_ref;
         // create some input data
-        bool isok = true;
+        bool isok = true; int pktlen;
         for (unsigned int j = 0; j < NLINKS; ++j) {
             for (unsigned int i = 0; i < NDATA; ++i) {
-                if (itest == 0){ // special case, human readable pattern
-                    int iclock = i - j * TMUX_OUT * NCLK;
-                    if (iclock >= 0) {
+                if (i % (TMUX_IN*NCLK) == 0) pktlen = (maxlen/5) + rand() % (maxlen*4/5);
+                int iclock = i - j * TMUX_OUT * NCLK;
+                if ((iclock >= 0) && ((iclock % maxlen) < pktlen)) {
+                    if (itest == 0){ // special case, human readable pattern
                         if (NCLK > 1) {
                             int sub = iclock % NCLK;
                             int bx  = (iclock / NCLK) % TMUX_IN;
                             int ev  = (iclock / (TMUX_IN * NCLK)) * NLINKS + j;
                             data[j][i](63,0) = 1 + sub + 10*bx + 1000 * ev;
-                            data[j][i][64] = 1;
                         } else {
                             int bx  = iclock % TMUX_IN;
                             int ev  = iclock / TMUX_IN * NLINKS + j;
                             data[j][i](63,0) = 1  + bx + 100 * ev;
-                            data[j][i][64] = 1;
                         }
                     } else {
-                        data[j][i] = 0;
+                        data[j][i](63,0) = ap_uint<64>(rand() & 0xFFFFFF);
                     }
+                    data[j][i][64] = 1;
                 } else {
-                    data[j][i][64] = rand() & 0x1;
-                    data[j][i](63,0) = ap_uint<65>(rand() & 0xFFFFFF);
+                    data[j][i] = 0;
                 }
             }
         }
-        if (itest == 0) {
+#ifdef VERBOSE
+        if (itest <= 5) {
             for (unsigned int j = 0; j < NLINKS; ++j) {
                 printf("L[%d]: ", j);
-                for (unsigned int i = 0; i < NDATA; ++i) printf("%5d | ", int(data[j][i]));
+                for (unsigned int i = 0; i < NDATA; ++i) printf("%dv%5d | ", int(data[j][i][64]), int(data[j][i](63,0)));
                 printf("\n");
             }
         }
+#endif
 
         snprintf(fnbuff, 25, "patterns-in-%d.txt", itest);
         f_patterns_in = fopen(fnbuff, "w");
@@ -65,29 +68,31 @@ int main() {
                 fprintf(f_patterns_in, " %1dv%016llx", int(in[j][64]), in[j](63,0).to_uint64());
             }
 
-            bool ret = tdemux(iclock == 0, in, out);
-            bool ref = tdemux_ref(iclock == 0, in, refout);
+            //bool newevt = (iclock == 0);
+            bool newevt = (iclock % (NCLK*TMUX_IN)) == 0;
+            tdemux(newevt, in, out);
+            tdemux_ref(newevt, in, refout);
 
             for (unsigned int j = 0; j < NLINKS; ++j) {
-                fprintf(f_patterns_out, " %1dv%016llx", int(in[j][64]), refout[j](63,0).to_uint64());
+                fprintf(f_patterns_out, " %1dv%016llx", int(refout[j][64]), refout[j](63,0).to_uint64());
             }
 
-            bool ok = (ret == ref);
-            if (ok) {
-                for (unsigned int j = 0; j < NLINKS; ++j) {
-                    ok = ok && (out[j] == refout[j]);
-                }
+            bool ok = true; //(ret == ref);
+            for (unsigned int j = 0; j < NLINKS; ++j) {
+                ok = ok && (out[j] == refout[j]);
             }
 
-            if (itest == 0) {
+#ifdef VERBOSE
+            if (itest <= 2) {
                 printf("%04d |  ", iclock);
-                for (unsigned int j = 0; j < NLINKS; ++j) printf("%6d ", int(in[j]));
-                printf(" | v%d  ", ret ? 1 : 0);
-                for (unsigned int j = 0; j < NLINKS; ++j) printf("%6d ", int(out[j]));
-                printf(" | v%d  ", ref ? 1 : 0);
-                for (unsigned int j = 0; j < NLINKS; ++j) printf("%6d ", int(refout[j]));
-                printf(isok ? "\n" : "   <=== ERROR \n");
+                for (unsigned int j = 0; j < NLINKS; ++j) printf("%dv%9d ", int(in[j][64]), int(in[j](63,0)));
+                printf(" |   ");
+                for (unsigned int j = 0; j < NLINKS; ++j) printf("%dv%9d ", int(out[j][64]), int(out[j](63,0)));
+                printf(" |   ");
+                for (unsigned int j = 0; j < NLINKS; ++j) printf("%dv%9d ", int(refout[j][64]), int(refout[j](63,0)));
+                printf(ok ? "\n" : "   <=== ERROR \n");
             }
+#endif
 
             if (!ok) isok = false;
 
@@ -102,6 +107,13 @@ int main() {
         }
         fclose(f_patterns_in);
         fclose(f_patterns_out);
+        // feed nulls into the tdemux to clean up the statics before the next test
+        for (int i = 0; i < NLINKS; ++i) in[i] = 0;
+        for (int i = 0; i < 6*PAGESIZE+10; ++i) {
+            tdemux(i == 0, in, out);
+            tdemux_ref(i == 0, in, out);
+
+        }
     }
     return 0;
 }

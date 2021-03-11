@@ -1,7 +1,7 @@
 #include "tdemux.h"
 #include <cassert>
 
-bool tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
+void tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
     #pragma HLS PIPELINE ii=1
     #pragma HLS ARRAY_PARTITION variable=links complete
     #pragma HLS ARRAY_PARTITION variable=out complete
@@ -12,10 +12,8 @@ bool tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
     typedef ap_uint<2> robin_t;   // must count up to NLINKS
 
     static counter_t   elcounter = 0, readcount = 0, toread = 0; 
-    static bool        fold[NLINKS];    // we use twice as much memory, to avoid contentions
     static offs_t      offs[NLINKS];
-    static robin_t     robin, readrobin, blkcounter;
-    static bool        readvalid = false, pre_readvalid = false;
+    static robin_t     robin = 0, readrobin = 1, blkcounter = 1;
     #pragma HLS ARRAY_PARTITION variable=offs complete
 
     const unsigned int MEMSIZE = 2*PAGESIZE;
@@ -25,12 +23,11 @@ bool tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
 
     if (newEvent) {
         elcounter = 0; blkcounter = 1;
-        robin = 0; readvalid = false; pre_readvalid = false;
+        robin = 0; readrobin = 1; readcount = 0;
         for (int i = 0; i < NLINKS; ++i) {
-            //fold[i] = (i == 0 ? 1 : 0);
             offs[i]  =  i * BLKSIZE + (i == 0 ? PAGESIZE : 0);
         }
-        toread = MEMSIZE-1;
+        toread = BLKSIZE-1;
     }
 
 
@@ -107,49 +104,24 @@ bool tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
             }
         }
     }
-    if (!readvalid) {
-        if (elcounter == 0 && blkcounter == 0) { 
 #ifndef __SYNTHESIS__
-            //printf("FW: elcounter %4d, blkcounter %6d, robin %d -> trigger pre_readvalid\n", int(elcounter), int(blkcounter), int(robin));
+    //printf("FW: toread %6d, readrobin %d, readcount %3d\n", int(toread), int(readrobin), int(readcount));
 #endif
-            pre_readvalid = true;
-        } else if (pre_readvalid) {
-#ifndef __SYNTHESIS__
-            //printf("FW: elcounter %4d, blkcounter %6d, robin %d -> trigger readvalid\n", int(elcounter), int(blkcounter), int(robin));
-#endif
-            readvalid = true;
-            toread = PAGESIZE;
-            readrobin = 0; readcount = 0;
-        } else {
-#ifndef __SYNTHESIS__
-            //printf("FW: elcounter %4d, blkcounter %6d, robin %d -> wait readvalid\n", int(elcounter), int(blkcounter), int(robin));
-#endif
-        }
-        for (int i = 0; i < NLINKS; ++i) {
-            out[i] = 0;
-        }
-        return false;
+    for (int i = 0; i < NLINKS; ++i) {
+        out[i] = buffer[(i+readrobin)%NLINKS][toread];
+    }
+
+    if (toread == MEMSIZE-1) {
+        toread = 0;
     } else {
-#ifndef __SYNTHESIS__
-        //printf("FW: toread %6d, readrobin %d, readcount %3d\n", int(toread), int(readrobin), int(readcount));
-#endif
-        for (int i = 0; i < NLINKS; ++i) {
-            out[i] = buffer[(i+readrobin)%NLINKS][toread];
-        }
+        toread++;
+    }
 
-        if (toread == MEMSIZE-1) {
-            toread = 0;
-        } else {
-            toread++;
-        }
-
-        readcount++; 
-        if (readcount == BLKSIZE) {
-            readcount = 0;
-            readrobin++;
-            if (readrobin == NLINKS) readrobin = 0;
-        }
-        return true;
+    readcount++; 
+    if (readcount == BLKSIZE) {
+        readcount = 0;
+        readrobin++;
+        if (readrobin == NLINKS) readrobin = 0;
     }
 }
 

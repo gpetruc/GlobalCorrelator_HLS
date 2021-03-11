@@ -12,6 +12,6 @@ typedef ap_uint<65> w65; // bit 64 is used for the valid bit
 #define BLKSIZE  (NCLK*TMUX_OUT)
 #define PAGESIZE (NCLK*TMUX_IN)
 
-bool tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) ;
+void tdemux(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) ;
 
 #endif

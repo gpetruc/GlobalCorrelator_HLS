@@ -8,8 +8,8 @@ typedef ap_uint<64> w64;
 class TDemuxRef {
     public:
         TDemuxRef() ;
-        bool operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) ;
-        bool operator()(bool newEvent, const w64 links[NLINKS], const bool valid[NLINKS], 
+        void operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) ;
+        void operator()(bool newEvent, const w64 links[NLINKS], const bool valid[NLINKS], 
                                              w64 out[NLINKS],         bool vout[NLINKS]) ;
     private:
         static const unsigned int MEMSIZE = 2*PAGESIZE;

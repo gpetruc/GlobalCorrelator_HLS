@@ -16,10 +16,14 @@ struct TM18LinkTriplet {
     std::queue<std::pair<T,bool>> links[3];
     
     TM18LinkTriplet() { 
+        init();
+    }
+
+    void init() {
+        for (auto & l : links) { while (!l.empty()) l.pop(); }
         for (int i = 0; i <  TM6CLOCKS; ++i)  links[1].emplace(T(0), false);
         for (int i = 0; i < 2*TM6CLOCKS; ++i) links[2].emplace(T(0), false);
-    };
-
+    }
 
     template<typename C>
     void push_event(unsigned int iev, const C & objs) {
@@ -34,9 +38,22 @@ struct TM18LinkTriplet {
         }
     }
 
+    void push_pause(unsigned int nclocks, bool valid=false) {
+        for (auto & q : links) {
+            for (unsigned int i = 0; i < nclocks; ++i) {
+                q.emplace(T(0), false);
+            }
+        }
+    }
+
     template<typename C>
-    void pop_frame(C & channels, unsigned int start=0, unsigned int stride=1) {
+    void pop_frame(C & channels, unsigned int start=0, unsigned int stride=1, bool maybenull=false) {
         for (int i = 0; i < 3; ++i) {
+            if (maybenull && links[i].empty()) {
+                channels.data [start+i*stride] = 0;
+                channels.valid[start+i*stride] = false;
+                continue;
+            }
             if (links[i].empty()) { 
                 printf("ERROR: link %d is empty (start = %u, stride = %u)\n", i, start, stride); fflush(stdout); 
                 continue;
@@ -48,6 +65,14 @@ struct TM18LinkTriplet {
             links[i].pop();
         }
     }
+
+    bool anyEmpty() {
+        for (auto & q : links) { 
+            if (q.empty()) return true; 
+        }
+        return false;
+    }
+
 };
 
 template<typename T, unsigned int TM6CLOCKS>
@@ -56,6 +81,10 @@ class TM18LinkMultiplet {
     public:
         TM18LinkMultiplet(unsigned int N) :
             nlinks_(N), links_(N) {}
+
+        void init() {
+            for (auto & l : links_) l.init();
+        }
 
         template<typename C, typename E>
         void push_links(unsigned int iev, std::vector<C> objs, const E & enc) {
@@ -89,13 +118,24 @@ class TM18LinkMultiplet {
             links_.front().push_event(iev, enc(objs));
         }
 
+        void push_pause(unsigned int nclocks, bool valid=false) {
+            for (auto & l : links_) {
+                l.push_pause(nclocks, valid);
+            }
+        }
+
 
         template<typename C>
-        void pop_frame(C & channels, unsigned int start=0, bool group_by_link=true) {
+        void pop_frame(C & channels, unsigned int start=0, bool group_by_link=true, bool maybenull=false) {
             unsigned int stride = group_by_link ? 1 : nlinks_;
             for (unsigned int i = 0; i < nlinks_; ++i) {
-                links_[i].pop_frame(channels, start + (group_by_link ? 3*i : i), stride);
+                links_[i].pop_frame(channels, start + (group_by_link ? 3*i : i), stride, maybenull);
             }
+        }
+
+        bool anyEmpty() {
+            for (auto & l : links_) if (l.anyEmpty()) return true;
+            return false;
         }
     private: 
         unsigned int nlinks_;
