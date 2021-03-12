@@ -1,9 +1,15 @@
-include:
-  - local: extern-ci/templates.yml
-  - local: 'pf/gitlab-ci.yml'
-  - local: 'puppi/gitlab-ci.yml'
-  - local: 'l1-regionizer/multififo/gitlab-ci.yml'
 
+include:
+  - project: cms-cactus/phase2/firmware/ci-templates
+    ref: 3775e01a
+    file: vivado/all.yml
+  - /pf/gitlab-ci.yml
+  - /puppi/gitlab-ci.yml
+  - /l1-regionizer/multififo/gitlab-ci.yml
+
+
+default:
+  tags: [vivado20192]
 
 variables:
   VIVADO_VERSION: '2019.2'
@@ -19,8 +25,8 @@ workflow:
     
 
 stages:
+  - sim
   - pre-build
-  - pre-build2
   - build
   - test
   - deploy

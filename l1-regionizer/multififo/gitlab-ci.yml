@@ -30,7 +30,7 @@ hls-csim:l1r-multififo-tm18:
 
 .l1reg-multififo-vhdl-common:
   extends: .vivado_base
-  stage: pre-build2
+  stage: pre-build
   variables:
     pfBoard: none
     pfReg: HGCal
