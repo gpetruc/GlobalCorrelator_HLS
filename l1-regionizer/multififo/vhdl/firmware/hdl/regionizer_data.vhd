@@ -88,6 +88,8 @@ package regionizer_data is
     constant PFII240 : natural := 4;
     constant NPFREGIONS : natural := 9;
 
+    constant NCLK360 : natural := 54;
+
     constant NTKSECTORS : natural := 9;
     constant NTKFIBERS : natural := 2;
     constant NTKFIFOS : natural := NTKFIBERS*3;

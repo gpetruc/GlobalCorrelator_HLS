@@ -7,6 +7,7 @@
 #include "utils/dummy_obj_packers.h"
 #include "utils/tmux18_utils.h"
 #include "tdemux/tdemux_ref.h"
+#include "tdemux/firmware/tdemux.h"
 #include "../../pf/ref/pfalgo2hgc_ref.h"
 #include "../../pf/firmware/pfalgo2hgc.h"
 #include "../../puppi/linpuppi_ref.h"
@@ -202,26 +203,41 @@ bool Tester::runTMuxAndDemux(int itest, int indexWithinTrain, int nclocks, bool 
         channelsVCU118.dump();
 
         // now let's run the time demultiplexer
-        bool newEvt = (iclock == 0 && indexWithinTrain == 0 && !tailOfTrain);
         for (int s = 0; s < NTKSECTORS; ++s) {
-            tk_tdemuxer[s]( newEvt, &channelsTM.data  [3*s], &channelsTM.valid  [3*s],
-                    &channelsTDemux.data[3*s], &channelsTDemux.valid[3*s]);
+            tk_tdemuxer[s](&channelsTM.data    [3*s], &channelsTM.valid    [3*s],
+                           &channelsTDemux.data[3*s], &channelsTDemux.valid[3*s]);
         }
         for (int s = 0; s < NCALOSECTORS; ++s) {
             for (int f = 0; f < NCALOFIBERS; ++f) {
                 ilink = calo_offs + 3*(s*NCALOFIBERS + f);
-                calo_tdemuxer[s][f]( newEvt, &channelsTM.data  [ilink], &channelsTM.valid  [ilink],
-                        &channelsTDemux.data[ilink], &channelsTDemux.valid[ilink]);
+                calo_tdemuxer[s][f](&channelsTM.data    [ilink], &channelsTM.valid    [ilink],
+                                    &channelsTDemux.data[ilink], &channelsTDemux.valid[ilink]);
             }
         }
-        mu_tdemuxer(newEvt, &channelsTM.data  [mu_offs], &channelsTM.valid  [mu_offs],
-                &channelsTDemux.data[mu_offs], &channelsTDemux.valid[mu_offs]);
+        mu_tdemuxer(&channelsTM.data    [mu_offs], &channelsTM.valid  [mu_offs],
+                    &channelsTDemux.data[mu_offs], &channelsTDemux.valid[mu_offs]);
         // note: the PV is delayed to realign it to the other demuxed channels
         pv_delayer(channelsTM.data    [vtx_offs], channelsTM.valid    [vtx_offs],
-                channelsTDemux.data[vtx_offs], channelsTDemux.valid[vtx_offs]);
+                   channelsTDemux.data[vtx_offs], channelsTDemux.valid[vtx_offs]);
 
-        if (indexWithinTrain < 2 || (indexWithinTrain == 2 && iclock == 0)) continue; // skip null frames
-        
+        // we run also the firmware tdemux HLS code on a single channel, for checking
+        tdemux_errflags errs; tdemux_istate   istate; tdemux_ostate   ostate;
+        w65 hwdemux_in[3], hwdemux_out[3];
+        for (int i = 0; i < 3; ++i) {
+            hwdemux_in[i](63,0) = channelsTM.data[i];
+            hwdemux_in[i][64]   = channelsTM.valid[i];
+        }
+        tdemux_full(hwdemux_in, hwdemux_out, errs, istate, ostate);
+        for (int i = 0; i < 3; ++i) {
+            if (hwdemux_out[i](63,0) != channelsTDemux.data[i] || hwdemux_out[i][64] != channelsTDemux.valid[i]) {
+                printf("Mismatch in tdemux at iclock %d, chann %d: ref %1dv%016llx vs hw %1dv%016llx\n", i, 
+                        int(channelsTDemux.valid[i]), channelsTDemux.data[i].to_uint64(),
+                        int(hwdemux_out[i][64]), hwdemux_out[i](63,0).to_uint64());
+                ok = false;
+            } 
+        }
+
+
         channelsTDemux.dump();
 
         // and now we unpack to 64 bit format
@@ -255,13 +271,14 @@ bool Tester::runTMuxAndDemux(int itest, int indexWithinTrain, int nclocks, bool 
         channelsDecode.valid[iout] = channelsTDemux.valid[ilink];
         channelsDecode.dump();
 
-        if (tailOfTrain && iclock > 2*TLEN) continue; // nothing to validate againts
+        continue;
+        //if (tailOfTrain && iclock > 2*TLEN) continue; // nothing to validate againts
 
         // validation
         unsigned int ref_index = (decoded_validation_index + iclock + 3*TLEN - 1) % (3*TLEN);
         for (unsigned int i = 0; i < nchann_decoded; ++i) {
             if (decoded_validation_data[ref_index][i] != channelsDecode.data[i] ||
-                    decoded_validation_valid[ref_index][i] != channelsDecode.valid[i]) {
+                decoded_validation_valid[ref_index][i] != channelsDecode.valid[i]) {
                 if (ok) printf("Mismatch in decoded validation, itest %d indexWithinTrain %d iclock %d, frame %d, dvi %u, ref_index %u, tail %d:\n", itest, indexWithinTrain, iclock, frame, decoded_validation_index, ref_index, int(tailOfTrain)); 
                 printf("channel %3u: ref %dv %20s vs emu %dv %20s\n", i, 
                         int(decoded_validation_valid[ref_index][i]), decoded_validation_data[ref_index][i].to_string(16).c_str(),
@@ -321,15 +338,15 @@ void Tester::runRegionizer(const l1ct::RegionizerDecodedInputs & in, const std::
         regEmulator.step(newevt_ref, calo_links_in, calo_out, ROUTER_ISMUX);
         regEmulator.step(newevt_ref, mu_links_in, mu_out, ROUTER_ISMUX);
 
-        ilink = 0; channelsReg.clear(true);
+        unsigned int ireg = iclock/regii; 
+        bool region_valid = ireg < allpfin.size();
+        ilink = 0; channelsReg.clear(region_valid);
         for (int i = 0; i < NTKOUT; ++i) 
             channelsReg.data[ilink++] = tk_out[i].pack(); 
         for (int i = 0; i < NCALOOUT; ++i) 
             channelsReg.data[ilink++] = calo_out[i].pack(); 
         for (int i = 0; i < NMUOUT; ++i) 
             channelsReg.data[ilink++] = mu_out[i].pack();
-        unsigned int ireg = iclock/regii; 
-        bool region_valid = ireg < allpfin.size();
         channelsReg.data[ilink++] = region_valid ? allpfin[ireg].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
 
         if (!firstEventOfTrain) {
@@ -400,7 +417,7 @@ bool Tester::run() {
         readOneEndcap(itest - trainStart, in, allpfin);
 
         runRegionizer(in, allpfin, TLEN, itest == trainStart, /*tail=*/false);
-        runPFPuppi(itest, allpfin, itest <= 0);
+        runPFPuppi(itest, allpfin, itest < 0);
         
         ok = runTMuxAndDemux(itest, itest - trainStart, TLEN, /*tail=*/false);
 
@@ -419,6 +436,8 @@ bool Tester::run() {
             channelsPuppiSort.dumpNulls(pause_length);
             // re-init muxers
             tk_tmuxer.init(); calo_tmuxer.init(); mu_tmuxer.init(); 
+            w65 hwdemux_in[3] = {0,0,0}, hwdemux_out[3];
+            for (int j = 0; j < 2*PAGESIZE+1; ++j) tdemux(hwdemux_in, hwdemux_out);
             decoded_validation_index = 0; frame = 0;
             trainStart = itest + 1;
         }

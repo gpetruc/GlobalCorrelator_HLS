@@ -7,6 +7,7 @@ entity delay_sort_mux_stream is
     generic(
         NSORTED : natural;
         DELAY  : natural;
+        NCLOCKS : natural := NCLK360;
         NREGIONS : natural := NPFREGIONS;
         NSTREAM : natural;
         OUTII : natural := PFII240;
@@ -59,7 +60,7 @@ begin
     gen_sorters: for isort in NREGIONS-1 downto 0 generate
         gen_sort_simple: if SORT_NSTAGES = 1 generate
             sorter : entity work.stream_sort
-                        generic map(NITEMS => NSORTED)
+                        generic map(NITEMS => NSORTED, NCLOCKS => NCLOCKS)
                         port map(ap_clk => ap_clk,
                             d_in => w72_to_anyparticle(delayed(isort)),
                             valid_in => delayed_valid(isort),
@@ -71,7 +72,7 @@ begin
             end generate gen_sort_simple;
         gen_sort_cascade: if SORT_NSTAGES > 1 generate
             sorter : entity work.cascade_stream_sort
-                        generic map(NITEMS => NSORTED, NSTAGES => SORT_NSTAGES)
+                        generic map(NITEMS => NSORTED, NSTAGES => SORT_NSTAGES, NCLOCKS => NCLOCKS)
                         port map(ap_clk => ap_clk,
                             d_in => w72_to_anyparticle(delayed(isort)),
                             valid_in => delayed_valid(isort),

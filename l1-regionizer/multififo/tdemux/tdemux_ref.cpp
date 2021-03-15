@@ -1,79 +1,125 @@
 #include "firmware/tdemux.h"
 #include "tdemux_ref.h"
 #include <algorithm>
+#include <cstdio>
 
 TDemuxRef::TDemuxRef() {
-    counter = 0;
-    robin = 0;
-    for (int i = 0; i < NLINKS; ++i) {
-        fold[i] = (i == 0 ? 1 : 0);
-        offs[i]  =  i * BLKSIZE + (fold[i] ? PAGESIZE : 0);
-        std::fill_n(&buffer[i][0], MEMSIZE, 0);
-    }
-    toread = BLKSIZE-1;
-    readcount = 0;
-    readrobin = 1;
+    inputState_ = Wait;
+    nWritten_ = 0;
+    outputState_ = Wait;
+    nRead_ = 0;
+    nToWrite_ = 0;
+    readLink_ = 0;
+    firstWriteLink_ = 0;
 }
 
-void TDemuxRef::operator()(bool newEvent, const w65 links[NLINKS], w65 out[NLINKS]) {
-    if (newEvent) {
-        counter  = 0;
-        robin = 0;
+void TDemuxRef::clear() {
+    for (int i = 0; i < NLINKS; ++i) { 
+        while (!buffer_[i].empty()) buffer_[i].pop(); 
+    }
+    inputState_ = Wait;
+    nWritten_ = 0;
+    outputState_ = Wait;
+    nRead_ = 0;
+    nToWrite_ = 0;
+    readLink_ = 0;
+    firstWriteLink_ = 0;
+}
+void TDemuxRef::operator()(const w65 links[NLINKS], w65 out[NLINKS]) {
+    // ----------------
+    if (inputState_ == Wait) {
+        int nOn = 0, iOn = -1;
         for (int i = 0; i < NLINKS; ++i) {
-            fold[i] = (i == 0 ? 1 : 0);
-            offs[i]  =  i * BLKSIZE + (fold[i] ? PAGESIZE : 0);
+            if (links[i][64]) { nOn++; iOn = i; }
         }
-        toread = BLKSIZE-1;
-        readrobin = 1;
-        //printf("Initialized\n");
+        assert(nOn <= 1);
+        if (nOn == 1) {
+            inputState_ = Run;
+            firstWriteLink_ = iOn;
+            nWritten_ = 0;
+        }
+    } else if (inputState_ == Check) {
+        if (links[firstWriteLink_][64]) { // new train
+            inputState_ = Run;
+        } else {
+            inputState_ = Finish;
+            nToWrite_ = TMUX_OUT*NCLK*(NLINKS-1)+1;
+        }
+    } 
+    // intentionally not part of the previous IF, as we can get there if the previous ones set inputState = Run
+    if (inputState_ == Run) {
+        for (int i = 0; i < NLINKS; ++i) {
+            int j = (firstWriteLink_ + i) % NLINKS;
+            bool linkEnabled = (nWritten_ >= TMUX_OUT*NCLK*i);
+            if (linkEnabled) buffer_[j].push(links[j]);
+        }
+        nWritten_++;
+        if (nWritten_ % PAGESIZE == 0) {
+            inputState_ = Check; // we may be at the end of a train
+        }
+    } else if (inputState_ == Finish) {
+        for (int i = 0; i < NLINKS; ++i) {
+            int j = (firstWriteLink_ + i) % NLINKS;
+            bool linkEnabled = (nToWrite_ > TMUX_OUT*NCLK*(NLINKS-1-i)+1);
+            if (linkEnabled) buffer_[j].push(links[j]);
+        }
+        nToWrite_--;
+        if (nToWrite_ == 0) {
+            inputState_ = Wait;
+        }
     }
-    for (int i = 0; i < NLINKS; ++i) {
-        buffer[(robin+i)%NLINKS][offs[i]] = links[i];
+    // ----------------
+    if (outputState_ == Wait) {
+        if (nWritten_ > (NLINKS-1)*TMUX_OUT*NCLK+1) {
+            outputState_ = Run;
+            readLink_ = firstWriteLink_;
+            nRead_ = 0;
+        }
     }
-    robin++;
-    counter++;
+    if (outputState_ == Run) {
+        for (int i = 0; i < NLINKS; ++i) {
+            if (buffer_[readLink_].empty()) {
+                printf("ERROR: buffer[%d] is empty. nWritten %u, nRead %u, firstWriteLink %d, ", readLink_, nWritten_, nRead_, firstWriteLink_);
+                for (int j = 0; j < NLINKS; ++j) {
+                    printf("buffer[%d].size %lu, ", j, buffer_[j].size());
+                }
+                printf("\n"); fflush(stdout);
 
-    /*printf("counter %4d, robin %d, toread %6d, readrobin %d, readcount %3d\n", counter, robin, toread, readrobin, readcount);
-    for (unsigned int j = 0; j < NLINKS; ++j) {
-        printf("M%d  fold %d  offs %5d : ", j, fold[j] ? 1 : 0, offs[j]);
-        for (unsigned int i = 0; i < MEMSIZE; ++i) {
-            printf("%5d%c | ", int(buffer[j][i]), i == offs[(NLINKS-robin+1+j)%NLINKS] ? '!' : ' ');
-        }
-        printf("\n");
-    }*/
-
-    if (robin == NLINKS) {
-        robin = 0;
-        if ((counter % BLKSIZE) == 0) {
-            int completed = (counter/BLKSIZE)%NLINKS; // index of the link whose buffer we have filled
-            //printf("Swap block for %d as counter %d is multiple of %d, %d\n", completed, counter, BLKSIZE, (counter % BLKSIZE));
-            fold[completed] = !fold[completed];  // fold that one around
-            for (int i = 0; i < NLINKS; ++i) {
-                offs[i]  =  (i == completed ? i * BLKSIZE + (fold[i] ? PAGESIZE : 0) : offs[i]+1);
             }
-        } else  {
-            //printf("Increase offset as counter %d is not multiple of %d\n", counter, BLKSIZE);
-            for (int i = 0; i < NLINKS; ++i) {
-                offs[i]++;
-            }
+            assert(!buffer_[readLink_].empty());
+            out[i] = buffer_[readLink_].front(); 
+            buffer_[readLink_].pop();
         }
+        nRead_++;
+        if ((nRead_ % (TMUX_OUT*NCLK)) == 0) {
+            readLink_ = (readLink_+1) % NLINKS;
+        }
+        if (nRead_ == nWritten_) {
+            outputState_ = Wait;
+            nWritten_ = 0;
+            nRead_ = 0;
+        }
+    } else {
+        for (int i = 0; i < NLINKS; ++i) out[i] = 0;
     }
-    for (int i = 0; i < NLINKS; ++i) {
-        out[i] = buffer[(i+readrobin)%NLINKS][toread];
+    /*
+    printf("after: inputState %1d, nWritten %3u, nToWrite %3u, firstWriteLink %d, outputState %1d, nRead %3u, readLink %d ", 
+            int(inputState_), nWritten_, nToWrite_, firstWriteLink_, int(outputState_), nRead_, readLink_);
+    for (int j = 0; j < NLINKS; ++j) {
+        printf("buff[%d] %4lu, ", j, buffer_[j].size());
     }
-    toread    = (toread+1)    % MEMSIZE;
-    readcount = (readcount+1) % BLKSIZE;
-    if (readcount == 0) readrobin = (readrobin+1) % NLINKS;
+    printf(""); fflush(stdout);
+    */
 }
 
-void TDemuxRef::operator()(bool newEvent, const w64 links[NLINKS], const bool valid[NLINKS], 
-                                                w64 out[NLINKS],         bool vout[NLINKS]) {
+void TDemuxRef::operator()(const w64 links[NLINKS], const bool valid[NLINKS], 
+                                   w64 out[NLINKS],         bool vout[NLINKS]) {
     w65 links65[NLINKS], out65[NLINKS];
     for (int i = 0; i < NLINKS; ++i) {
         links65[i](63,0) = links[i];
         links65[i][64]   = valid[i];
     }
-    (*this)(newEvent, links65, out65);
+    (*this)(links65, out65);
     for (int i = 0; i < NLINKS; ++i) {
         out[i]  = out65[i](63,0);
         vout[i] = out65[i][64];

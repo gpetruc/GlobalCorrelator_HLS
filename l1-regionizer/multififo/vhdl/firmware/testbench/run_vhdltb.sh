@@ -8,8 +8,9 @@ PROJ=$1; shift;
 
 FW="../hdl"
 HLS="../../.."
+VHDLS="../../../../../common/vhdl/firmware/hdl/bit_delay.vhd"
 if [[ "${PROJ}" == "vhdl-nomux-tk" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
     VHDLS="${VHDLS} ${FW}/tk_regionizer.vhd tk_regionizer_vhdl_tb.vhd"
     HLSPROJ="project_csim_HGCal_nomux"
     DET="tk"
@@ -19,7 +20,7 @@ elif [[ "${PROJ}" == "vhdl-nomux-calo" ]]; then
     HLSPROJ="project_csim_HGCal_nomux"
     DET="calo"
 elif [[ "${PROJ}" == "vhdl-nomux-mu" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/mu_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd "
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/mu_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd "
     VHDLS="${VHDLS} ${FW}/mu_regionizer.vhd mu_regionizer_vhdl_tb.vhd"
     HLSPROJ="project_csim_HGCal_nomux"
     DET="mu"
@@ -41,12 +42,12 @@ elif [[ "${PROJ}" == "vhdl-nomux-mu" ]]; then
 #    VHDLS="$VHDLS ${FW}/regionizer_data_stdlogic.vhd ${FW}/calo_phi_regionizer_hls_slices.vhd calo_phi_regionizer_hls_slices_tb.vhd"
 #    HLSPROJ="project_MC_calo_input"
 elif [[ "${PROJ}" == "vhdl-mux-tk" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
     VHDLS="${VHDLS} ${FW}/tk_regionizer.vhd ${FW}/stream_sort.vhd ${FW}/region_mux.vhd ${FW}/tk_regionizer_mux.vhd tk_regionizer_vhdl_mux_tb.vhd"
     HLSPROJ="project_csim_HGCal_mux"
     DET="tk"
 elif [[ "${PROJ}" == "vhdl-mux-all" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd ${FW}/stream_sort.vhd ${FW}/region_mux.vhd ${FW}/pfregion_loop.vhd"
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd ${FW}/stream_sort.vhd ${FW}/region_mux.vhd ${FW}/pfregion_loop.vhd"
     VHDLS="${VHDLS} ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/tk_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/calo_router.vhd ${FW}/calo_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/mu_router.vhd ${FW}/mu_regionizer.vhd "
@@ -55,13 +56,13 @@ elif [[ "${PROJ}" == "vhdl-mux-all" ]]; then
     HLSPROJ="project_csim_HGCal_mux"
     DET="all"
 elif [[ "${PROJ}" == "vhdl-stream-tk" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd"
     VHDLS="${VHDLS} ${FW}/stream_sort.vhd  ${FW}/cascade_stream_sort_elem.vhd  ${FW}/cascade_stream_sort.vhd ${FW}/region_mux_stream.vhd ${FW}/delay_sort_mux_stream.vhd"
     VHDLS="${VHDLS} ${FW}/tk_regionizer.vhd ${FW}/tk_regionizer_mux_stream.vhd tk_regionizer_vhdl_mux_stream_tb.vhd"
     HLSPROJ="project_csim_HGCal_stream"
     DET="tk"
 elif [[ "${PROJ}" == "vhdl-stream-all" ]]; then
-    VHDLS="${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd "
+    VHDLS="${VHDLS} ${FW}/regionizer_data.vhd ${FW}/rolling_fifo.vhd ${FW}/fifo_merge2.vhd ${FW}/fifo_merge2_full.vhd ${FW}/fifo_merge3.vhd "
     VHDLS="${VHDLS} ${FW}/stream_sort.vhd  ${FW}/cascade_stream_sort_elem.vhd  ${FW}/cascade_stream_sort.vhd ${FW}/region_mux_stream.vhd ${FW}/delay_sort_mux_stream.vhd ${FW}/pfregion_loop.vhd"
     VHDLS="${VHDLS} ${FW}/tk_router_element.vhd ${FW}/tk_router.vhd ${FW}/tk_regionizer.vhd "
     VHDLS="${VHDLS} ${FW}/calo_router.vhd ${FW}/calo_regionizer.vhd "

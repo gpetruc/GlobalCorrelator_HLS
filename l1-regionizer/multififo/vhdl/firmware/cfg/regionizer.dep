@@ -1,3 +1,4 @@
+src -c correlator-common:common/vhdl bit_delay.vhd 
 src regionizer_data.vhd
 src rolling_fifo.vhd
 src fifo_merge2.vhd

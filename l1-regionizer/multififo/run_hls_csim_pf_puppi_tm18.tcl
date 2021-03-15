@@ -10,6 +10,7 @@ set sample TTbar_PU200
 
 add_files -tb regionizer_pf_puppi_test_tm18.cpp -cflags "${cflags}"
 add_files -tb tdemux/tdemux_ref.cpp   -cflags "${cflags}"
+add_files -tb tdemux/firmware/tdemux.cpp   -cflags "${cflags}"
 add_files -tb utils/tmux18_utils.cpp -cflags "${cflags}"
 add_files -tb firmware/dummy_obj_unpackers.cpp -cflags "${cflags}"
 add_files -tb utils/dummy_obj_packers.cpp -cflags "${cflags}"

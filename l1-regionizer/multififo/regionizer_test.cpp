@@ -129,8 +129,10 @@ int main(int argc, char **argv) {
             for (int r = 0; r < NTKOUT; ++r) all_channels_ref[ilink++] = tk_out_emu[r].pack();
             for (int r = 0; r < NCALOOUT; ++r) all_channels_ref[ilink++] = calo_out_emu[r].pack();
             for (int r = 0; r < NMUOUT; ++r) all_channels_ref[ilink++] = mu_out_emu[r].pack();
-            unsigned int iregion = i / (stream ? 4 : 6); bool region_valid = iregion < pfin.size();
-            all_channels_ref[ilink++] = region_valid ? pfin[iregion].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
+            if (itest > 0) {
+                unsigned int iregion = i / (stream ? 4 : 6); bool region_valid = iregion < pfin.size();
+                all_channels_ref[ilink++] = region_valid ? pfin[iregion].region.pack() : ap_uint<l1ct::PFRegion::BITWIDTH>(0);
+            }
 
             ilink = 0;
             for (int r = 0; r < NTKOUT; ++r) all_channels_out[ilink++] = tk_links64_out[r];

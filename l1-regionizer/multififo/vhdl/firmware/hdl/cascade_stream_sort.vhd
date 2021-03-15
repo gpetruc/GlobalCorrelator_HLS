@@ -7,6 +7,7 @@ use work.regionizer_data.all;
 entity cascade_stream_sort is
     generic(
         NITEMS : natural := 24;
+        NCLOCKS : natural := NCLK360;
         NSTAGES : natural := 2
     );
     port(
@@ -35,7 +36,7 @@ architecture Behavioral of cascade_stream_sort is
 begin
 
     head : entity work.cascade_stream_sort_elem
-                    generic map(NITEMS => STAGE_ITEMS)
+                    generic map(NITEMS => STAGE_ITEMS, NCLOCKS => NCLOCKS)
                     port    map(ap_clk => ap_clk,
                                 roll   => roll,
                                 d_in   => d_in,
@@ -50,7 +51,7 @@ begin
                                 
     gen_tail_norec: if NSTAGES = 2 generate
         tail_norec : entity work.cascade_stream_sort_elem
-                    generic map(NITEMS => REST_ITEMS)
+                    generic map(NITEMS => REST_ITEMS, NCLOCKS => NCLOCKS)
                     port    map(ap_clk => ap_clk,
                                 roll   => roll_del,
                                 d_in   => d_carry,
@@ -66,7 +67,7 @@ begin
 
     tail_rec: if NSTAGES > 2 generate
                 tail_norec : entity work.cascade_stream_sort
-                    generic map(NITEMS => REST_ITEMS, NSTAGES => NSTAGES-1)
+                    generic map(NITEMS => REST_ITEMS, NSTAGES => NSTAGES-1, NCLOCKS => NCLOCKS)
                     port    map(ap_clk => ap_clk,
                                 roll   => roll_del,
                                 d_in   => d_carry,

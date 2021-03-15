@@ -13,6 +13,7 @@ parser.add_option("-s", "--skip", dest="skip", type="int", default=0, help="skip
 parser.add_option("--sr", "--skipRef", dest="skipRef", type="int", default=0, help="skip first N frames from ref dump")
 parser.add_option("-c", "--channels", dest="channels", default=None, help="channels to look at: e.g. 0,2,7-9 ")
 parser.add_option("--si", "--skip-invalid", dest="skipInvalid", action="store_true", default=False, help="skip invalid frames (starting with 0v)")
+parser.add_option("--svb", "--skip-valid-bit", dest="skipValidBit", action="store_true", default=False, help="strip away the valid bit")
 parser.add_option("-v", action="count",  dest="verbose", default=1, help="increase verbosity")
 parser.add_option("-q", action="store_const", dest="verbose", const=0, help="reduce verbosity")
 
@@ -44,8 +45,9 @@ class FrameSet:
                 fdata = fields[1:]
             if options.channels:
                 fdata = [v for (i,v) in enumerate(fdata) if i in options.channels ]
-            if options.format == "emp" and options.skipInvalid:
-                if all(d.startswith("0v") for d in fdata): continue
+            if options.format == "emp":
+                if options.skipInvalid and all(d.startswith("0v") for d in fdata): continue
+                if options.skipValidBit: fdata = [d[2:] for d in fdata]
             self._frames.append( [frameno, fdata] )
         if not self._frames: raise RuntimeError("No valid patterns in file %s" % filename)
         maxflen = max(len(f[1]) for f in self._frames)

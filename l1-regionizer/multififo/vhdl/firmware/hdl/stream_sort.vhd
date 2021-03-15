@@ -8,7 +8,8 @@ use work.regionizer_data.all;
 
 entity stream_sort is
     generic(
-        NITEMS : natural := 24
+        NITEMS : natural := 24;
+        NCLOCKS : natural := NCLK360
     );
     port(
         ap_clk  : in std_logic;
@@ -25,7 +26,12 @@ architecture Behavioral of stream_sort is
     signal sorted : anyparticles(NITEMS-1 downto 0);
     signal valid  : std_logic_vector(NITEMS-1 downto 0) := (others => '0');
 begin
-     roll_out <= roll; -- the clock cycle a new event comes in here is also the clock cycle at which we're done with the old one
+
+     roll_out_delay: entity work.bit_delay
+                        generic map(DELAY => NCLOCKS)
+                        port map(clk => ap_clk, enable => '1',
+                           d => roll,
+                           q => roll_out);
 
      logic: process(ap_clk) 
            variable below : std_logic_vector(NITEMS-1 downto 0);
