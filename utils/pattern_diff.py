@@ -16,20 +16,38 @@ parser.add_option("--si", "--skip-invalid", dest="skipInvalid", action="store_tr
 parser.add_option("--svb", "--skip-valid-bit", dest="skipValidBit", action="store_true", default=False, help="strip away the valid bit")
 parser.add_option("-v", action="count",  dest="verbose", default=1, help="increase verbosity")
 parser.add_option("-q", action="store_const", dest="verbose", const=0, help="reduce verbosity")
+parser.add_option("-E", dest="numberOfErrors", type=int, default=1, help="Number of errors after which to stop when using 'exact' matching")
 
 (options,args) = parser.parse_args()
 if options.channels:
-    channels_enable = []
-    for cpair in options.channels.split(","):
-        if "-" in cpair:
-            first, last = map(int,cpair.split("-"))
-            channels_enable += range(first,last+1)
+    channels_enable = {};
+    for cmap in options.channels.split(","):
+        channels = []; openEnd = False
+        for cpair in cmap.split(":"):
+            if cpair[-1] == "-":
+                channels.append([int(cpair[:-1])])
+                openEnd = True
+            elif "-" in cpair:
+                first, last = map(int,cpair.split("-"))
+                channels.append(range(first,last+1))
+            else:
+                channels.append([int(cpair)])
+        if len(channels) == 1:
+            channels_enable.update(dict((i,i) for i in channels[0]))
+        elif  len(channels) == 2:
+            if len(channels[0]) == len(channels[1]): 
+                channels_enable.update(dict((i,j) for (i,j) in zip(channels[0],channels[1])))
+            elif len(channels[0]) > 1 and len(channels[1]) == 1 and openEnd:
+                offs = channels[1][0] - channels[0][0]
+                channels_enable.update(dict((i,i+offs) for i in channels[0]))
+            else:
+                raise RuntimeError("Bad channel map %s" % cmap)
         else:
-            channels_enable.append(int(cpair))
+            raise RuntimeError("Bad channel map %s" % cmap)
     options.channels = channels_enable
 
 class FrameSet:
-    def __init__(self, filename, options):
+    def __init__(self, filename, isRef, options):
         self._filename = filename
         self._frames = []
         for line in open(filename, "r"):
@@ -44,7 +62,10 @@ class FrameSet:
                 frameno = int(fields[0]); 
                 fdata = fields[1:]
             if options.channels:
-                fdata = [v for (i,v) in enumerate(fdata) if i in options.channels ]
+                if isRef:
+                    fdata = [ v for (i,v) in enumerate(fdata) if i in options.channels ]
+                else:
+                    fdata = [ fdata[c2] for (c1,c2) in sorted(options.channels.items()) ]
             if options.format == "emp":
                 if options.skipInvalid and all(d.startswith("0v") for d in fdata): continue
                 if options.skipValidBit: fdata = [d[2:] for d in fdata]
@@ -89,6 +110,7 @@ def match_exact(fs1, fs2, nmax):
     max12 = min(max1, max2)
     iframe = 0
     nmatch = 0
+    errs = 0
     for f in xrange(min12, max12+1):
         iframe += 1
         if iframe > nmax: 
@@ -110,8 +132,10 @@ def match_exact(fs1, fs2, nmax):
                     print "\tchannel % 3d:  %s  vs  %s : %s " % (i, d1[i], d2[i], "ok" if d1[i] == d2[i] else "FAIL")
             else:
                 print "mismatch at frame %04d, after %d successfully matched frames" % (f, nmatch)
-            return False
-    print "%d successfully matched frames" % nmatch
+            errs += 1
+            if errs >= options.numberOfErrors:
+                return False
+    print "%d successfully matched frames (%d errors)" % (nmatch-errs, errs)
     return True
 
 def try_find_match(fs1, fs2, nmax, maxattempts):
@@ -140,8 +164,8 @@ def try_find_match(fs1, fs2, nmax, maxattempts):
                 return True
     print "Could not find frame %04d of #1 in #2: %s"  % (fno1, "  ".join(d1))
     return False
-ref = FrameSet(args[0], options)
-test = FrameSet(args[1], options)
+ref = FrameSet(args[0], True, options)
+test = FrameSet(args[1], False, options)
 if options.skipRef: ref.skipFrames(options.skipRef) 
 if options.latency: ref.delay(options.latency)
 if options.skip: test.skipFrames(options.skip)

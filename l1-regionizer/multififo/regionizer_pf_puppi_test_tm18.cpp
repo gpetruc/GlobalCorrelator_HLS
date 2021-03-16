@@ -417,7 +417,7 @@ bool Tester::run() {
         readOneEndcap(itest - trainStart, in, allpfin);
 
         runRegionizer(in, allpfin, TLEN, itest == trainStart, /*tail=*/false);
-        runPFPuppi(itest, allpfin, itest < 0);
+        runPFPuppi(itest, allpfin, itest <= 1);
         
         ok = runTMuxAndDemux(itest, itest - trainStart, TLEN, /*tail=*/false);
 
