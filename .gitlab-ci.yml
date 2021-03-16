@@ -1,7 +1,7 @@
 
 include:
   - project: cms-cactus/phase2/firmware/ci-templates
-    ref: 3775e01a
+    ref: 4053a13d
     file: vivado/all.yml
   - /pf/gitlab-ci.yml
   - /puppi/gitlab-ci.yml

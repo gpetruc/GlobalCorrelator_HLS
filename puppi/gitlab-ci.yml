@@ -1,6 +1,7 @@
 
 .linpuppi-hls-common:
   variables:
+    VIVADO_HLS_LOG_ID: linpuppi-$${puppiReg}
     WORKDIR: puppi
   parallel:
     matrix:
@@ -16,7 +17,6 @@ hls-csim:puppi:
     - .linpuppi-hls-common
   variables:
     puppiBoard: none
-    VIVADO_HLS_LOG_ID: linpuppi-$${puppiReg}-csim
 
 
 hls-csynth:puppi:
@@ -25,7 +25,6 @@ hls-csynth:puppi:
     - .linpuppi-hls-common
   variables:
     puppiBoard: VCU118
-    VIVADO_HLS_LOG_ID: linpuppi-$${puppiReg}-csynth
 
 
 
@@ -33,6 +32,7 @@ hls-csynth:puppi:
 .puppiSort-hls-common:
   variables:
     puppiReg: HGCal
+    VIVADO_HLS_LOG_ID: puppiSort-hybrid-HGCal
     VIVADO_HLS_TCL_SCRIPT: run_hls_puppi_sort.tcl
     WORKDIR: puppi
 
@@ -41,8 +41,6 @@ hls-csim:puppiSort:
   extends:
     - .vivado_hls_csim
     - .puppiSort-hls-common
-  variables:
-    VIVADO_HLS_LOG_ID: puppiSort-hybrid-HGCal-csim
 
 
 hls-csynth:puppiSort:
@@ -51,4 +49,3 @@ hls-csynth:puppiSort:
     - .puppiSort-hls-common
   variables:
     sortAlgo: hybrid
-    VIVADO_HLS_LOG_ID: puppiSort-hybrid-HGCal-csynth

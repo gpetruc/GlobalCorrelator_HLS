@@ -4,7 +4,7 @@ hls-csim:l1r-multififo:
   variables:
     pfBoard: none
     pfReg: HGCal
-    VIVADO_HLS_LOG_ID: l1r-mf-$${regionizerMode}-csim
+    VIVADO_HLS_LOG_ID: l1r-mf-$${regionizerMode}
     VIVADO_HLS_TCL_SCRIPT: run_hls_csim.tcl
     WORKDIR: l1-regionizer/multififo
   parallel:
@@ -17,7 +17,7 @@ hls-csim:l1r-multififo-tm18:
   variables:
     pfBoard: VCU118
     pfReg: HGCal
-    VIVADO_HLS_LOG_ID: l1r-mf-tm18-csim
+    VIVADO_HLS_LOG_ID: l1r-mf-tm18
     VIVADO_HLS_TCL_SCRIPT: run_hls_csim_pf_puppi_tm18.tcl
     WORKDIR: l1-regionizer/multififo
 

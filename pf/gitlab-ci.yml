@@ -1,6 +1,7 @@
 
 .pf-hls-common:
   variables:
+    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}
     VIVADO_HLS_TCL_SCRIPT: run_hls_$${PF_ALGO_TAG}.tcl
     WORKDIR: pf
   parallel:
@@ -17,7 +18,6 @@ hls-csim:pf:
     - .pf-hls-common
   variables:
     pfBoard: none
-    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}-csim
 
 
 hls-csynth:pf:
@@ -26,4 +26,3 @@ hls-csynth:pf:
     - .pf-hls-common
   variables:
     pfBoard: VCU118
-    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}-csynth
