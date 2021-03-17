@@ -1,73 +1,28 @@
-.pf-common: 
-  tags: [ vivado20192 ]
-  before_script:
-    - source /opt/Xilinx/Vivado/2019.2/settings64.sh
-    - cd pf
-  after_script:
-    - mv pf/vivado_hls.log pf/vivado_hls.${CI_JOB_NAME}.txt
-  artifacts:
-    when: always
-    expire_in: 7 days
-  only:
-    refs: [ branches, tags, merge_request, web, schedules ]
-    changes:
-      - "*"
-      - dataformats/**/*
-      - data/**/*
-      - pf/**/*
-      - utils/**/*
 
-.pf-csim-common: 
-  extends: .pf-common
-  stage: pre-build
-  variables: 
+.pf-hls-common:
+  variables:
+    VIVADO_HLS_LOG_ID: $${PF_ALGO_TAG}
+    VIVADO_HLS_TCL_SCRIPT: run_hls_$${PF_ALGO_TAG}.tcl
+    WORKDIR: pf
+  parallel:
+    matrix:
+      - PF_ALGO_TAG: pfalgo3
+        pfReg: Barrel
+      - PF_ALGO_TAG: pfalgo2hgc
+        pfReg: HGCal
+
+
+hls-csim:pf:
+  extends:
+    - .vivado_hls_csim
+    - .pf-hls-common
+  variables:
     pfBoard: none
-  artifacts:
-    paths:
-      - pf/vivado_hls.${CI_JOB_NAME}.txt
-      - pf/proj_pf${pfReg}_${pfBoard}/solution/csim/build/*.txt
 
 
-.pf-csynth-common:
-  extends: .pf-common
-  stage: build
-  when: manual
+hls-csynth:pf:
+  extends:
+    - .vivado_hls_csynth
+    - .pf-hls-common
   variables:
-      pfBoard: VCU118
-      DO_SYNTH: 1
-  artifacts:
-    paths:
-      - pf/vivado_hls.${CI_JOB_NAME}.txt
-      - pf/proj_pf${pfReg}_${pfBoard}/solution/csim/build/*.txt
-      - pf/proj_pf${pfReg}_${pfBoard}/solution/syn/report/*
-      - pf/proj_pf${pfReg}_${pfBoard}/solution/impl/vhdl/*
-  dependencies: 
-
-   
-pfalgo3-csim:
-  extends: .pf-csim-common
-  variables:
-    pfReg: Barrel
-  script:
-    - vivado_hls -f run_hls_pfalgo3.tcl
-
-pfalgo2hgc-csim:
-  extends: .pf-csim-common
-  variables:
-    pfReg: HGCal
-  script:
-    - vivado_hls -f run_hls_pfalgo2hgc.tcl
-
-pfalgo3-csynth:
-  extends: .pf-csynth-common
-  variables:
-    pfReg: Barrel
-  script:
-    - vivado_hls -f run_hls_pfalgo3.tcl
-
-pfalgo2hgc-csynth:
-  extends: .pf-csynth-common
-  variables:
-    pfReg: HGCal
-  script:
-    - vivado_hls -f run_hls_pfalgo2hgc.tcl
+    pfBoard: VCU118
