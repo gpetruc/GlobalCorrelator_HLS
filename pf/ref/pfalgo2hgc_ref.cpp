@@ -99,16 +99,18 @@ void l1ct::PFAlgo2HGCEmulator::run(const PFInputRegion& in, OutputRegion& out) c
     for (unsigned int i = 0; i < nMU; ++i) {
       if (in.muon[i].hwPt == 0)
         continue;
-      printf("FW  \t muon  %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  charge %+2d   packed %s \n",
-             i,
-             in.muon[i].floatPt(),
-             in.muon[i].intPt(),
-             in.muon[i].floatEta(),
-             in.muon[i].intEta(),
-             in.muon[i].floatPhi(),
-             in.muon[i].intPhi(),
-             in.muon[i].intCharge(),
-             in.muon[i].pack().to_string(16).c_str());
+      printf(
+          "FW  \t muon  %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  charge %+2d   "
+          "packed %s \n",
+          i,
+          in.muon[i].floatPt(),
+          in.muon[i].intPt(),
+          in.muon[i].floatEta(),
+          in.muon[i].intEta(),
+          in.muon[i].floatPhi(),
+          in.muon[i].intPhi(),
+          in.muon[i].intCharge(),
+          in.muon[i].pack().to_string(16).c_str());
     }
   }
 
@@ -234,30 +236,32 @@ void l1ct::PFAlgo2HGCEmulator::run(const PFInputRegion& in, OutputRegion& out) c
     for (unsigned int i = 0; i < nTRACK; ++i) {
       if (out.pfcharged[i].hwPt == 0)
         continue;
-      printf("FW  \t outch %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  pid %d  packed %s\n",
-             i,
-             out.pfcharged[i].floatPt(),
-             out.pfcharged[i].intPt(),
-             out.pfcharged[i].floatEta(),
-             out.pfcharged[i].intEta(),
-             out.pfcharged[i].floatPhi(),
-             out.pfcharged[i].intPhi(),
-             out.pfcharged[i].intId(),
-             out.pfcharged[i].pack().to_string(16).c_str());
+      printf(
+          "FW  \t outch %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  pid %d  packed %s\n",
+          i,
+          out.pfcharged[i].floatPt(),
+          out.pfcharged[i].intPt(),
+          out.pfcharged[i].floatEta(),
+          out.pfcharged[i].intEta(),
+          out.pfcharged[i].floatPhi(),
+          out.pfcharged[i].intPhi(),
+          out.pfcharged[i].intId(),
+          out.pfcharged[i].pack().to_string(16).c_str());
     }
     for (unsigned int i = 0; i < nSELCALO; ++i) {
       if (out.pfneutral[i].hwPt == 0)
         continue;
-      printf("FW  \t outne %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  pid %d  packed %s\n",
-             i,
-             out.pfneutral[i].floatPt(),
-             out.pfneutral[i].intPt(),
-             out.pfneutral[i].floatEta(),
-             out.pfneutral[i].intEta(),
-             out.pfneutral[i].floatPhi(),
-             out.pfneutral[i].intPhi(),
-             out.pfneutral[i].intId(),
-             out.pfneutral[i].pack().to_string(16).c_str());
+      printf(
+          "FW  \t outne %3d: pt %8.2f [ %8d ]  calo eta %+5.2f [ %+5d ]  calo phi %+5.2f [ %+5d ]  pid %d  packed %s\n",
+          i,
+          out.pfneutral[i].floatPt(),
+          out.pfneutral[i].intPt(),
+          out.pfneutral[i].floatEta(),
+          out.pfneutral[i].intEta(),
+          out.pfneutral[i].floatPhi(),
+          out.pfneutral[i].intPhi(),
+          out.pfneutral[i].intId(),
+          out.pfneutral[i].pack().to_string(16).c_str());
     }
   }
 }
