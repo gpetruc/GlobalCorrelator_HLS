@@ -1,6 +1,6 @@
-
-hls-csim:l1r-multififo:
+l1reg-multififo:csim:
   extends: .vivado_hls_csim
+  tags: [ vivado20192-csim ]
   variables:
     pfBoard: none
     pfReg: HGCal
@@ -9,19 +9,18 @@ hls-csim:l1r-multififo:
     WORKDIR: l1-regionizer/multififo
   parallel:
     matrix:
-      - regionizerMode: [mux, nomux, stream]
+      - regionizerMode: [nomux, mux, stream]
 
 
-hls-csim:l1r-multififo-tm18:
+l1reg-multififo-tm18:csim:
   extends: .vivado_hls_csim
+  tags: [ vivado20192-csim ]
   variables:
     pfBoard: VCU118
     pfReg: HGCal
     VIVADO_HLS_LOG_ID: l1r-mf-tm18
     VIVADO_HLS_TCL_SCRIPT: run_hls_csim_pf_puppi_tm18.tcl
     WORKDIR: l1-regionizer/multififo
-
-
 
 # NOTE: Config for hdl-sim jobs still needs to be cleaned up to use standard template
 #       (like the rest of the commands), once scripts refactorised to ensure same set
@@ -36,36 +35,36 @@ hls-csim:l1r-multififo-tm18:
     pfReg: HGCal
     WORKDIR: l1-regionizer/multififo/vhdl/firmware/testbench
 
-hdl-sim:l1r-multififo-mux:
-  extends: .l1reg-multififo-vhdl-common
-  variables:
-    regionizerMode: mux
-  dependencies:
-    - 'hls-csim:l1r-multififo: [mux]'
-  script:
-    - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
-    - "./run_vhdltb.sh vhdl-mux-tk  && pattern_diff.py vhdl-mux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -s 54 --sr 54 -l 8 exact"
-    - "./run_vhdltb.sh vhdl-mux-all && pattern_diff.py vhdl-mux-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
-
-hdl-sim:l1r-multififo-nomux:
+l1reg-multififo-nomux:sim:
   extends: .l1reg-multififo-vhdl-common
   variables:
     regionizerMode: nomux
   dependencies:
-    - 'hls-csim:l1r-multififo: [nomux]'
+    - 'l1reg-multififo:csim: [nomux]'
   script:
     - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
     - "./run_vhdltb.sh vhdl-nomux-tk && pattern_diff.py vhdl-nomux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -l 6 exact"
     - "./run_vhdltb.sh vhdl-nomux-calo && pattern_diff.py vhdl-nomux-calo_xsim.dir/output-{ref-calo,calo-vhdl_tb}.txt -l 7 exact"
     - "./run_vhdltb.sh vhdl-nomux-mu && pattern_diff.py vhdl-nomux-mu_xsim.dir/output-{ref-mu,mu-vhdl_tb}.txt -l 5 exact"
 
-hdl-sim:l1r-multififo-stream:
+l1reg-multififo-mux:sim:
+  extends: .l1reg-multififo-vhdl-common
+  variables:
+    regionizerMode: mux
+  dependencies:
+    - 'l1reg-multififo:csim: [mux]'
+  script:
+    - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
+    - "./run_vhdltb.sh vhdl-mux-tk  && pattern_diff.py vhdl-mux-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -s 54 --sr 54 -l 8 exact"
+    - "./run_vhdltb.sh vhdl-mux-all && pattern_diff.py vhdl-mux-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
+
+l1reg-multififo-stream:sim:
   extends: .l1reg-multififo-vhdl-common
   variables:
     regionizerMode: stream
   dependencies:
-    - 'hls-csim:l1r-multififo: [stream]'
+    - 'l1reg-multififo:csim: [stream]'
   script:
     - export PATH=${CI_PROJECT_DIR}/utils:${PATH}
-    - "./run_vhdltb.sh vhdl-stream-tk  && pattern_diff.py vhdl-stream-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -c 1-25 -l 10 exact"
-    - "./run_vhdltb.sh vhdl-stream-all && pattern_diff.py vhdl-stream-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact"
+    - "./run_vhdltb.sh vhdl-stream-tk  && pattern_diff.py vhdl-stream-tk_xsim.dir/output-{ref-tk,tk-vhdl_tb}.txt -c 1-25 -l 10 exact --skip 54 --skipRef 54"
+    - "./run_vhdltb.sh vhdl-stream-all && pattern_diff.py vhdl-stream-all_xsim.dir/output-{ref-emp,emp-vhdl_tb}.txt --emp -l 11 exact --skip 54 --skipRef 54"

@@ -12,15 +12,16 @@
         pfReg: HGCal
 
 
-hls-csim:pf:
+pf:csim:
   extends:
     - .vivado_hls_csim
     - .pf-hls-common
+  tags: [ vivado20192-csim ]
   variables:
     pfBoard: none
 
 
-hls-csynth:pf:
+pf:csynth:
   extends:
     - .vivado_hls_csynth
     - .pf-hls-common

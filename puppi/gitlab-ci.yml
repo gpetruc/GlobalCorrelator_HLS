@@ -11,15 +11,16 @@
         VIVADO_HLS_TCL_SCRIPT: run_hls_linpuppi_forward.tcl
 
 
-hls-csim:puppi:
+puppi:csim:
   extends:
     - .vivado_hls_csim
     - .linpuppi-hls-common
+  tags: [ vivado20192-csim ]
   variables:
     puppiBoard: none
 
 
-hls-csynth:puppi:
+puppi:csynth:
   extends:
     - .vivado_hls_csynth
     - .linpuppi-hls-common
@@ -37,13 +38,14 @@ hls-csynth:puppi:
     WORKDIR: puppi
 
 
-hls-csim:puppiSort:
+puppiSort:csim:
+  tags: [ vivado20192-csim ]
   extends:
     - .vivado_hls_csim
     - .puppiSort-hls-common
 
 
-hls-csynth:puppiSort:
+puppiSort:csynth:
   extends:
     - .vivado_hls_csynth
     - .puppiSort-hls-common
