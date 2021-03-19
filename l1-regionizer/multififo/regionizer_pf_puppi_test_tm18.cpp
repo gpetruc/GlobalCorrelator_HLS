@@ -22,7 +22,7 @@
 
 #define TLEN REGIONIZERNCLOCKS 
 #ifndef NTEST
-#define NTEST 50
+#define NTEST 48
 #endif
 
 #define PAUSES
@@ -31,28 +31,59 @@ template<unsigned int NCHANN, unsigned int NBITS>
 class Channels {
     public:
         Channels() { clear(); }
-        Channels(const char *name) :
-            serializer(new PatternSerializer(name, NCHANN*((NBITS+63)/64)))
+        Channels(const char *name, unsigned int nmux = 1) :
+            nchann64_((((NCHANN*((NBITS+63)/64))+(nmux-1))/nmux)*nmux), filename_(name), nmux_(nmux), fileindex_(0)
         {
+            if (filename_.find("%") == std::string::npos) {
+                serializer_.reset(new PatternSerializer(name, nchann64_, nmux_));
+            } else {
+                newFile();
+            }
             clear(); 
         }
-        void clear(bool isvalid=false) {
-            for (unsigned int iclock = 0; iclock < NCHANN; ++iclock) {
-                data[iclock] = 0; valid[iclock] = isvalid;
-            }
-        }
-        unsigned int size() const { return NCHANN; }
-        void dump() { serializer->packAndWrite(NCHANN, data, valid); }
 
-        void dumpNulls(unsigned int n, bool valid=false) {
+        Channels<NCHANN,NBITS> & copy(const Channels & other) {
+            for (unsigned int i = 0; i < NCHANN; ++i) {
+                data[i] = other.data[i]; valid[i] = other.valid[i];
+            }
+            return *this;
+        }
+        Channels<NCHANN,NBITS> & clear(bool isvalid=false) {
+            for (unsigned int i = 0; i < NCHANN; ++i) {
+                data[i] = 0; valid[i] = isvalid;
+            }
+            return *this; 
+        }
+
+        unsigned int size() const { return NCHANN; }
+
+        Channels<NCHANN,NBITS> &  dump() { 
+            serializer_->packAndWrite(NCHANN, data, valid); 
+            return *this; 
+        }
+
+        Channels<NCHANN,NBITS> &  dumpNulls(unsigned int n, bool valid=false) {
             clear(valid);
             for (unsigned int i = 0; i < n; ++i) dump();
+            return *this; 
+        }
+
+        Channels<NCHANN,NBITS> & newFile() {
+            fileindex_++;
+            unsigned int maxlen = filename_.size()+10;
+            char buff[maxlen];
+            std::fill(buff,buff+maxlen,'\0');
+            snprintf(buff, maxlen-1, filename_.c_str(), fileindex_);
+            serializer_.reset(new PatternSerializer(buff, nchann64_, nmux_));
+            return *this; 
         }
 
         ap_uint<NBITS> data[NCHANN];
         bool valid[NCHANN];
     private:
-        std::unique_ptr<PatternSerializer> serializer;
+        std::string filename_; 
+        unsigned int nchann64_, nmux_, fileindex_;
+        std::unique_ptr<PatternSerializer> serializer_;
 };
 
 struct Tester {
@@ -61,13 +92,18 @@ struct Tester {
         inputs("TTbar_PU200_HGCal.dump"),
         channelsTM("input-emp.txt"), 
         channelsTDemux("input-emp-tdemux.txt"),
-        channelsVCU118("input-emp-vcu118.txt"),
+        channelsVCU118("input-emp-vcu118.%03d.txt"),
+        channelsTDemuxSplit("input-emp-tdemux.%03d.txt"),
         channelsDecode("input-emp-decoded.txt"), 
         channelsIn("input-emp-decoded-ref.txt"),
         channelsReg("output-emp-regionized-ref.txt"),
+        channelsRegSplit("output-emp-regionized-ref.%03d.txt"),
         channelsPf("output-emp-pf-ref.txt"),
+        channelsPfStream("output-emp-pf-stream-ref.%03d.txt"),
         channelsPuppi("output-emp-puppi-ref.txt"),
+        channelsPuppiStream("output-emp-puppi-stream-ref.%03d.txt",6),
         channelsPuppiSort("output-emp-puppisort-ref.txt"),
+        channelsPuppiSortStream("output-emp-puppisort-stream-ref.%03d.txt",6),
         vcu118_links(nchann_vcu118, 0), // index is tmux link, value is VCU118 link
         decoded_validation_index(0),
         tk_tmuxer(NTKSECTORS), calo_tmuxer(NCALOSECTORS*NCALOFIBERS), mu_tmuxer(1),
@@ -97,20 +133,20 @@ struct Tester {
     }
         
 
-    static const unsigned int nchann_in = NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1, nchann_vcu118 = 120;
+    static const unsigned int nchann_in = NTKSECTORS*3 + 3*NCALOSECTORS*NCALOFIBERS + 3 + 1, nchann_vcu118 = 28*4;
     static const unsigned int nchann_decoded = NTKSECTORS*NTKFIBERS + NCALOSECTORS*NCALOFIBERS + NMUFIBERS + 1;
     static const unsigned int nchann_regionized = NTKOUT + NCALOOUT + NMUOUT + 1;
     static const unsigned int nchann_pf = NTRACK + NCALO + NMU, nchann_puppi = NTRACK + NCALO, nchann_sort = NPUPPIFINALSORTED;
     static const unsigned int tk_offs = 0, calo_offs = NTKSECTORS*3, mu_offs = calo_offs + NCALOSECTORS * NCALOFIBERS * 3, vtx_offs = mu_offs + 3;
 
     DumpFileReader inputs;
-    Channels<nchann_in,64> channelsTM, channelsTDemux;
+    Channels<nchann_in,64> channelsTM, channelsTDemux, channelsTDemuxSplit;
     Channels<nchann_vcu118,64> channelsVCU118;
     Channels<nchann_decoded,72> channelsDecode, channelsIn;
-    Channels<nchann_regionized,72> channelsReg;
-    Channels<nchann_pf,72> channelsPf;
-    Channels<nchann_puppi,64> channelsPuppi;
-    Channels<nchann_sort,64> channelsPuppiSort;
+    Channels<nchann_regionized,72> channelsReg, channelsRegSplit;
+    Channels<nchann_pf,72> channelsPf, channelsPfStream;
+    Channels<nchann_puppi,64> channelsPuppi, channelsPuppiStream;
+    Channels<nchann_sort,64> channelsPuppiSort, channelsPuppiSortStream;
 
     std::vector<int> vcu118_links; // index is tmux link, value is VCU118 link
 
@@ -237,8 +273,8 @@ bool Tester::runTMuxAndDemux(int itest, int indexWithinTrain, int nclocks, bool 
             } 
         }
 
-
         channelsTDemux.dump();
+        channelsTDemuxSplit.copy(channelsTDemux).dump();
 
         // and now we unpack to 64 bit format
         ilink = 0; unsigned int iout = 0;
@@ -351,6 +387,7 @@ void Tester::runRegionizer(const l1ct::RegionizerDecodedInputs & in, const std::
 
         if (!firstEventOfTrain) {
             channelsReg.dump();
+            channelsRegSplit.copy(channelsReg).dump();
         }
     }
 }
@@ -399,11 +436,19 @@ void Tester::runPFPuppi(int itest, const std::vector<l1ct::PFInputRegion> & allp
             channelsPf.dump();
             channelsPuppi.dump();
             channelsPuppiSort.dump();
+            for (int i = j, k = 0; i < nchann_pf; i += 6, ++k) {
+                channelsPfStream.data[k] = channelsPf.data[i];
+                channelsPfStream.valid[k] = channelsPf.valid[i];
+            }
+            channelsPfStream.dump();
         }
+        channelsPuppiStream.copy(channelsPuppi).dump();
+        channelsPuppiSortStream.copy(channelsPuppiSort).dump();
     }
 }
 
 bool Tester::run() {
+    unsigned int events_per_chunk = 12;
     unsigned int frame = 0, ilink; 
     bool ok = true, firstOfTrain = true;
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before
@@ -422,7 +467,7 @@ bool Tester::run() {
         ok = runTMuxAndDemux(itest, itest - trainStart, TLEN, /*tail=*/false);
 
         #ifdef PAUSES
-        if (itest - trainStart == 5) { // put a pause after 6 events
+        if (itest - trainStart == (events_per_chunk-1)) { // put a pause after 6 events
             unsigned int pause_length = 200;
             // flush data: regionizer
             runRegionizer(in, allpfin, TLEN, /*start=*/false, /*tail=*/true);
@@ -442,6 +487,14 @@ bool Tester::run() {
             trainStart = itest + 1;
         }
         #endif
+        if (((itest % events_per_chunk) == (events_per_chunk-1)) && (itest != NTEST-1)) { 
+            channelsVCU118.newFile(); 
+            channelsTDemuxSplit.newFile();
+            channelsRegSplit.newFile();
+            channelsPfStream.newFile();
+            channelsPuppiStream.newFile();
+            channelsPuppiSortStream.newFile();
+        }
         if (!ok) break;
     } 
 
