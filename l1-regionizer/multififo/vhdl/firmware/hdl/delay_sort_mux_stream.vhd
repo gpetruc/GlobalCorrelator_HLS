@@ -29,7 +29,7 @@ architecture Behavioral of delay_sort_mux_stream is
 
     signal delayed:        w72s(EFFDELAY*NREGIONS-1 downto 0);
     signal delayed_valid:  std_logic_vector(EFFDELAY*NREGIONS-1 downto 0) := (others => '0');
-    signal delayed_roll:   std_logic_vector(EFFDELAY-1 downto 0);
+    signal delayed_roll:   std_logic_vector(EFFDELAY-1 downto 0) := (others => '0');
 
     signal sorted:        anyparticles(NSORTED*NREGIONS-1 downto 0);
     signal sorted_valid:  std_logic_vector(NSORTED*NREGIONS-1 downto 0) := (others => '0');

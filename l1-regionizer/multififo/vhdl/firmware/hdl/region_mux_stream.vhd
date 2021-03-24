@@ -28,6 +28,7 @@ architecture Behavioral of region_mux_stream is
     signal regions : anyparticles(NREGIONS*NITEMS-1 downto 0);
     signal valid   : std_logic_vector(NREGIONS*NITEMS-1 downto 0) := (others => '0');
     signal count   : integer range 0 to OUTII-1 := 0;
+    signal roll_out_i : std_logic := '0';
 begin
 
      logic: process(ap_clk) 
@@ -56,9 +57,10 @@ begin
                         count <= 0;
                     end if;
                 end if;
-                roll_out <= roll;
+                roll_out_i <= roll;
             end if;
         end process logic;
+    roll_out <= roll_out_i;
 
     gen_out: for i in 0 to NSTREAM-1 generate
         d_out(i) <= regions(i*OUTII);

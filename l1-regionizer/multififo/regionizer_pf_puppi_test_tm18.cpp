@@ -23,6 +23,7 @@
 #define TLEN REGIONIZERNCLOCKS 
 #ifndef NTEST
 #define NTEST 48
+//#define NTEST 1000
 #endif
 
 #define PAUSES
@@ -144,7 +145,8 @@ struct Tester {
     Channels<nchann_vcu118,64> channelsVCU118;
     Channels<nchann_decoded,72> channelsDecode, channelsIn;
     Channels<nchann_regionized,72> channelsReg, channelsRegSplit;
-    Channels<nchann_pf,72> channelsPf, channelsPfStream;
+    Channels<nchann_pf,72> channelsPf;
+    Channels<(nchann_pf+3)/4,72> channelsPfStream;
     Channels<nchann_puppi,64> channelsPuppi, channelsPuppiStream;
     Channels<nchann_sort,64> channelsPuppiSort, channelsPuppiSortStream;
 
@@ -436,9 +438,14 @@ void Tester::runPFPuppi(int itest, const std::vector<l1ct::PFInputRegion> & allp
             channelsPf.dump();
             channelsPuppi.dump();
             channelsPuppiSort.dump();
-            for (int i = j, k = 0; i < nchann_pf; i += 6, ++k) {
-                channelsPfStream.data[k] = channelsPf.data[i];
-                channelsPfStream.valid[k] = channelsPf.valid[i];
+            if (j < 4) {
+                channelsPfStream.clear(true);
+                for (unsigned int i = j, k = 0; i < nchann_pf; i += 4, ++k) {
+                    channelsPfStream.data[k] = channelsPf.data[i];
+                    channelsPfStream.valid[k] = channelsPf.valid[i];
+                }
+            } else {
+                channelsPfStream.clear(false);
             }
             channelsPfStream.dump();
         }
@@ -448,7 +455,7 @@ void Tester::runPFPuppi(int itest, const std::vector<l1ct::PFInputRegion> & allp
 }
 
 bool Tester::run() {
-    unsigned int events_per_chunk = 12;
+    unsigned int events_per_chunk = 9;
     unsigned int frame = 0, ilink; 
     bool ok = true, firstOfTrain = true;
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before

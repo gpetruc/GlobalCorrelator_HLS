@@ -416,11 +416,21 @@ PuppiObj linpuppi_chs_one(const PFRegion & region, const PFChargedObj pfch, z0_t
     #pragma HLS pipeline II=1
     #pragma HLS LATENCY min=1
     PuppiObj ret;
+    #ifndef FAKE_PUPPI
     if (pfch.hwPt != 0 && region.isFiducial(pfch) && (linpuppi_fromPV(pfch, pvZ0) || pfch.hwId.isMuon())) {
         ret.fill(region, pfch);
     } else {
         ret.clear();
     }
+    #else
+    if (pfch.hwPt != 0) {
+        ret.fill(region, pfch);
+        ret.setHwDxy(dxy_t(pvZ0));
+        ret.setHwTkQuality(region.isFiducial(pfch) ? 1 : 0);
+    } else {
+        ret.clear();
+    }
+    #endif
     return ret;
 }
 
@@ -558,15 +568,22 @@ void linpuppiSum2All(const PFRegion & region, const PFNeutralObj & caloin, const
 
     int x2 = x2a+x2ptp;
     pt_t puppiPt; puppiWgt_t puppiWgt; linpuppi_calc_wpt(caloin.hwPt, x2, puppiPt, puppiWgt);
+#ifndef FAKE_PUPPI
 #ifndef LINPUPPI_etaBins
     if (region.isFiducial(caloin) && puppiPt >= ptCut) {
 #elif LINPUPPI_etaBins == 2
     if (region.isFiducial(caloin) && puppiPt >= (ietaBin ? ptCut_1 : ptCut_0)) {
 #endif
         out.fill(region, caloin, puppiPt, puppiWgt);
+#else // FAKE_PUPPI
+    if (caloin.hwPt != 0) {
+        out.fill(region, caloin, caloin.hwPt, puppiWgt);
+        out.hwData[9] = region.isFiducial(caloin);
+        out.hwData(20,10) = puppiPt(10,0);
     } else {
         out.clear();
     }
+#endif
 #ifndef __SYNTHESIS__
 #ifndef LINPUPPI_etaBins
     if (gdebug_) printf("hw  candidate  pt %7.2f  em %1d: alpha %+7.2f   x2a %+5d = %+7.3f  x2pt %+5d = %+7.3f   x2 %+5d = %+7.3f  -->                       puppi pt %7.2f\n",

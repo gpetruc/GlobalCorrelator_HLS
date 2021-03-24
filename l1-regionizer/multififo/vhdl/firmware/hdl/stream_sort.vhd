@@ -28,7 +28,7 @@ architecture Behavioral of stream_sort is
 begin
 
      roll_out_delay: entity work.bit_delay
-                        generic map(DELAY => NCLOCKS)
+                        generic map(DELAY => NCLOCKS, SHREG => "yes")
                         port map(clk => ap_clk, enable => '1',
                            d => roll,
                            q => roll_out);

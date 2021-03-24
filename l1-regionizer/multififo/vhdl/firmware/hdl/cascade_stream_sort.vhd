@@ -29,7 +29,7 @@ architecture Behavioral of cascade_stream_sort is
     constant REST_ITEMS  : natural := NITEMS - STAGE_ITEMS;
     constant DELAY       : natural := NSTAGES-1;
     signal d_del     : anyparticles(STAGE_ITEMS*DELAY-1 downto 0);
-    signal valid_del : std_logic_vector(STAGE_ITEMS*DELAY-1 downto 0);
+    signal valid_del : std_logic_vector(STAGE_ITEMS*DELAY-1 downto 0) := (others => '0');
     signal roll_del  : std_logic := '0';
     signal d_carry : anyparticle;
     signal valid_carry, shift_carry : std_logic := '0';

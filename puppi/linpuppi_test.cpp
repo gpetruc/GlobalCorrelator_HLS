@@ -157,6 +157,10 @@ int main() {
         puEmulator.linpuppi_ref(inputs.pfregion().region, inputs.pfregion().track, pv, pfout.pfneutral, outallne_ref_nocut, outallne_ref, outselne_ref);
         puEmulator.linpuppi_flt(inputs.pfregion().region, inputs.pfregion().track, pv, pfout.pfneutral, outallne_flt_nocut, outallne_flt, outselne_flt);
 
+#ifdef FAKE_PUPPI
+        continue;
+#endif
+
         // validate numerical accuracy 
         checker.checkIntVsFloat(pfout.pfneutral, outallne_ref_nocut, outallne_flt_nocut, verbose);
 
