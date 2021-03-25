@@ -455,7 +455,7 @@ void Tester::runPFPuppi(int itest, const std::vector<l1ct::PFInputRegion> & allp
 }
 
 bool Tester::run() {
-    unsigned int events_per_chunk = 9;
+    unsigned int events_per_chunk = 12;
     unsigned int frame = 0, ilink; 
     bool ok = true, firstOfTrain = true;
     l1ct::PVObjEmu pv_prev; // we have 1 event of delay in the reference regionizer, so we need to use the PV from 54 clocks before

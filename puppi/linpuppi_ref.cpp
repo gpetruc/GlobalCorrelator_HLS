@@ -160,26 +160,36 @@ void l1ct::LinPuppiEmulator::linpuppi_chs_ref(const PFRegionEmu &region,
   outallch.resize(nTrack);
   for (unsigned int i = 0; i < nTrack; ++i) {
     int z0diff = pfch[i].hwZ0 - pv.hwZ0;
+#ifndef FAKE_PUPPI
     if (pfch[i].hwPt != 0 && region.isFiducial(pfch[i]) && (std::abs(z0diff) <= int(dzCut_) || pfch[i].hwId.isMuon())) {
       outallch[i].fill(region, pfch[i]);
+#else // FAKE_PUPPI
+    if (pfch[i].hwPt != 0) {
+      outallch[i].fill(region, pfch[i]);
+      outallch[i].setHwDxy(dxy_t(pv.hwZ0));
+      outallch[i].setHwTkQuality(region.isFiducial(pfch[i]) ? 1 : 0);
+#endif
       if (debug_ && pfch[i].hwPt > 0)
-        printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d) -> pass\n",
+        printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d), fid %1d -> pass, packed %s\n",
                i,
                pfch[i].floatPt(),
                pfch[i].intId(),
                int(pfch[i].hwZ0),
                z0diff,
-               dzCut_);
+               dzCut_, 
+               region.isFiducial(pfch[i]),
+               outallch[i].pack().to_string(16).c_str());
     } else {
       outallch[i].clear();
       if (debug_ && pfch[i].hwPt > 0)
-        printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d) -> fail\n",
+        printf("ref candidate %02u pt %7.2f pid %1d   vz %+6d  dz %+6d (cut %5d), fid %1d -> fail\n",
                i,
                pfch[i].floatPt(),
                pfch[i].intId(),
                int(pfch[i].hwZ0),
                z0diff,
-               dzCut_);
+               dzCut_, 
+               region.isFiducial(pfch[i]));
     }
   }
 }
@@ -400,10 +410,17 @@ void l1ct::LinPuppiEmulator::linpuppi_ref(const PFRegionEmu &region,
     unsigned int ieta = find_ieta(region, pfallne[in].hwEta);
     bool isEM = (pfallne[in].hwId.isPhoton());
     std::pair<pt_t, puppiWgt_t> ptAndW = sum2puppiPt_ref(sum, pfallne[in].hwPt, ieta, isEM, in);
+    #ifndef FAKE_PUPPI
     outallne_nocut[in].fill(region, pfallne[in], ptAndW.first, ptAndW.second);
     if (region.isFiducial(pfallne[in]) && outallne_nocut[in].hwPt >= ptCut_[ieta]) {
       outallne[in] = outallne_nocut[in];
     }
+    #else // FAKE_PUPPI
+    outallne_nocut[in].fill(region, pfallne[in], pfallne[in].hwPt, ptAndW.second);
+    outallne_nocut[in].hwData[9]     = region.isFiducial(pfallne[in]);
+    outallne_nocut[in].hwData(20,10) = ptAndW.first(10,0);
+    outallne[in] = outallne_nocut[in];
+    #endif
   }
   puppisort_and_crop_ref(nOut_, outallne, outselne);
 }

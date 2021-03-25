@@ -20,14 +20,14 @@ end bram_delay;
 
 architecture rtl of bram_delay is
     constant MY_DELAY : natural := DELAY-3; -- 3 clock cycles of delay are already there because of registers & logic
+    constant half_index : natural := MY_DELAY-1;  
+    constant max_index : natural := 2*MY_DELAY-1; 
     signal d72: std_logic_vector(71 downto 0) := (others => '0');
     signal q72: std_logic_vector(71 downto 0) := (others => '0');
     signal raddr: std_logic_vector(14 downto 0);
     signal waddr: std_logic_vector(14 downto 0);
-    signal rindex: natural range 0 to 2*MY_DELAY-1;
-    signal windex: natural range 0 to 2*MY_DELAY-1;
-    constant half_index : natural := MY_DELAY-1;  
-    constant max_index : natural := 2*MY_DELAY-1; 
+    signal rindex: natural range 0 to 2*MY_DELAY-1 := half_index;
+    signal windex: natural range 0 to 2*MY_DELAY-1 := 0;
 begin
     process(clk)
     begin

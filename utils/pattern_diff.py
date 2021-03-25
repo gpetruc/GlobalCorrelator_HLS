@@ -1,105 +1,18 @@
 #!/usr/bin/env python
-import re
 import sys
 
 from optparse import OptionParser
+from patterns import FrameSet, add_common_options, parse_option
 parser = OptionParser(usage="%prog [options] ref test")
-parser.add_option("-f", "--format", dest="format", default="plain", help="format: plain, emp")
-parser.add_option("--emp", action="store_const", dest="format", const="emp", help="set format to emp")
-parser.add_option("-l", "--latency",dest="latency", type=int, default=0, help="Latency to add to the ref patterns to match the test one")
-parser.add_option("-N", "--max-frames", dest="maxFrames", type="int", default=10000, help="number of channels")
+add_common_options(parser)
 parser.add_option("--max-attempts", dest="maxAttempts", type="int", default=10, help="max attempts to look for a matching frame")
+parser.add_option("-l", "--latency",dest="latency", type=int, default=0, help="Latency to add to the ref patterns to match the test one")
 parser.add_option("-s", "--skip", dest="skip", type="int", default=0, help="skip first N frames from test dump")
 parser.add_option("--sr", "--skipRef", dest="skipRef", type="int", default=0, help="skip first N frames from ref dump")
-parser.add_option("-c", "--channels", dest="channels", default=None, help="channels to look at: e.g. 0,2,7-9 ")
-parser.add_option("--si", "--skip-invalid", dest="skipInvalid", action="store_true", default=False, help="skip invalid frames (starting with 0v)")
-parser.add_option("--svb", "--skip-valid-bit", dest="skipValidBit", action="store_true", default=False, help="strip away the valid bit")
-parser.add_option("-v", action="count",  dest="verbose", default=1, help="increase verbosity")
-parser.add_option("-q", action="store_const", dest="verbose", const=0, help="reduce verbosity")
+parser.add_option("-N", "--max-frames", dest="maxFrames", type="int", default=10000, help="number of channels")
 parser.add_option("-E", dest="numberOfErrors", type=int, default=1, help="Number of errors after which to stop when using 'exact' matching")
-
 (options,args) = parser.parse_args()
-if options.channels:
-    channels_enable = {};
-    for cmap in options.channels.split(","):
-        channels = []; openEnd = False
-        for cpair in cmap.split(":"):
-            if cpair[-1] == "-":
-                channels.append([int(cpair[:-1])])
-                openEnd = True
-            elif "-" in cpair:
-                first, last = map(int,cpair.split("-"))
-                channels.append(range(first,last+1))
-            else:
-                channels.append([int(cpair)])
-        if len(channels) == 1:
-            channels_enable.update(dict((i,i) for i in channels[0]))
-        elif  len(channels) == 2:
-            if len(channels[0]) == len(channels[1]): 
-                channels_enable.update(dict((i,j) for (i,j) in zip(channels[0],channels[1])))
-            elif len(channels[0]) > 1 and len(channels[1]) == 1 and openEnd:
-                offs = channels[1][0] - channels[0][0]
-                channels_enable.update(dict((i,i+offs) for i in channels[0]))
-            else:
-                raise RuntimeError("Bad channel map %s" % cmap)
-        else:
-            raise RuntimeError("Bad channel map %s" % cmap)
-    options.channels = channels_enable
-
-class FrameSet:
-    def __init__(self, filename, isRef, options):
-        self._filename = filename
-        self._frames = []
-        for line in open(filename, "r"):
-            fields = line.strip().split()
-            if options.format == "emp":
-                if not line.startswith("Frame"): continue
-                if fields[0] != "Frame": continue
-                if fields[2] != ":": raise RuntimeError("Malformed line in file %s: %s" % (filename, line))
-                frameno = int(fields[1])
-                fdata   = map(lambda s : s.lower(), fields[3:])
-            else:
-                frameno = int(fields[0]); 
-                fdata = fields[1:]
-            if options.channels:
-                if isRef:
-                    fdata = [ v for (i,v) in enumerate(fdata) if i in options.channels ]
-                else:
-                    fdata = [ fdata[c2] for (c1,c2) in sorted(options.channels.items()) ]
-            if options.format == "emp":
-                if options.skipInvalid and all(d.startswith("0v") for d in fdata): continue
-                if options.skipValidBit: fdata = [d[2:] for d in fdata]
-            self._frames.append( [frameno, fdata] )
-        if not self._frames: raise RuntimeError("No valid patterns in file %s" % filename)
-        maxflen = max(len(f[1]) for f in self._frames)
-        minflen = min(len(f[1]) for f in self._frames)
-        if maxflen != minflen: raise RuntimeError("Frame length mismatch in file: min %d, max %d" % (minflen, maxflen))
-        self._nchannels = minflen
-        if options.verbose > 0:
-            print "Loaded %d frames from %s with %d channels" % (len(self._frames), self._filename, self._nchannels)
-    def delay(self,nframes):
-        for f in self._frames: f[0] += nframes
-    def __getitem__(self,index):
-        for f in self._frames: 
-            if f[0] == index: return f[1]
-        raise IndexError
-    def listFrames(self):
-        return [f[0] for f in self._frames]
-    def firstFrame(self):
-        return self._frames[0]
-    def allFrames(self):
-        return self._frames
-    def nFrames(self):
-        return len(self._frames)
-    def nChannels(self):
-        return self._nchannels
-    def skipFrames(self, nframes):
-        self._frames = self._frames[nframes:]
-    def cropChannels(self,nchannels):
-        if nchannels < self._nchannels:
-            self._frames = [ [ f[0], f[1][:nchannels] ] for f in self._frames ]
-            if options.verbose > 0:
-                print "Cropped %s to %d channels" % (self._filename, nchannels)
+parse_option(options)
 
 def match_exact(fs1, fs2, nmax):
     frames1 = fs1.listFrames()
@@ -164,8 +77,9 @@ def try_find_match(fs1, fs2, nmax, maxattempts):
                 return True
     print "Could not find frame %04d of #1 in #2: %s"  % (fno1, "  ".join(d1))
     return False
-ref = FrameSet(args[0], True, options)
-test = FrameSet(args[1], False, options)
+
+ref = FrameSet(args[0], options, True)
+test = FrameSet(args[1], options, False)
 if options.skipRef: ref.skipFrames(options.skipRef) 
 if options.latency: ref.delay(options.latency)
 if options.skip: test.skipFrames(options.skip)
