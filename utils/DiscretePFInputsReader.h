@@ -48,7 +48,7 @@ class DiscretePFInputsReader {
         }
         ~DiscretePFInputsReader() { fclose(file_); }
         // for region-by-region approach
-        bool nextRegion(HadCaloObj calo[NCALO], EmCaloObj emcalo[NEMCALO], TkObj track[NTRACK], MuObj mu[NMU], z0_t & hwZPV) {
+        bool nextRegion(HadCaloObj calo[NCALO], EmCaloObj emcalo[NEMCALO], TkObj track[NTRACK], MuObj mu[NMU], z0_t & hwZPV, float &reg_eta_center) {
             if (!nextRegion()) return false;
             const Region &r = event_.regions[iregion_];
 
@@ -56,6 +56,7 @@ class DiscretePFInputsReader {
             dpf2fw::convert<NCALO>(r.calo, calo);
             dpf2fw::convert<NEMCALO>(r.emcalo, emcalo);
             dpf2fw::convert<NMU>(r.muon, mu);
+            reg_eta_center = r.etaCenter;
 
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
             hwZPV = event_.z0 * l1tpf_impl::InputTrack::Z0_SCALE;

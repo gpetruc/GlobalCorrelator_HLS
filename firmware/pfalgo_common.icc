@@ -60,6 +60,7 @@ ap_uint<NB> dr2_plus_dpt_int_cap(int dr2, pt_t pt1, pt_t pt2, PTS_t ptscale, ap_
 
 template<typename T, int NIn, int NOut>
 void ptsort_hwopt(const T in[NIn], T out[NOut]) {
+  #pragma HLS INLINE
     T tmp[NOut];
     #pragma HLS ARRAY_PARTITION variable=tmp complete
 
@@ -218,6 +219,7 @@ struct picker_of_closest<MATCH_T,1> {
 
 template<int DR2MAX, int NCA, typename DR_T>
 ap_uint<NCA>  pick_closest(const DR_T calo_track_drval[NCA]) {
+  #pragma HLS INLINE
     const DR_T eDR2MAX = DR2MAX;
     typedef match<DR_T,ap_uint<ct_log2_ceil<NCA>::value>> match_t;
     match_t candidates[NCA];
@@ -355,5 +357,3 @@ void pfmualgo(const MuObj mu[NMU], const TkObj track[NTRACK], const ap_uint<NMU>
         }
     }
 }
-
-

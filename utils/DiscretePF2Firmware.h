@@ -36,6 +36,7 @@ namespace dpf2fw {
         out.hwPtErr = in.hwPtErr;
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
+        out.hwFlags = in.hwFlags;
     }
     inline void convert(const l1tpf_impl::Muon & in, MuObj & out) {
         out.hwPt = in.hwPt;

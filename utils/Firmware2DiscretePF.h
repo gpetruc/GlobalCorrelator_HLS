@@ -128,6 +128,7 @@ namespace fw2dpf {
         out.hwPtErr = in.hwPtErr;
         out.hwEta = in.hwEta;
         out.hwPhi = in.hwPhi;
+        out.hwFlags = in.hwFlags;
         out.src = nullptr;
     }
     inline void convert(const MuObj & in, l1tpf_impl::Muon & out) {
