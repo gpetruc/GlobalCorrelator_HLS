@@ -6,15 +6,10 @@ add_files -tb algo_test.cpp
 add_files -tb algo_ref.cpp
 
 # reset the solution
-open_solution -reset "solution1"
-###  MP7 (Virtex-7 690T)
-# set_part {xc7vx690tffg1927-2}
-##   VCU118 dev kit (VU9P)
-set_part {xcvu9p-flga2104-2L-e}
-##   Serenity with KU115 
-#set_part {xcku115-flvf1924-2-i}
-## 240 MHz
-create_clock -period 3.125
+open_solution -reset "solution"
+# set the FPGA (VU13P), and a 360 MHz clock
+set_part {xcvu13p-flga2577-2-e}
+create_clock -period 2.777
 
 # just check that the C++ compiles
 csim_design

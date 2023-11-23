@@ -20,23 +20,25 @@ Second tutorial example: an algorithm that computes the scalar sum p<sub>T</sub>
 `vivado_hls -f run_hls.tcl`
 
 In this case, the Tcl script is configured to also run the synthesis. 
-The report of the synthesis is saved in `proj/solution1/syn/report/algo_main_csynth.rpt`
+The report of the synthesis is saved in `proj/solution/syn/report/algo_main_csynth.rpt`
 
-## Synthesis results (Vivado 2018.3)
+## Synthesis results (Vitis 2023.1)
 
-For the first implementation, it has a latency of 10 clock cycles, using 568 FFs and 1551 LUTs.
+For the first implementation, it has a latency of 13 clock cycles, using 2629 FFs and 2385 LUTs.
 Vivado is not understanding that it can parallelize the sum, apparently because of the if inside the loop
 
 Changing the loop code so that the sum is always executed, but we add zero in some entries, makes HLS understand that the code can be parallelized.
-Now the loop takes 1 clock, 82 FFs, 1195 LUTs.
+Now the loop takes 2 clocks (5.6ns), 375 FFs, 1271 LUTs.
 
-## Changing the clock
+## Changing the clock frequency
 
-We can change the clock to 320 MHz (3.125 ns) from the TCL, recreating the project, or in the GUI from the solution settings (golden gear button in the toolbar) and going in the 'Synthesis' page
+We can change the clock period to see how it affects the results, from the TCL file or from the solution settings in the GUI (or adding new solutions, from the GUI):
+ * 480 MHz (2.08ns): 3 clock cycles (6.2ns), 580 FF, 1271 LUTs
+ * 240 MHz (4.16ns): 1 clock cycle (4.2ns), 156 FF, 1271 LUTs
 
-After this change, the algorithm now takes 2 clock cycles, 227 FFs, 1195 LUTs: the amount of computation resources used is unchanged, but more registers are needed to hold the result in memory during the processing.
+The amount of computations needed, and thus of LUTs remains the same, and the latency in ns remains similar (slightly higher).
+At higher speed, less LUT operations can be done per clock cycle and so more clock cycles are needed, and consequently more FFs (and more FPGA interconnect resources, not shown by HLS)
 
-One can go to an even faster clock of 400 MHz (2.5 ns), and you'll see a further increase in FFs to 407.
 
 
 
