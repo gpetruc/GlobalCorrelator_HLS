@@ -10,8 +10,8 @@ add_files -tb testbench.cc
 
 # create a solution (i.e. a hardware configuration for synthesis)
 open_solution -reset "solution"
-# set the FPGA (VU13P), and a 360 MHz clock
-set_part {xcvu13p-flga2577-2-e}
+# set the FPGA (VU9P), and a 360 MHz clock
+set_part {xcvu9p-flga2577-2-e}
 create_clock -period 2.777
 
 # end here, so that we can then open the project interactively in the gui

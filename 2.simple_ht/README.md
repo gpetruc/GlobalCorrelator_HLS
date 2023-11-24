@@ -1,6 +1,6 @@
 # First tutorial example
 
-Second tutorial example: an algorithm that computes the scalar sum p<sub>T</sub> of all the objects with |&eta| &lt; 2.4
+Second tutorial example: an algorithm that computes the scalar sum p<sub>T</sub> of all the objects with |&eta;| &lt; 2.4
  * define a simple structure to hold a "particle" object with a p<sub>T</sub> and an &eta; value, stored as integer
  * define a reference implementation
  * try different C++ implementatons for synthesis that result in different performances

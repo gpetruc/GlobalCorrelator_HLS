@@ -13,15 +13,15 @@ Example of an algorithm to compute MET implemented using lookup tables for compl
 
 # Running the example
 ## Batch mode using Tcl script
-`vivado_hls -f run_hls.tcl`
+`vitis_hls -f run_hls.tcl`
 
 ## To open the project in the GUI
 After creating the project using the tcl script (default name from script is `proj`)
 
-`vivado_hls -p proj`
+`vitis_hls -p proj`
 
 ## Implementation with LUT
 
-The default implementation, with Vivado 2018.3, yields Latency 7, Resources: 10 BRAM, 14 DSP, 931 FF, 872 LUT
+The default implementation, with Vivado 2023.2, yields Latency 10, Resources: 10 BRAM, 14 DSP, 1686 FF, 1126 LUT
 
 We can then optimize further, packing sin and cos into a single LUT (see the commented code), which reduces the block RAMs to 7 with no extra cost. 

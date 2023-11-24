@@ -7,8 +7,8 @@ add_files -tb algo_ref.cpp
 
 # reset the solution
 open_solution -reset "solution"
-# set the FPGA (VU13P), and a 360 MHz clock
-set_part {xcvu13p-flga2577-2-e}
+# set the FPGA (VU9P), and a 360 MHz clock
+set_part {xcvu9p-flga2577-2-e}
 create_clock -period 2.777
 
 # just check that the C++ compiles
