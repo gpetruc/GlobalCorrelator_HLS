@@ -9,13 +9,13 @@ It's implemented in 3 version:
 
 # Structure of this example
 
-* `run_hls.tcl`: configuration & startup file for Vivado HLS defining the project, the input files, etc
+* `run_hls.tcl`: configuration & startup file for Vitis HLS defining the project, the input files, etc
 * `src` directory with the header file and implementation for the synthesis (i.e. to to be compiled into firmware)
    * `func.h`, `func.cc`: header and source file for the code to be synthethised
 * `testbench.cc`: simple C++ testbench that runs the algorithm on a few random input files
 
 # Running the example
-## Create the Vivado HLS project 
+## Create the Vitis HLS project 
 `vitis_hls -f run_hls.tcl`
 
 ## Open the project in the GUI

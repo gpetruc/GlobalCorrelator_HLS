@@ -4,7 +4,7 @@ Example of an algorithm to compute MET implemented using lookup tables for compl
 
 # Structure of this example
 
-* `run_hls.tcl`: configuration & startup file for Vivado HLS defining the project, the input files, etc
+* `run_hls.tcl`: configuration & startup file for Vitis HLS defining the project, the input files, etc
 * `src` directory with the header file and implementation for the synthesis (i.e. to to be compiled into firmware)
    * `data.h`: define the dataformats
    * `algo.h`, `algo.cpp`: header and source file for the code to be synthethised
