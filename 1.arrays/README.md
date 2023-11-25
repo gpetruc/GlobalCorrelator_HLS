@@ -1,4 +1,4 @@
-# First tutorial example
+# Introduction to arrays in HLS
 
 A very simple example: a function that reads two input arrays `a[i]`, `b[i]`, and computes the products (dropping the 8 least siginficant bits), and adds them up.
 
