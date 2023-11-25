@@ -1,4 +1,4 @@
-# First tutorial example
+# A first physics example: H<sub>T</sub>
 
 Second tutorial example: an algorithm that computes the scalar sum p<sub>T</sub> of all the objects with |&eta;| &lt; 2.4
  * define a simple structure to hold a "particle" object with a p<sub>T</sub> and an &eta; value, stored as integer
@@ -25,10 +25,12 @@ The report of the synthesis is saved in `proj/solution/syn/report/algo_main_csyn
 ## Synthesis results (Vitis 2023.1)
 
 For the first implementation, it has a latency of 13 clock cycles, using 2629 FFs and 2385 LUTs.
-Vivado is not understanding that it can parallelize the sum, apparently because of the if inside the loop
+Vitis is not understanding that it can parallelize the sum, apparently because of the if inside the loop
 
 Changing the loop code so that the sum is always executed, but we add zero in some entries, makes HLS understand that the code can be parallelized.
 Now the loop takes 2 clocks (5.6ns), 375 FFs, 1271 LUTs.
+
+An alternative approach to force Vitis HLS to do parallelize the reduction is to use recursive templates, which works also in more general cases of divide-and-conquer algorithms (e.g. finding the maximum or minimum value, sorting, ...). The result is identical, 2 clocks (5.6ns), 375 FFs, 1271 LUTs.
 
 ## Changing the clock frequency
 
