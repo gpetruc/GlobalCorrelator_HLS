@@ -15,8 +15,8 @@ struct TkMu {
     // datamembers
     bool valid;
     pt_t hwPt;
-    eta_t hwEta; 
     phi_t hwPhi;
+    eta_t hwEta; 
     z0_t hwZ0;
     d0_t hwD0;
     bool hwCharge; // zero is positive

@@ -1,0 +1,5 @@
+proj*/solution
+proj*/hls.app
+vitis_hls.log*
+.vscode
+hs_err_pid*.log
