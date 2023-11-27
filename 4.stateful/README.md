@@ -29,14 +29,14 @@ The GMT sends 12 TkMuon objects, using 18 64-bit words, with the following forma
 |  2   | 63-0 | TkMu 1 bits 63-0 |
 |  3   | 63-0 | TkMu 2 bits 63-0 |
 |  4   | 31-0 | TkMu 2 bits 96-64 |
-|  5   | 63-32 | TkMu 3 bits 96-64 |
-|  6   | 63-0 | TkMu 3 bits 63-0 |
+|  4   | 63-32 | TkMu 3 bits 96-64 |
+|  5   | 63-0 | TkMu 3 bits 63-0 |
 | ...  | ...  | ... |
 | 16   | 31-0 | TkMu 10 bits 96-64 |
 | 16   | 63-32 | TkMu 11 bits 96-64 |
 | 17   | 63-0 | TkMu 11 bits 63-0 |
 
-We will write a module that at each event receives at each clock a 64-bit data word and the start-of-event signal, and returns as output a list of 18 TkMu objects, and a bit specifying whether the list for this event complete and can be read by the downstream firmware.
+We will write a module that at each event receives at each clock a 64-bit data word and the start-of-event signal, and returns as output a list of 12 TkMu objects, and a bit specifying whether the list for this event complete and can be read by the downstream firmware.
 
 # Structure of this example
 
