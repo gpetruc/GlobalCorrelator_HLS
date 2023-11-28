@@ -15,13 +15,13 @@ the encoding of the remainig bits different for charged and neutral particles, a
 | PID | Binary | Particle | PDG ID |
 | ---- | ---- | ---- | ---- |
 | 0 | 000 | neutral hadron | 130 (K<sup>0</sup><sub>L</sub>) |
-| 1 | 001 | photon | 22 (&gamma;) | \hline
+| 1 | 001 | photon | 22 (&gamma;) |
 | 2 | 010 | hadron of charge -1 | -211 (&pi;<sup>&minus;</sup>) |
-| 3 | 011 | hadron of charge +1 | +211 (&pi;<sup>+</sup>) | \hline
+| 3 | 011 | hadron of charge +1 | +211 (&pi;<sup>+</sup>) |
 | 4 | 100 | electron | +11 (e<sup>&minus;</sup>)  |
-| 5 | 101 | positron | -11 (e<sup>+</sup>) | \hline
+| 5 | 101 | positron | -11 (e<sup>+</sup>) |
 | 6 | 110 | muon | +13 (&mu;<sup>&minus;</sup>) |
-| 7 | 111 | anti-muon | -13 (&mu;<sup>+</sup>) | \hline
+| 7 | 111 | anti-muon | -13 (&mu;<sup>+</sup>) |
 
 The <sub>T</sub><sup>miss</sup> object should be a 64-bit word with this format
 | Bit range | Content | Bits | Encoding |
@@ -34,6 +34,6 @@ The <sub>T</sub><sup>miss</sup> object should be a 64-bit word with this format
 
 where E<sub>T</sub><sup>tot</sup> is the scalar sum of the object p<sub>T</sub>'s.
 
-In the trigger, the algorithm will take as input a vector of 208 particles, run at 360 MHz with an initialization interval of 54, and return the two sums.
+In the trigger, the algorithm will take as input a vector of 216 particles, run at 360 MHz with an initialization interval of 9, and return the two sums.
 
 In the Alveo, the algorithm will take as input a number of particles, an input pointer to 64-bit words for the inputs, and an output pointer to 64 bit words for the output.

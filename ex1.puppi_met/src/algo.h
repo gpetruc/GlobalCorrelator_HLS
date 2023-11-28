@@ -3,7 +3,7 @@
 
 #include "data.h"
 
-#define NPUPPI_MAX 208
+#define NPUPPI_MAX 216
 
 void compute_sums_l1t(const Puppi in[NPUPPI_MAX], Sum & out, Sum & out_nomu) ;
 

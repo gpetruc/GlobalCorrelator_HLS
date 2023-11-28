@@ -3,7 +3,7 @@
 
 #include "data.h"
 
-#define NPUPPI_MAX 208
+#define NPUPPI_MAX 216
 #define NISO_MAX 12
 
 typedef ap_uint<24> dr2_t;
@@ -22,5 +22,7 @@ inline dr2_t deltaR2(const Puppi & p1, const Puppi & p2) {
 void compute_isolated_l1t(const Puppi in[NPUPPI_MAX], Puppi out[NISO_MAX], Puppi::pt_t out_absiso[NISO_MAX]) ;
 
 void compute_isolated_alveo(unsigned int N, const uint64_t *in, unsigned int & nout, uint64_t *out, uint16_t *out_absiso) ;
+
+void compute_isolated_ref(unsigned int npuppi, const Puppi in[NPUPPI_MAX], Puppi out[NISO_MAX], Puppi::pt_t out_absiso[NISO_MAX], bool verbose=false) ;
 
 #endif

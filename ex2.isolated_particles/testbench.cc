@@ -30,40 +30,7 @@ int main(int argc, char **argv) {
         }
 
         // REFERENCE CODE GOES HERE
-        unsigned niso_ref = 0;
-        bool masked[NPUPPI_MAX];
-        auto dr2_max = drToHwDr2(0.4), dr2_veto = drToHwDr2(0.1);
-        for (int i = 0; i < npuppi; ++i) masked[i] = (puppi[i].hwID < 2);
-        for (int iter = 0; iter < NISO_MAX; ++iter) {
-            int iseed = -1;
-            for (int i = 0; i < npuppi; ++i) {
-                if (!masked[i] && (iseed == -1 || puppi[iseed].hwPt < puppi[i].hwPt)) {
-                    iseed = i;
-                }
-            }
-            if (iseed == -1) break;
-            out_ref[niso_ref] = puppi[iseed];
-            out_absiso_ref[niso_ref] = 0;
-            for (int i = 0; i < npuppi; ++i) {
-                auto dr2 = deltaR2(puppi[iseed], puppi[i]);
-                if (dr2 < dr2_max) {
-                    masked[i] = true;
-                    if (dr2 > dr2_veto) out_absiso_ref[niso_ref] += puppi[i].hwPt;
-                }
-            }
-            if (itest == 0) {
-                printf("Seed %3u pT %8.3f eta %+6.3f phi %+6.3f pid %1u: abs iso %8.3f\n",
-                    iseed, puppi[iseed].floatPt(), puppi[iseed].floatEta(),  
-            puppi[iseed].floatPhi(), puppi[iseed].hwID.to_uint(), Puppi::floatPt(out_absiso_ref[niso_ref]));
-            }
-            if (out_absiso_ref[niso_ref] < puppi[iseed].hwPt) {
-                niso_ref++;
-            }
-        }
-        for (int i = niso_ref; i < NISO_MAX; ++i) {
-            out_ref[i].clear();
-            out_absiso_ref[i] = 0;
-        }
+        compute_isolated_ref(npuppi, puppi, out_ref, out_absiso_ref, itest == 0);
 
         // CALL TO FIRMWARE
         compute_isolated_l1t(puppi, out, out_absiso);
