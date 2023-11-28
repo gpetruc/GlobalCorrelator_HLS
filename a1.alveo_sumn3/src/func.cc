@@ -24,7 +24,7 @@ void func_stream(hls::stream<uint16_t> & in, hls::stream<uint64_t> & out) {
   out.write(ret.to_uint64());
 }
 
-#define NSTREAMS 16
+#define NSTREAMS 64
 void func_many_streams(uint16_t n, const uint16_t *ins, uint64_t *results) {
   #pragma hls interface mode=m_axi port=ins offset=slave bundle=gmem depth=1024
   #pragma hls interface mode=m_axi port=results offset=slave bundle=gmem depth=1024
