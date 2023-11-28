@@ -114,24 +114,71 @@ void px_py_to_pt_phi(pxy_t px, pxy_t py, Sum::pt_t &pt, Sum::phi_t &phi) {
     #endif
 }
 
+template<unsigned int N>
+pxy_t sumpxy(const pxy_t values[N]) {
+   return sumpxy<N/2>(values) +
+          sumpxy<N-N/2>(&values[N/2]);
+
+}
+
+template<unsigned int N>
+pxy_t sumpxy(const pxy_t values[N], bool ismu[N]) {
+   return sumpxy<N/2>(values, ismu) +
+          sumpxy<N-N/2>(&values[N/2], &ismu[N/2]);
+
+}
+
+template<unsigned int N>
+Puppi::pt_t sumpt(const Puppi values[N]) {
+   return sumpt<N/2>(values) +
+          sumpt<N-N/2>(&values[N/2]);
+
+}
+
+template<unsigned int N>
+Puppi::pt_t sumpt(const Puppi values[N], bool ismu[N]) {
+   return sumpt<N/2>(values, ismu) +
+          sumpt<N-N/2>(&values[N/2], &ismu[N/2]);
+
+}
+
+template<>
+pxy_t sumpxy<1>(const pxy_t values[1]) {
+   return values[0];
+}
+
+template<>
+pxy_t sumpxy<1>(const pxy_t values[1], bool ismu[1]) {
+   return ismu[0] ? pxy_t(0) : values[0];
+}
+
+
+template<>
+Puppi::pt_t sumpt<1>(const Puppi values[1]) {
+   return values[0].hwPt;
+}
+
+template<>
+Puppi::pt_t sumpt<1>(const Puppi values[1], bool ismu[1]) {
+   return ismu[0] ? Puppi::pt_t(0) : values[0].hwPt;
+}
+
+
 void compute_sums_l1t(const Puppi in[NPUPPI_MAX], Sum & out, Sum & out_nomu) {
     #pragma HLS ARRAY_PARTITION variable=in complete
     #pragma HLS pipeline II=54
-    Puppi::pt_t sum = 0, sum_nomu = 0;
-    pxy_t sumx = 0, sumy = 0, sumx_nomu = 0, sumy_nomu = 0;
+    pxy_t px[NPUPPI_MAX], py[NPUPPI_MAX];
+    bool ismu[NPUPPI_MAX];
+    #pragma HLS ARRAY_PARTITION variable=px complete
+    #pragma HLS ARRAY_PARTITION variable=py complete
+    #pragma HLS ARRAY_PARTITION variable=ismu complete
     for (unsigned int i = 0; i < NPUPPI_MAX; ++i) {
-       pxy_t px, py, px_nomu, py_nomu;
-       toCartesian(in[i].hwPt, in[i].hwPhi, px, py);
-       bool ismu = in[i].hwID > 6;
-       px_nomu = ismu ? pxy_t(0) : px;
-       py_nomu = ismu ? pxy_t(0) : py;
-       sumx += px;
-       sumy += py;
-       sumx_nomu += px_nomu;
-       sumy_nomu += py_nomu;
-       sum += in[i].hwPt;
-       sum_nomu += ismu ? Puppi::pt_t(0) : in[i].hwPt;
+       toCartesian(in[i].hwPt, in[i].hwPhi, px[i], py[i]);
+       ismu[i] = in[i].hwID >= 6;
     }
+    pxy_t sumx = sumpxy<NPUPPI_MAX>(px), sumy = sumpxy<NPUPPI_MAX>(py);
+    pxy_t sumx_nomu = sumpxy<NPUPPI_MAX>(px, ismu), sumy_nomu = sumpxy<NPUPPI_MAX>(py, ismu);
+    Puppi::pt_t sum = sumpt<NPUPPI_MAX>(in), sum_nomu = sumpt<NPUPPI_MAX>(in, ismu);
     out.valid = 1;
     px_py_to_pt_phi(-sumx, -sumy, out.hwPt, out.hwPhi);
     out.hwPtTot = sum;

@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
             sumpt += puppi[i].floatPt();
             sumpx += puppi[i].floatPt()*c;
             sumpy += puppi[i].floatPt()*s;
-            if (puppi[i].hwID < Puppi::MuMinus) {
+            if (puppi[i].hwID < 6) {
                 nomu_sumpt += puppi[i].floatPt();
                 nomu_sumpx += puppi[i].floatPt()*c;
                 nomu_sumpy += puppi[i].floatPt()*s;
