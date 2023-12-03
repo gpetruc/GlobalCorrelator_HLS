@@ -16,6 +16,9 @@ print(f'IP signature: {func.signature}')
 xbuf = pynq.allocate(N, dtype='uint16')
 rbuf = pynq.allocate(N, dtype='uint64')
 
+import time
+
+t0 = time.perf_counter()
 # copy data to input buffer
 xbuf[:] = x
 
@@ -27,6 +30,7 @@ func.call(N, xbuf, rbuf)
 
 # synchronise output buffer from device (Device->Host)
 rbuf.sync_from_device()
+t1 = time.perf_counter()
 
 ok = True
 for i in range(N):
@@ -35,4 +39,4 @@ for i in range(N):
     if rbuf[i] != c:
         ok = False
     print(f'{i:3d}  {xbuf[i]:4d}  {rbuf[i]:20d}   {c:20d}  {c==rbuf[i]}')
-
+print("Done after %.3f us, ok? %s" % ((t1-t0)*1e6, ok))

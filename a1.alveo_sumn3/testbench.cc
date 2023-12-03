@@ -45,6 +45,7 @@ int main(int argc, char **argv) {
         auto dt = std::chrono::duration<double>(t1 - t0).count();
         //func_many_seq(ndata, ins.data(), outs.data());
         func_many_streams(ndata, ins.data(), outs.data());
+        //func_many_queues(ndata, ins.data(), outs.data());
         for (int i = 0; i < ndata; ++i) {
             if (outs[i] != refs[i] || refs[i] != maths[i]) {
                 printf("Mismatch %d, n = %u, math = %lu, ref = %lu, fw = %lu\n",

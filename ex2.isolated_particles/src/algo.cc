@@ -45,7 +45,15 @@ Puppi::pt_t SumReduce<1>(const Puppi::pt_t in[1]) {
 }
 
 Puppi find_seed(const Puppi in[NPUPPI_MAX], const bool masked[NPUPPI_MAX]) {
+    #pragma HLS inline off
+	#pragma HLS pipeline ii=1
     return BestSeedReduce<NPUPPI_MAX>(in, masked);
+}
+
+Puppi::pt_t SumReduceAll(const Puppi::pt_t in[NPUPPI_MAX]) {
+    #pragma HLS inline off
+    #pragma HLS pipeline ii=1
+    return SumReduce<NPUPPI_MAX>(in);
 }
 
 ap_int<Puppi::eta_t::width+1> deltaEta(Puppi::eta_t eta1, Puppi::eta_t eta2) {
@@ -75,14 +83,14 @@ void one_iteration(const Puppi in[NPUPPI_MAX], const bool masked[NPUPPI_MAX], bo
     Puppi::pt_t tosum[NPUPPI_MAX];
     #pragma HLS ARRAY_PARTITION variable=tosum complete
 
-    seed = BestSeedReduce<NPUPPI_MAX>(in, masked);
+    seed = find_seed(in, masked);
     for (unsigned int i = 0; i < NPUPPI_MAX; ++i) {
         dr2_t dr2 = deltaR2_slow(seed, in[i]);
         bool inside = (dr2 < dr2_max);
         masked_out[i] = masked[i] || inside;
         tosum[i] =  inside && (dr2 > dr2_veto) ? in[i].hwPt : Puppi::pt_t(0);
     }
-    absiso = SumReduce<NPUPPI_MAX>(tosum);
+    absiso = SumReduceAll(tosum);
 }
 
 

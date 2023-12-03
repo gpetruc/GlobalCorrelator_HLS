@@ -13,5 +13,6 @@ open_solution -reset "solution"
 set_part {xcvu9p-flga2577-2-e}
 create_clock -period 2.777
 
-# end here, so that we can then open the project interactively in the gui
+csim_design
+csynth_design
 exit

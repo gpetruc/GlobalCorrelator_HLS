@@ -186,6 +186,21 @@ void compute_sums_l1t(const Puppi in[NPUPPI_MAX], Sum & out, Sum & out_nomu) {
     out_nomu.hwPtTot = sum_nomu;
 }
 
-void compute_sums_alveo(unsigned int N, const uint64_t *in, uint64_t out[2])  {
-    // left as exercise
+void compute_sums_alveo(unsigned int N, const uint64_t *in, uint64_t out[2])  {  
+    #pragma hls interface mode=m_axi port=in offset=slave bundle=gmem
+    #pragma hls interface mode=m_axi port=out offset=slave bundle=gmem
+    Puppi puppi[NPUPPI_MAX];
+    #pragma HLS ARRAY_PARTITION variable=puppi complete
+    Sum sum, sum_nomu;
+    assert(N < NPUPPI_MAX);
+    for (unsigned int i = 0; i < N; ++i) {
+        puppi[i].unpack(in[i]);
+    }
+    for (unsigned int i = N; i < NPUPPI_MAX; ++i) {
+        puppi[i].clear();
+    }
+    compute_sums_l1t(puppi, sum, sum_nomu);
+    out[0] = sum.pack();
+    out[1] = sum_nomu.pack();
 }
+

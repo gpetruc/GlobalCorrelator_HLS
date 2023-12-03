@@ -3,3 +3,6 @@ proj*/hls.app
 vitis_hls.log*
 .vscode
 hs_err_pid*.log
+.ipynb_checkpoints
+*.xclbin*
+_x

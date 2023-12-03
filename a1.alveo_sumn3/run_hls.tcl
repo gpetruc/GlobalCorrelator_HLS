@@ -1,4 +1,6 @@
-open_project -reset proj
+#open_project -reset proj_queues
+open_project -reset proj_streams
+#set_top func_many_queues
 set_top func_many_streams
 add_files src/func.cc
 add_files -tb testbench.cc
@@ -16,7 +18,7 @@ csim_design -argv "2 256"
 
 # synthethize the algorithm
 csynth_design
-
+cosim_design -argv "2 1024"
 export_design -format xo
 
 quit
